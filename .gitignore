@@ -1,0 +1,13 @@
+venv/*
+.env
+__pycache__
+.vscode/*
+.DS_Store
+.ipynb_checkpoints
+.idea
+.python-version
+*.ipynb
+
+*.egg-info/
+
+temp

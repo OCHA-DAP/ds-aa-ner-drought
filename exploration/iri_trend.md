@@ -14,6 +14,8 @@ jupyter:
 ---
 
 # IRI trend
+<!-- markdownlint-disable-line MD013 -->
+Check trend of overall activation prob.
 
 ```python
 %load_ext jupyter_black
@@ -31,6 +33,8 @@ import ocha_stratus as stratus
 from src.constants import *
 ```
 
+## Load and process data
+
 ```python
 blob_name = f"{PROJECT_PREFIX}/raw/iri/ner_trigger_comparison_2025_newmodel_adjustment - raw.csv"
 ```
@@ -43,8 +47,13 @@ df_iri_raw.columns = ["year"] + [
 df_iri_raw["year"] = df_iri_raw["year"].astype(int)
 ```
 
+## Calculate activation prob. and plot
+
+See how activation probability changes as we adjust start year of analysis (we have previously used 1998 as a convention, since there were several activations before this).
+
 ```python
 def calculate_activations(ind_frac: float):
+    """Calculate activations based on logic in framework"""
     df_iri = df_iri_raw.copy()
     for x in df_iri:
         if "bool" in x or x == "year":
@@ -77,6 +86,7 @@ def calculate_activations(ind_frac: float):
         rp = (n_years + 1) / n_activations if n_activations > 0 else np.inf
         prob = 1 / rp
         p = n_activations / n_years
+        # Bernoulli standard error
         se = np.sqrt((p * (1 - p) / n_years))
         dicts.append(
             {"min_year": year, "rp": rp, "prob": 1 / rp, "se": se, "p": p}
@@ -130,6 +140,8 @@ def plot_rp(df_rp: pd.DataFrame, ind_frac: float):
     ax.spines["right"].set_visible(False)
 ```
 
+From plot below, activation probability is too high no matter how late we set the start date of analysis.
+
 ```python
 ind_frac = 0.35
 df_rp, df_activations = calculate_activations(ind_frac=ind_frac)
@@ -140,12 +152,82 @@ plot_rp(df_rp, ind_frac)
 df_rp
 ```
 
+However, if we adjust the per-month percentile threshold to `0.3`, we're ok.
+
+Note that this is set to step of `0.05` since this is how the Maproom is designed.
+
 ```python
 ind_frac = 0.3
 df_rp, df_activations = calculate_activations(ind_frac=ind_frac)
 plot_rp(df_rp, ind_frac)
 ```
 
-```python
+## Calculate framework stats
 
+To go in standard reporting table.
+
+```python
+ind_frac = 0.3
+df_rp, df_activations = calculate_activations(ind_frac=ind_frac)
+```
+
+```python
+df_rp
+```
+
+```python
+WINDOW_1_BUDGET = 5.25
+WINDOW_2_BUDGET = 9.6
+
+df_activations["total_spend"] = (
+    df_activations["w1"] * WINDOW_1_BUDGET
+    + df_activations["w2"] * WINDOW_2_BUDGET
+)
+```
+
+```python
+df_activations_recent = df_activations[df_activations["year"] >= 1998]
+total_years = len(df_activations_recent)
+```
+
+```python
+df_activations_recent
+```
+
+```python
+w1_rp = (total_years + 1) / df_activations_recent["w1"].sum()
+w2_rp = (total_years + 1) / df_activations_recent["w2"].sum()
+any_rp = (total_years + 1) / df_activations_recent["any"].sum()
+
+total_spend = df_activations_recent["total_spend"].sum()
+avg_spend = total_spend / total_years
+avg_spend_activation = total_spend / df_activations_recent["any"].sum()
+total_budget = WINDOW_1_BUDGET + WINDOW_2_BUDGET
+rp_eff = total_budget / avg_spend
+
+print(f"window 1 RP: {w1_rp:.1f}")
+print(f"window 1 prob: {1/w1_rp:.0%}")
+
+print(f"window 2 RP: {w2_rp:.1f}")
+print(f"window 2 prob: {1/w2_rp:.0%}")
+
+print(f"any RP: {any_rp:.1f}")
+print(f"any prob: {1/any_rp:.0%}")
+
+print(f"average spend: {avg_spend:.1f}")
+print(f"rp eff: {rp_eff:.1f}")
+print(f"prob eff: {1/rp_eff:.0%}")
+print(f"average spend per act.: {avg_spend_activation:.1f}")
+```
+
+```python
+df_activations_recent[df_activations_recent["w1"]].sort_values("year")[
+    "year"
+].to_list()
+```
+
+```python
+df_activations_recent[df_activations_recent["w2"]].sort_values("year")[
+    "year"
+].to_list()
 ```

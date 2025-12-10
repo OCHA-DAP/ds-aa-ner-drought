@@ -28,6 +28,8 @@ import calendar
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.ticker import FuncFormatter
+from matplotlib.patches import Patch
 import ocha_stratus as stratus
 
 from src.constants import *
@@ -167,7 +169,7 @@ plot_rp(df_rp, ind_frac)
 To go in standard reporting table.
 
 ```python
-ind_frac = 0.3
+ind_frac = 0.25
 df_rp, df_activations = calculate_activations(ind_frac=ind_frac)
 ```
 
@@ -187,7 +189,8 @@ df_activations["total_spend"] = (
 
 ```python
 df_activations_recent = df_activations[df_activations["year"] >= 1998]
-total_years = len(df_activations_recent)
+# adding one year to account for 2025
+total_years = len(df_activations_recent) + 1
 ```
 
 ```python
@@ -197,7 +200,7 @@ df_activations_recent
 ```python
 w1_rp = (total_years + 1) / df_activations_recent["w1"].sum()
 w2_rp = (total_years + 1) / df_activations_recent["w2"].sum()
-any_rp = (total_years + 1) / df_activations_recent["any"].sum()
+any_rp = (total_years + 1) / (df_activations_recent["any"].sum())
 
 total_spend = df_activations_recent["total_spend"].sum()
 avg_spend = total_spend / total_years
@@ -230,4 +233,101 @@ df_activations_recent[df_activations_recent["w1"]].sort_values("year")[
 df_activations_recent[df_activations_recent["w2"]].sort_values("year")[
     "year"
 ].to_list()
+```
+
+### Iterate over percentile thresholds
+
+```python
+def calc_number_years(thresh, min_year=1998):
+    df_rp, df_activations = calculate_activations(ind_frac=thresh)
+    df_activations["total_spend"] = (
+        df_activations["w1"] * WINDOW_1_BUDGET
+        + df_activations["w2"] * WINDOW_2_BUDGET
+    )
+    df_activations_recent = df_activations[df_activations["year"] >= min_year]
+
+    # adding one year to account for 2025
+    total_years = len(df_activations_recent) + 1
+    # w1_rp = (total_years + 1) / df_activations_recent["w1"].sum()
+    # w2_rp = (total_years + 1) / df_activations_recent["w2"].sum()
+    any_rp = (total_years + 1) / (df_activations_recent["any"].sum())
+    any_rp_high = (total_years + 1) / (df_activations_recent["any"].sum() - 1)
+    any_rp_low = (total_years + 1) / (df_activations_recent["any"].sum() + 1)
+
+    # total_spend = df_activations_recent["total_spend"].sum()
+    # avg_spend = total_spend / total_years
+    # avg_spend_activation = total_spend / df_activations_recent["any"].sum()
+    # total_budget = WINDOW_1_BUDGET + WINDOW_2_BUDGET
+    # rp_eff = total_budget / avg_spend
+    return any_rp, any_rp_high, any_rp_low
+```
+
+```python
+dicts = []
+for thresh in np.arange(0.1, 0.4, 0.001):
+    any_rp, any_rp_high, any_rp_low = calc_number_years(thresh)
+    dicts.append(
+        {
+            "thresh": thresh,
+            "any_rp": any_rp,
+            "any_rp_high": any_rp_high,
+            "any_rp_low": any_rp_low,
+        }
+    )
+```
+
+```python
+df_rps = pd.DataFrame(dicts)
+```
+
+```python
+df_rps["thresh"]
+```
+
+```python
+df_rps[df_rps["thresh"].round(3) == 0.201]
+```
+
+```python
+fig, ax = plt.subplots(dpi=200)
+df_rps.plot(x="thresh", y="any_rp", ax=ax, color="dodgerblue", legend=False)
+ax.fill_between(
+    df_rps["thresh"],
+    df_rps["any_rp_low"],
+    df_rps["any_rp_high"],
+    facecolor="dodgerblue",
+    alpha=0.3,
+)
+ax.axhline(3.5, color="crimson")
+ax.annotate(
+    "3.5 ans\n(limite\nminimum\nCERF)",
+    (df_rps["thresh"].max(), 3.5),
+    va="center",
+    ha="left",
+    color="crimson",
+)
+
+band_handle = Patch(
+    facecolor="dodgerblue",
+    alpha=0.3,
+    label="Incertitude\n(± 1 activation\nhistorique)",
+)
+
+ax.legend(handles=[band_handle], loc="upper right", frameon=True)
+
+ax.set_ylim(1, 10)
+ax.set_xlim(df_rps["thresh"].min(), df_rps["thresh"].max())
+
+ax.xaxis.set_major_formatter(
+    FuncFormatter(lambda x, pos: f"{int(round(x * 100))}e")
+)
+
+ax.set_xlabel("Seuil centile par mois")
+ax.set_ylabel("Période de retour globale du cadre (ans)")
+
+[ax.spines[x].set_visible(False) for x in ["top", "right"]]
+```
+
+```python
+
 ```

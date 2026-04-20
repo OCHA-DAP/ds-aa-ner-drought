@@ -54,16 +54,22 @@ df_iri_raw["year"] = df_iri_raw["year"].astype(int)
 See how activation probability changes as we adjust start year of analysis (we have previously used 1998 as a convention, since there were several activations before this).
 
 ```python
-def calculate_activations(ind_frac: float):
+def calculate_activations(ind_frac: float, print_threshs: bool = False):
     """Calculate activations based on logic in framework"""
     df_iri = df_iri_raw.copy()
     for x in df_iri:
         if "bool" in x or x == "year":
             continue
         if x == "Aug":
-            df_iri[f"{x}_bool"] = df_iri[x] <= df_iri[x].quantile(ind_frac)
+            thresh = df_iri[x].quantile(ind_frac)
+            thresh = round(thresh, 3)
+            df_iri[f"{x}_bool"] = df_iri[x] <= thresh
         else:
-            df_iri[f"{x}_bool"] = df_iri[x] >= df_iri[x].quantile(1 - ind_frac)
+            thresh = df_iri[x].quantile(1 - ind_frac)
+            thresh = round(thresh, 1)
+            df_iri[f"{x}_bool"] = df_iri[x] >= thresh
+        if print_threshs:
+            print(x, thresh)
 
     for mo_int in range(1, 6):
         mo1 = calendar.month_abbr[mo_int]
@@ -169,8 +175,14 @@ plot_rp(df_rp, ind_frac)
 To go in standard reporting table.
 
 ```python
-ind_frac = 0.25
-df_rp, df_activations = calculate_activations(ind_frac=ind_frac)
+ind_frac = 0.3
+df_rp, df_activations = calculate_activations(
+    ind_frac=ind_frac, print_threshs=True
+)
+```
+
+```python
+df_activations.sort_values("Jan")
 ```
 
 ```python
@@ -190,7 +202,8 @@ df_activations["total_spend"] = (
 ```python
 df_activations_recent = df_activations[df_activations["year"] >= 1998]
 # adding one year to account for 2025
-total_years = len(df_activations_recent) + 1
+# total_years = len(df_activations_recent) + 1
+total_years = len(df_activations_recent) + 0
 ```
 
 ```python
@@ -326,6 +339,10 @@ ax.set_xlabel("Seuil centile par mois")
 ax.set_ylabel("Période de retour globale du cadre (ans)")
 
 [ax.spines[x].set_visible(False) for x in ["top", "right"]]
+```
+
+```python
+1/3.5
 ```
 
 ```python

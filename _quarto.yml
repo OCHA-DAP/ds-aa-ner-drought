@@ -1,0 +1,24 @@
+project:
+  type: website
+  output-dir: _site
+
+website:
+  title: "NER Drought Trigger"
+  navbar:
+    background: primary
+    title: "OCHA · ds-aa-ner-drought"
+
+format:
+  html:
+    theme: cosmo
+    toc: true
+    toc-depth: 3
+    toc-location: left
+    embed-resources: true
+    fig-cap-location: bottom
+
+execute:
+  freeze: auto
+  echo: false
+  warning: false
+  message: false

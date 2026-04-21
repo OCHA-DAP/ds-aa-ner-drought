@@ -1,12 +1,13 @@
 project:
   type: website
-  output-dir: _site
+  output-dir: docs
 
 website:
-  title: "NER Drought Trigger"
+  title: "Niger Anticipatory Action: Drought"
+  description: "Analysis for drought anticipatory action in Niger."
   navbar:
     background: primary
-    title: "OCHA · ds-aa-ner-drought"
+    title: "Niger Anticipatory Action: Drought"
 
 format:
   html:

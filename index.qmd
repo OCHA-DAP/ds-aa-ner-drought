@@ -1,6 +1,6 @@
 ---
-title: "Niger Drought Trigger Design"
-subtitle: "IRI Forecast-Based Anticipatory Action Trigger · 1998–2025"
+title: "Niger Anticipatory Action: Drought"
+subtitle: "IRI Forecast-Based Trigger Design · 1998–2025"
 date: today
 date-format: "D MMMM YYYY"
 ---

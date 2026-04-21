@@ -5,6 +5,10 @@ date: today
 date-format: "D MMMM YYYY"
 ---
 
+::: {style="background:#c0392b; color:white; font-size:1.6rem; font-weight:700; letter-spacing:0.1em; text-align:center; padding:1rem 1.5rem; border-radius:6px; margin-bottom:2rem;"}
+DRAFT — NOT FOR DISTRIBUTION
+:::
+
 ```{python}
 #| label: setup
 #| include: false

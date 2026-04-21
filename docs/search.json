@@ -4,14 +4,14 @@
     "href": "index.html",
     "title": "Niger Anticipatory Action: Drought",
     "section": "",
-    "text": "This document describes the design of an anticipatory action trigger for drought in Niger, based on IRI seasonal forecast probabilities and an August rainfall observation.\nThe trigger has two independent arms — either can fire to release early action:\n\nForecast arm: fires when any two consecutive monthly IRI forecasts (January–June) are both among the top 5 most elevated “below-normal” years in the historical record.\nObservation arm: fires when early August rainfall is among the bottom 5 driest years.\n\nThe trigger is calibrated against 28 years of data (1998–2025), targeting approximately a 1-in-3.5 year combined return period."
+    "text": "DRAFT — NOT FOR DISTRIBUTION"
   },
   {
     "objectID": "index.html#overview",
     "href": "index.html#overview",
     "title": "Niger Anticipatory Action: Drought",
-    "section": "",
-    "text": "This document describes the design of an anticipatory action trigger for drought in Niger, based on IRI seasonal forecast probabilities and an August rainfall observation.\nThe trigger has two independent arms — either can fire to release early action:\n\nForecast arm: fires when any two consecutive monthly IRI forecasts (January–June) are both among the top 5 most elevated “below-normal” years in the historical record.\nObservation arm: fires when early August rainfall is among the bottom 5 driest years.\n\nThe trigger is calibrated against 28 years of data (1998–2025), targeting approximately a 1-in-3.5 year combined return period."
+    "section": "Overview",
+    "text": "Overview\nThis document describes the design of an anticipatory action trigger for drought in Niger, based on IRI seasonal forecast probabilities and an August rainfall observation.\nThe trigger has two independent arms — either can fire to release early action:\n\nForecast arm: fires when any two consecutive monthly IRI forecasts (January–June) are both among the top 5 most elevated “below-normal” years in the historical record.\nObservation arm: fires when early August rainfall is among the bottom 5 driest years.\n\nThe trigger is calibrated against 28 years of data (1998–2025), targeting approximately a 1-in-3.5 year combined return period."
   },
   {
     "objectID": "index.html#data",

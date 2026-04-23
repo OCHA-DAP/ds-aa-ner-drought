@@ -27,7 +27,7 @@ START_YEAR   = 1998   # first year used for trigger design
 END_YEAR     = 2025
 COLS         = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"]
 MOS          = [1, 2, 3, 4, 5, 6]
-N_ABOVE      = 5      # forecast arm: top N years per month
+N_ABOVE      = 3      # forecast arm: top N years per month
 N_BELOW      = 5      # observation arm: bottom N years
 FUTURE_YEARS = [2026, 2027]
 TOTAL_YEARS  = END_YEAR - START_YEAR + 1   # 28
@@ -131,8 +131,33 @@ thresh_o = df_model["Aug"].nsmallest(N_BELOW).max() if N_BELOW > 0 else -np.inf
 df_model["trig_obsv"]  = df_model["Aug"] <= thresh_o
 df_model["trig_either"] = df_model["trig_fcast"] | df_model["trig_obsv"]
 
-n_trig  = int(df_model["trig_either"].sum())
-rp_actual = (n + 1) / n_trig
+n_fcast_trig = int(df_model["trig_fcast"].sum())
+n_obsv_trig  = int(df_model["trig_obsv"].sum())
+n_trig       = int(df_model["trig_either"].sum())
+rp_actual    = (n + 1) / n_trig
+
+# ── Grid search over all (n_above, n_below) combinations ──────────────────────
+_dicts = []
+for _na in range(0, n + 1):
+    for mo in MOS:
+        col    = calendar.month_abbr[mo]
+        thresh = df_model[col].nlargest(_na).min() if _na > 0 else np.inf
+        df_model[f"_gs_{mo}"] = df_model[col] >= thresh
+    _cc = []
+    for _sm in MOS[1:]:
+        _fm  = _sm - 1
+        _c   = f"_gs_{_fm}_{_sm}"
+        df_model[_c] = df_model[f"_gs_{_fm}"] & df_model[f"_gs_{_sm}"]
+        _cc.append(_c)
+    df_model["_gs_fcast"] = df_model[_cc].any(axis=1)
+    _nf = int(df_model["_gs_fcast"].sum())
+    for _nb in range(0, n + 1):
+        _to = df_model["Aug"].nsmallest(_nb).max() if _nb > 0 else -np.inf
+        _no = int((df_model["Aug"] <= _to).sum())
+        _nt = int((df_model["_gs_fcast"] | (df_model["Aug"] <= _to)).sum())
+        _dicts.append({"n_above": _na, "n_below": _nb, "n_fcast": _nf, "n_obsv": _no, "n_trig": _nt})
+df_model.drop(columns=[c for c in df_model.columns if c.startswith("_gs_")], inplace=True)
+df_qs = pd.DataFrame(_dicts).drop_duplicates(subset=["n_fcast", "n_obsv"])
 
 # ── Back-transform thresholds ─────────────────────────────────────────────────
 idx_asc   = np.argsort(years_fit)
@@ -186,10 +211,12 @@ This document describes the design of an anticipatory action trigger for drought
 
 The trigger has **two independent arms** — either can fire to release early action:
 
-- **Forecast arm**: fires when any two consecutive monthly IRI forecasts (January–June) are both among the top `{python} N_ABOVE` most elevated "below-normal" years in the historical record.
-- **Observation arm**: fires when early August rainfall is among the bottom `{python} N_BELOW` driest years.
+- **Forecast arm**: fires when any two consecutive monthly IRI forecasts (January–June) are both in the top `{python} N_ABOVE` years per month in the detrended historical record. This results in **`{python} n_fcast_trig` total forecast-arm trigger years** out of `{python} TOTAL_YEARS`.
+- **Observation arm**: fires when early August rainfall is among the bottom `{python} N_BELOW` driest years, covering **`{python} n_obsv_trig` observation-arm trigger years**.
 
 The trigger is calibrated against `{python} TOTAL_YEARS` years of data (`{python} START_YEAR`–`{python} END_YEAR`), targeting approximately a **1-in-3.5 year** combined return period.
+
+The forecast and observation arms are designed to each fire in **`{python} n_fcast_trig` years**, giving them equal probability of triggering. This represents a deliberate design choice: an earlier version of this framework used a much wider observation arm (proportionally far more observation-arm trigger years than forecast-arm years), meaning the trigger was far more likely to fire on the observation arm than the forecast arm. The revised design balances the two arms, preserving the value of the early warning signal from the forecast arm.
 
 ---
 
@@ -434,14 +461,133 @@ The trigger was designed over `{python} TOTAL_YEARS` years (`{python} START_YEAR
 |---|---|
 | Analysis period | `{python} START_YEAR`–`{python} END_YEAR` (`{python} TOTAL_YEARS` years) |
 | Detrending model | Full historical record (1991–2025) |
-| Forecast arm: trigger years | Top `{python} N_ABOVE` of `{python} TOTAL_YEARS` ≈ `{python} round(N_ABOVE/TOTAL_YEARS*100, 1)`% |
+| Forecast arm: threshold per month | Top `{python} N_ABOVE` of `{python} TOTAL_YEARS` years per month |
+| Forecast arm: total trigger years | `{python} n_fcast_trig` / `{python} TOTAL_YEARS` ≈ `{python} round(n_fcast_trig/TOTAL_YEARS*100, 1)`% |
 | Observation arm: trigger years | Bottom `{python} N_BELOW` of `{python} TOTAL_YEARS` ≈ `{python} round(N_BELOW/TOTAL_YEARS*100, 1)`% |
 | Total trigger years | `{python} n_trig` / `{python} TOTAL_YEARS` |
 | Combined return period | ~1-in-`{python} round(rp_actual, 1)` years |
 
-The **forecast arm** fires when any two *consecutive* monthly forecasts (e.g. Jan+Feb, Feb+Mar, …, May+Jun) are both in the top `{python} N_ABOVE` years. Requiring consecutive months adds persistence, reducing false alarms from single-month spikes.
+The **forecast arm** fires when any two *consecutive* monthly forecasts (e.g. Jan+Feb, Feb+Mar, …, May+Jun) are both in the top `{python} N_ABOVE` years for that month. Requiring consecutive months adds persistence, reducing false alarms from single-month spikes. Using top `{python} N_ABOVE` per month yields `{python} n_fcast_trig` total years in which the forecast arm fires — fewer than `{python} N_ABOVE` because not every year with one elevated month also has an elevated consecutive month.
 
-The **observation arm** provides a safety net: it fires independently when the August rainfall observation is among the bottom `{python} N_BELOW` years, even if the forecast arm did not fire.
+The **observation arm** provides a safety net: it fires independently when the August rainfall observation is among the bottom `{python} N_BELOW` years, even if the forecast arm did not fire. Setting `{python} N_BELOW` = `{python} n_fcast_trig` gives both arms **equal trigger probability**, balancing the system so it is no more likely to release via observation than via forecast.
+
+### Trigger arm comparison
+
+The scatter below shows each historical year as a point. The x-axis is the August observation value (obs arm metric — lower is drier); the y-axis is the strongest consecutive forecast pair in that year, measured as the minimum of the two months' detrended values (forecast arm metric — higher means both months were elevated). Threshold lines mark where each arm fires. Points are coloured by which arm(s) triggered.
+
+```{python}
+#| label: fig-arm-scatter
+#| fig-cap: "Each year plotted by its forecast-arm strength (y: max consecutive pair, min of the two months) vs its observation-arm value (x: Aug). Dashed lines mark the trigger thresholds. Colour shows which arm(s) fired."
+#| fig-width: 7
+#| fig-height: 6
+
+_pairs = [(calendar.month_abbr[m-1], calendar.month_abbr[m]) for m in MOS[1:]]
+
+_best_pair = []
+for _, row in df_model.iterrows():
+    _best_pair.append(max(min(row[a], row[b]) for a, b in _pairs))
+_best_pair = np.array(_best_pair)
+
+_aug_vals  = df_model["Aug"].values
+_years_sc  = df_model["year"].values
+
+_pair_thresh = max(
+    min(df_model[a].nlargest(N_ABOVE).min(), df_model[b].nlargest(N_ABOVE).min())
+    for a, b in _pairs
+)
+
+_COLORS = {
+    "both":     "#9B2335",
+    "forecast": "#4477AA",
+    "obs":      "#EE6677",
+    "neither":  "#BBBBBB",
+}
+_LABELS = {
+    "both":     "Both arms",
+    "forecast": "Forecast only",
+    "obs":      "Obs only",
+    "neither":  "Neither",
+}
+
+_cat = []
+for i in range(len(df_model)):
+    _f = bool(df_model["trig_fcast"].iloc[i])
+    _o = bool(df_model["trig_obsv"].iloc[i])
+    if _f and _o:
+        _cat.append("both")
+    elif _f:
+        _cat.append("forecast")
+    elif _o:
+        _cat.append("obs")
+    else:
+        _cat.append("neither")
+
+fig, ax = plt.subplots(figsize=(7, 6))
+for _k in ["both", "forecast", "obs", "neither"]:
+    _m = [c == _k for c in _cat]
+    ax.scatter(
+        _aug_vals[_m], _best_pair[_m],
+        color=_COLORS[_k], label=_LABELS[_k],
+        s=60, alpha=0.9, edgecolors="white", linewidths=0.4, zorder=4,
+    )
+
+for i in range(len(df_model)):
+    ax.annotate(
+        str(_years_sc[i]),
+        (_aug_vals[i], _best_pair[i]),
+        fontsize=6.5, color="#333333",
+        xytext=(3, 3), textcoords="offset points",
+    )
+
+ax.axvline(thresh_o, color="#EE6677", lw=1.5, ls="--", label=f"Obs threshold ({thresh_o:.2f})")
+ax.axhline(_pair_thresh, color="#4477AA", lw=1.5, ls="--", label=f"Forecast threshold ({_pair_thresh:.2f})")
+ax.set_xlabel("Aug observation (lower = drier)")
+ax.set_ylabel("Best consecutive pair value\n(min of the two months, higher = stronger forecast)")
+ax.legend(fontsize=8)
+plt.tight_layout()
+plt.show()
+```
+
+### Forecast vs observation arm trade-off
+
+The chart below shows the full design space: each point is a combination of total forecast-arm trigger years (x) and observation-arm trigger years (y), coloured by the resulting combined return period. Points on the 45° line have equal trigger probability for both arms.
+
+```{python}
+#| label: fig-tradeoff
+#| fig-cap: "Forecast arm trigger years vs observation arm trigger years. Points are coloured by combined return period. The 45° dashed line marks equal probability for both arms; the star marks the selected design."
+#| fig-width: 7
+#| fig-height: 6
+
+_df_plot  = df_qs.copy()
+_df_plot["rp"] = (n + 1) / _df_plot["n_trig"].replace(0, np.nan)
+_df_filt  = _df_plot[_df_plot["rp"].between(3, 5)].drop_duplicates(subset=["n_fcast", "n_obsv"])
+
+_rp_vals  = sorted(_df_filt["rp"].round(1).unique())
+_cmap     = plt.colormaps.get_cmap("tab10")
+_cmap_map = {v: _cmap(i) for i, v in enumerate(_rp_vals)}
+
+fig, ax = plt.subplots(figsize=(7, 6))
+for _rv, _grp in _df_filt.groupby(_df_filt["rp"].round(1)):
+    ax.scatter(_grp["n_fcast"], _grp["n_obsv"],
+               color=_cmap_map[_rv], s=100,
+               edgecolors="gray", linewidths=0.4,
+               label=f"RP {_rv:.1f}")
+
+ax.scatter(n_fcast_trig, n_obsv_trig,
+           s=300, marker="*", color="black", zorder=10, label="Selected")
+
+ax.axline((0, 0), slope=1, color="gray", lw=1.2, ls="--", label="Equal arms (45°)")
+ax.legend(title="Overall RP", bbox_to_anchor=(1.05, 1), loc="upper left", fontsize=9)
+ax.spines[["top", "right", "left", "bottom"]].set_visible(False)
+ax.set_xlabel("N years triggered by forecast arm")
+ax.set_ylabel("N years triggered by observation arm")
+ax.set_xlim(-0.5, 10.5)
+ax.set_ylim(-0.5, 10.5)
+ax.xaxis.set_major_locator(plt.MultipleLocator(1))
+ax.yaxis.set_major_locator(plt.MultipleLocator(1))
+plt.tight_layout()
+plt.show()
+```
 
 ### Thresholds (detrended space)
 

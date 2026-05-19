@@ -13,7 +13,7 @@ def imports():
     import numpy as np
     import ocha_stratus as stratus
     import pandas as pd
-    from scipy.stats import linregress, mannwhitneyu, pearsonr, spearmanr
+    from scipy.stats import linregress, mannwhitneyu, spearmanr
     from statsmodels.othermod.betareg import BetaModel
 
     COLS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"]
@@ -30,7 +30,6 @@ def imports():
         mo,
         np,
         pd,
-        pearsonr,
         plt,
         spearmanr,
         squeeze,
@@ -67,19 +66,29 @@ def load_data(stratus):
 @app.cell
 def _detrend_header(mo):
     mo.md(
-        """## Detrending
+        """
+    ## Detrending
 
         Three-step procedure: (1) fit a beta regression trend per month and divide
         out, (2) check for remaining variance trend, (3) scale residuals to remove
         heteroscedasticity. The result is a stationary series suitable for
-        threshold-based trigger design."""
+        threshold-based trigger design.
+    """
     )
     return
 
 
 @app.cell
 def beta_detrend(
-    BetaModel, COLS, df_stats_iri, mo, np, squeeze, start_year, x_norm, years
+    BetaModel,
+    COLS,
+    df_stats_iri,
+    mo,
+    np,
+    squeeze,
+    start_year,
+    x_norm,
+    years,
 ):
     # Full-record design matrix
     _n_all = len(x_norm)
@@ -146,8 +155,8 @@ def beta_detrend(
     return (
         beta_results_all,
         beta_results_fit,
-        df_detrended_beta_all_full,
         df_detrended_beta_all,
+        df_detrended_beta_all_full,
         df_detrended_beta_fit,
         x_norm_fit,
         years_fit,
@@ -254,7 +263,6 @@ def full_detrend(
             "pvalue_v": _p_f,
             "r2_v": _r_f**2,
         }
-
     return (
         df_detrended_final_all,
         df_detrended_final_fit,
@@ -524,11 +532,13 @@ def merge_aug(df_detrended_final, df_stats_iri):
 @app.cell
 def _corr_header(mo):
     mo.md(
-        """## Correlation with August observation
+        """
+    ## Correlation with August observation
 
         Negative correlation between Jan–Jun forecast and Aug observation is what
         drives the forecast arm of the trigger. Detrending should improve this
-        by removing the shared time trend."""
+        by removing the shared time trend.
+    """
     )
     return
 
@@ -599,7 +609,13 @@ def corr_comparison_plot(COLS, df_stats, df_stats_iri, np, plt, start_year):
 
 @app.cell
 def corr_scatter_plot(
-    COLS, df_stats, df_stats_iri, linregress, np, plt, start_year
+    COLS,
+    df_stats,
+    df_stats_iri,
+    linregress,
+    np,
+    plt,
+    start_year,
 ):
     _fig, _axes = plt.subplots(2, len(COLS), figsize=(16, 7))
     _df_iri_fit = df_stats_iri[df_stats_iri["year"] >= start_year]
@@ -647,7 +663,14 @@ def corr_scatter_plot(
 
 @app.cell
 def roc_auc_plot(
-    COLS, df_stats, df_stats_iri, mannwhitneyu, mo, np, plt, start_year
+    COLS,
+    df_stats,
+    df_stats_iri,
+    mannwhitneyu,
+    mo,
+    np,
+    plt,
+    start_year,
 ):
     def _auc(y_true, y_score):
         """AUC via Mann-Whitney U (equivalent to trapezoidal ROC AUC)."""
@@ -745,11 +768,13 @@ def roc_auc_plot(
 @app.cell
 def _trigger_header(mo):
     mo.md(
-        """## Trigger design
+        """
+    ## Trigger design
 
         Grid search over all combinations of forecast-arm threshold (top N years
         above) and observation-arm threshold (bottom N years below). The plot shows
-        which combinations achieve an overall return period between 3 and 5 years."""
+        which combinations achieve an overall return period between 3 and 5 years.
+    """
     )
     return
 
@@ -1021,11 +1046,13 @@ def show_threshold_table(calendar, df_model, mo, mos, n_above, n_below, np):
 @app.cell
 def _backtransform_header(mo):
     mo.md(
-        """## Back-transformed thresholds
+        """
+    ## Back-transformed thresholds
 
         The trigger thresholds above are in detrended space. To use them in
         practice we need to back-transform to raw values for each future year,
-        accounting for the ongoing trend."""
+        accounting for the ongoing trend.
+    """
     )
     return
 

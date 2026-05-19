@@ -712,7 +712,10 @@ The table below gives the trigger threshold in raw forecast probability space fo
 #| label: tbl-future
 #| tbl-cap: "Back-transformed trigger thresholds for 2026 and 2027. Values are the minimum below-normal probability needed for a month to count toward the forecast arm trigger."
 
-df_thresh_summary.style.format("{:.4f}").set_caption("")
+df_thresh_summary.style.format({
+    "Detrended thresh": "{:.4f}",
+    **{str(yr): "{:.1%}" for yr in FUTURE_YEARS},
+}).set_caption("")
 ```
 
 These thresholds are lower than they would have been a decade ago, reflecting the declining climatological trend. The trigger is designed to remain calibrated to a consistent return period as the climate context evolves.

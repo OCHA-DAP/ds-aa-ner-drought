@@ -149,12 +149,14 @@ def compute_triggers(
                     }
                 )
 
-            _trig_pairs = [
-                _trig_month[calendar.month_abbr[_m1]]
-                and _trig_month[calendar.month_abbr[_m2]]
+            _pair_trigs = {
+                f"trig_{calendar.month_abbr[_m1]}_{calendar.month_abbr[_m2]}": (
+                    _trig_month[calendar.month_abbr[_m1]]
+                    and _trig_month[calendar.month_abbr[_m2]]
+                )
                 for _m1, _m2 in _consec_pairs
-            ]
-            _trig_fcast = any(_trig_pairs)
+            }
+            _trig_fcast = any(_pair_trigs.values())
             _trig_obsv = bool(df_obs.loc[_year, "trig_obsv"])
             _result_rows.append(
                 {
@@ -164,6 +166,7 @@ def compute_triggers(
                     "trig_obsv": _trig_obsv,
                     "trig_either": _trig_fcast or _trig_obsv,
                     **{f"trig_{_col}": _trig_month[_col] for _col in COLS},
+                    **_pair_trigs,
                 }
             )
 
@@ -371,6 +374,105 @@ def aug_obs_plot(df_obs, obs_pct, plt):
     )
     _ax.set_xlabel("Year")
     _ax.set_ylabel("Aug value")
+    _ax.legend()
+    _ax.spines[["top", "right"]].set_visible(False)
+    plt.tight_layout()
+    _fig
+
+
+@app.cell
+def trigger_detail_table(COLS, calendar, df_results, mo, mos, pct_sel):
+    _pct = pct_sel.value
+    _df = (
+        df_results[df_results["pct"] == _pct]
+        .copy()
+        .sort_values("year", ascending=False)
+    )
+
+    _month_cols = [f"trig_{c}" for c in COLS]
+    _pair_cols = [
+        f"trig_{calendar.month_abbr[mos[i]]}_{calendar.month_abbr[mos[i+1]]}"
+        for i in range(len(mos) - 1)
+    ]
+    _rename = {
+        **{f"trig_{c}": c for c in COLS},
+        **{
+            f"trig_{calendar.month_abbr[mos[i]]}_{calendar.month_abbr[mos[i+1]]}": (
+                f"{calendar.month_abbr[mos[i]]}+{calendar.month_abbr[mos[i+1]]}"
+            )
+            for i in range(len(mos) - 1)
+        },
+        "trig_fcast": "Fcast",
+        "trig_obsv": "Obs",
+        "trig_either": "Either",
+    }
+    _display = (
+        _df[
+            ["year"]
+            + _month_cols
+            + _pair_cols
+            + ["trig_fcast", "trig_obsv", "trig_either"]
+        ]
+        .rename(columns=_rename)
+        .reset_index(drop=True)
+    )
+    mo.vstack(
+        [
+            mo.md(f"### Per-year trigger detail (pct = {_pct}%)"),
+            mo.ui.table(_display),
+        ]
+    )
+
+
+@app.cell
+def correlation_plot(
+    COLS, df_iri, df_results, np, plt, pct_sel, start_eval_year
+):
+    from scipy.stats import pearsonr
+
+    _pct = pct_sel.value
+    _eval = df_iri[df_iri["year"] >= start_eval_year].sort_values("year")
+    _jas = _eval["JAS_SPI"].values
+
+    _df_trig = (
+        df_results[df_results["pct"] == _pct]
+        .sort_values("year")
+        .set_index("year")
+        .loc[_eval["year"].values]
+    )
+
+    _raw_r = [pearsonr(_eval[c].values, _jas)[0] for c in COLS]
+    _bin_r = [
+        pearsonr(_df_trig[f"trig_{c}"].astype(float).values, _jas)[0]
+        for c in COLS
+    ]
+
+    _x = np.arange(len(COLS))
+    _w = 0.35
+    _fig, _ax = plt.subplots(figsize=(9, 4))
+    _ax.bar(
+        _x - _w / 2,
+        _raw_r,
+        _w,
+        label="Raw IRI value",
+        color="steelblue",
+        alpha=0.85,
+    )
+    _ax.bar(
+        _x + _w / 2,
+        _bin_r,
+        _w,
+        label=f"Binary trigger (top {_pct}%)",
+        color="crimson",
+        alpha=0.85,
+    )
+    _ax.axhline(0, color="black", lw=0.8)
+    _ax.set_xticks(_x)
+    _ax.set_xticklabels(COLS)
+    _ax.set_ylabel("Pearson r with JAS SPI")
+    _ax.set_title(
+        "Correlation with observed JAS rainfall (negative = drought signal)"
+    )
     _ax.legend()
     _ax.spines[["top", "right"]].set_visible(False)
     plt.tight_layout()

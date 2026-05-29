@@ -73,7 +73,7 @@ def params(mo):
         f"Evaluation years: **{start_eval_year}–{end_eval_year}** "
         f"({end_eval_year - start_eval_year + 1} years), "
         f"reference window: **{ref_window} years** (truncated for {start_eval_year}–{start_eval_year + 2}), "
-        f"obs arm: bottom **{obs_pct}%** of Aug (full historical record), "
+        f"obs arm: fixed threshold at bottom **{obs_pct}%** of full Aug record, "
         f"target RP: **{rp_target}**"
     )
     return (
@@ -104,12 +104,11 @@ def compute_triggers(
     _eval_years = list(range(start_eval_year, end_eval_year + 1))
     _consec_pairs = [(mos[i], mos[i + 1]) for i in range(len(mos) - 1)]
 
-    # Pre-compute obs arm (Aug, bottom obs_pct%) — full historical record up to year-1
+    # Pre-compute obs arm (Aug, bottom obs_pct%) — single fixed threshold from full record
+    _obs_thresh = float(np.percentile(df_iri["Aug"].values, obs_pct))
     _obs_rows = []
     for _year in _eval_years:
-        _ref_aug = df_iri[df_iri["year"] < _year]
         _actual = df_iri[df_iri["year"] == _year].iloc[0]
-        _obs_thresh = float(np.percentile(_ref_aug["Aug"].values, obs_pct))
         _act_aug = float(_actual["Aug"])
         _trig_obsv = _act_aug <= _obs_thresh
         _obs_rows.append(
@@ -342,12 +341,11 @@ def all_months_plot(COLS, df_thresholds, plt, pct_sel, ref_window):
 def aug_obs_plot(df_obs, obs_pct, plt):
     _df = df_obs.reset_index().sort_values("year")
     _fig, _ax = plt.subplots(figsize=(10, 3.5))
-    _ax.plot(
-        _df["year"],
-        _df["obs_threshold"],
+    _ax.axhline(
+        _df["obs_threshold"].iloc[0],
         lw=1.8,
         color="darkorange",
-        label=f"Full historical Aug threshold (bottom {obs_pct}%)",
+        label=f"Aug threshold (bottom {obs_pct}% of full record)",
     )
     _trig = _df[_df["trig_obsv"]]
     _no_trig = _df[~_df["trig_obsv"]]

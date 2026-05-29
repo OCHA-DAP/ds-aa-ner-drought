@@ -67,20 +67,17 @@ def params(mo):
     pct_steps = list(
         range(0, 105, 5)
     )  # fraction triggering from top: 0%, 5%, ..., 100%
-    obs_pct = 20  # bottom % of Aug reference that triggers obs arm (fixed)
     mos = [1, 2, 3, 4, 5, 6]
     rp_target = 3.5
     mo.md(
         f"Evaluation years: **{start_eval_year}–{end_eval_year}** "
         f"({end_eval_year - start_eval_year + 1} years), "
         f"reference window: **{ref_window} years** (truncated for {start_eval_year}–{start_eval_year + 2}), "
-        f"obs arm: fixed threshold at bottom **{obs_pct}%** of full Aug record, "
         f"target RP: **{rp_target}**"
     )
     return (
         end_eval_year,
         mos,
-        obs_pct,
         pct_steps,
         ref_window,
         rp_target,
@@ -89,38 +86,35 @@ def params(mo):
 
 
 @app.cell
-def compute_triggers(
+def obs_ui(mo):
+    obs_pct_slider = mo.ui.slider(
+        start=5,
+        stop=50,
+        step=5,
+        value=20,
+        label="Obs arm: Aug percentile threshold",
+        show_value=True,
+    )
+    mo.md(f"**Observational threshold:** {obs_pct_slider}")
+    return (obs_pct_slider,)
+
+
+@app.cell
+def compute_forecast_triggers(
     COLS,
     calendar,
     df_iri,
     end_eval_year,
     mos,
     np,
-    obs_pct,
     pd,
     pct_steps,
     ref_window,
     start_eval_year,
 ):
+    """Forecast arm only — does not depend on obs_pct so slider won't rerun this."""
     _eval_years = list(range(start_eval_year, end_eval_year + 1))
     _consec_pairs = [(mos[i], mos[i + 1]) for i in range(len(mos) - 1)]
-
-    # Pre-compute obs arm (Aug, bottom obs_pct%) — single fixed threshold from full record
-    _obs_thresh = float(np.percentile(df_iri["Aug"].values, obs_pct))
-    _obs_rows = []
-    for _year in _eval_years:
-        _actual = df_iri[df_iri["year"] == _year].iloc[0]
-        _act_aug = float(_actual["Aug"])
-        _trig_obsv = _act_aug <= _obs_thresh
-        _obs_rows.append(
-            {
-                "year": _year,
-                "obs_threshold": _obs_thresh,
-                "actual_aug": _act_aug,
-                "trig_obsv": _trig_obsv,
-            }
-        )
-    df_obs = pd.DataFrame(_obs_rows).set_index("year")
 
     _result_rows = []
     _thresh_rows = []
@@ -158,50 +152,103 @@ def compute_triggers(
                 for _m1, _m2 in _consec_pairs
             }
             _trig_fcast = any(_pair_trigs.values())
-            _trig_obsv = bool(df_obs.loc[_year, "trig_obsv"])
             _result_rows.append(
                 {
                     "pct": _pct,
                     "year": _year,
                     "trig_fcast": _trig_fcast,
-                    "trig_obsv": _trig_obsv,
-                    "trig_either": _trig_fcast or _trig_obsv,
                     **{f"trig_{_col}": _trig_month[_col] for _col in COLS},
                     **_pair_trigs,
                 }
             )
 
-    df_results = pd.DataFrame(_result_rows)
+    df_forecast = pd.DataFrame(_result_rows)
     df_thresholds = pd.DataFrame(_thresh_rows)
-    return df_obs, df_results, df_thresholds
+    return df_forecast, df_thresholds
+
+
+@app.cell
+def compute_obs_triggers(
+    df_iri, end_eval_year, np, obs_pct_slider, pd, start_eval_year
+):
+    _obs_pct = obs_pct_slider.value
+    _eval_years = list(range(start_eval_year, end_eval_year + 1))
+    _obs_thresh = float(np.percentile(df_iri["Aug"].values, _obs_pct))
+    _obs_rows = []
+    for _year in _eval_years:
+        _actual = df_iri[df_iri["year"] == _year].iloc[0]
+        _act_aug = float(_actual["Aug"])
+        _trig_obsv = _act_aug <= _obs_thresh
+        _obs_rows.append(
+            {
+                "year": _year,
+                "obs_threshold": _obs_thresh,
+                "actual_aug": _act_aug,
+                "trig_obsv": _trig_obsv,
+            }
+        )
+    df_obs = pd.DataFrame(_obs_rows).set_index("year")
+    return (df_obs,)
+
+
+@app.cell
+def combine_results(df_forecast, df_obs, pd, pct_steps):
+    _obs = df_obs[["trig_obsv"]]
+    _chunks = []
+    for _pct in pct_steps:
+        _fc = df_forecast[df_forecast["pct"] == _pct].set_index("year")
+        _merged = _fc.join(_obs)
+        _merged["trig_either"] = _merged["trig_fcast"] | _merged["trig_obsv"]
+        _chunks.append(_merged.reset_index())
+    df_results = pd.concat(_chunks, ignore_index=True)
+    return (df_results,)
 
 
 @app.cell
 def trigger_summary(
-    df_results, end_eval_year, mo, obs_pct, pd, rp_target, start_eval_year
+    df_results,
+    end_eval_year,
+    mo,
+    obs_pct_slider,
+    pd,
+    rp_target,
+    start_eval_year,
 ):
+    _obs_pct = obs_pct_slider.value
     _n_years = end_eval_year - start_eval_year + 1
     _rows = []
     for _pct, _grp in df_results.groupby("pct"):
         _n_fcast = int(_grp["trig_fcast"].sum())
         _n_obsv = int(_grp["trig_obsv"].sum())
-        _n_trig = int(_grp["trig_either"].sum())
-        _rp = (_n_years + 1) / _n_trig if _n_trig > 0 else float("inf")
+        _n_either = int(_grp["trig_either"].sum())
+        _rp_fcast = (
+            round((_n_years + 1) / _n_fcast, 1)
+            if _n_fcast > 0
+            else float("inf")
+        )
+        _rp_obsv = (
+            round((_n_years + 1) / _n_obsv, 1) if _n_obsv > 0 else float("inf")
+        )
+        _rp_either = (
+            round((_n_years + 1) / _n_either, 1)
+            if _n_either > 0
+            else float("inf")
+        )
         _rows.append(
             {
                 "pct_triggering": _pct,
                 "n_fcast": _n_fcast,
-                f"n_obsv (Aug ≤{obs_pct}%)": _n_obsv,
-                "n_either": _n_trig,
-                "return_period": (
-                    round(_rp, 1) if _n_trig > 0 else float("inf")
-                ),
+                "rp_fcast": _rp_fcast,
+                f"n_obsv (Aug≤{_obs_pct}%)": _n_obsv,
+                f"rp_obsv (Aug≤{_obs_pct}%)": _rp_obsv,
+                "n_either": _n_either,
+                "rp_either": _rp_either,
             }
         )
     df_summary = pd.DataFrame(_rows)
 
     _near_target = df_summary[
-        df_summary["return_period"].apply(
+        df_summary["rp_either"].apply(
             lambda x: isinstance(x, float) and abs(x - rp_target) <= 0.6
         )
     ]
@@ -213,7 +260,8 @@ def trigger_summary(
     mo.vstack(
         [
             mo.md(
-                f"### Trigger counts by percentile threshold\n\nObs arm (Aug) fixed at bottom {obs_pct}%. {_note}"
+                f"### Trigger counts by percentile threshold\n\n"
+                f"Obs arm (Aug) fixed at bottom **{_obs_pct}%** of full record. {_note}"
             ),
             mo.ui.table(df_summary),
         ]
@@ -223,17 +271,20 @@ def trigger_summary(
 
 @app.cell
 def find_closest_pct(df_summary, rp_target):
-    _finite = df_summary[df_summary["return_period"] < float("inf")]
+    _finite = df_summary[df_summary["rp_either"] < float("inf")]
     closest_pct = int(
         _finite.iloc[
-            (_finite["return_period"] - rp_target).abs().argsort().iloc[0]
+            (_finite["rp_either"] - rp_target).abs().argsort().iloc[0]
         ]["pct_triggering"]
     )
     return (closest_pct,)
 
 
 @app.cell
-def triggered_years_detail(closest_pct, df_results, mo, obs_pct, rp_target):
+def triggered_years_detail(
+    closest_pct, df_results, mo, obs_pct_slider, rp_target
+):
+    _obs_pct = obs_pct_slider.value
     _grp = df_results[df_results["pct"] == closest_pct]
     _fcast_years = sorted(_grp[_grp["trig_fcast"]]["year"].tolist())
     _obsv_years = sorted(_grp[_grp["trig_obsv"]]["year"].tolist())
@@ -241,7 +292,7 @@ def triggered_years_detail(closest_pct, df_results, mo, obs_pct, rp_target):
     mo.md(
         f"At **pct = {closest_pct}%** (closest to RP {rp_target}):  \n"
         f"Forecast arm: **{_fcast_years}**  \n"
-        f"Obs arm (Aug ≤{obs_pct}%): **{_obsv_years}**  \n"
+        f"Obs arm (Aug ≤{_obs_pct}%): **{_obsv_years}**  \n"
         f"Combined: **{_either_years}**"
     )
 
@@ -342,14 +393,15 @@ def all_months_plot(COLS, df_thresholds, plt, pct_sel, ref_window):
 
 
 @app.cell
-def aug_obs_plot(df_obs, obs_pct, plt):
+def aug_obs_plot(df_obs, obs_pct_slider, plt):
+    _obs_pct = obs_pct_slider.value
     _df = df_obs.reset_index().sort_values("year")
     _fig, _ax = plt.subplots(figsize=(10, 3.5))
     _ax.axhline(
         _df["obs_threshold"].iloc[0],
         lw=1.8,
         color="darkorange",
-        label=f"Aug threshold (bottom {obs_pct}% of full record)",
+        label=f"Aug threshold (bottom {_obs_pct}% of full record)",
     )
     _trig = _df[_df["trig_obsv"]]
     _no_trig = _df[~_df["trig_obsv"]]
@@ -371,7 +423,7 @@ def aug_obs_plot(df_obs, obs_pct, plt):
         label="Not triggered",
     )
     _ax.set_title(
-        f"Aug observation arm — full historical threshold at bottom {obs_pct}%"
+        f"Aug observation arm — full historical threshold at bottom {_obs_pct}%"
     )
     _ax.set_xlabel("Year")
     _ax.set_ylabel("Aug value")

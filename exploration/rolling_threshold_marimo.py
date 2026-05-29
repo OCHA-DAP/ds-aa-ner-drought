@@ -73,7 +73,7 @@ def params(mo):
         f"Evaluation years: **{start_eval_year}–{end_eval_year}** "
         f"({end_eval_year - start_eval_year + 1} years), "
         f"reference window: **{ref_window} years** (truncated for {start_eval_year}–{start_eval_year + 2}), "
-        f"obs arm: bottom **{obs_pct}%** of Aug, "
+        f"obs arm: bottom **{obs_pct}%** of Aug (full historical record), "
         f"target RP: **{rp_target}**"
     )
     return (
@@ -104,12 +104,12 @@ def compute_triggers(
     _eval_years = list(range(start_eval_year, end_eval_year + 1))
     _consec_pairs = [(mos[i], mos[i + 1]) for i in range(len(mos) - 1)]
 
-    # Pre-compute obs arm (Aug, bottom obs_pct%) — same rolling window, doesn't vary by pct
+    # Pre-compute obs arm (Aug, bottom obs_pct%) — full historical record up to year-1
     _obs_rows = []
     for _year in _eval_years:
-        _ref = df_iri[df_iri["year"].between(_year - ref_window, _year - 1)]
+        _ref_aug = df_iri[df_iri["year"] < _year]
         _actual = df_iri[df_iri["year"] == _year].iloc[0]
-        _obs_thresh = float(np.percentile(_ref["Aug"].values, obs_pct))
+        _obs_thresh = float(np.percentile(_ref_aug["Aug"].values, obs_pct))
         _act_aug = float(_actual["Aug"])
         _trig_obsv = _act_aug <= _obs_thresh
         _obs_rows.append(
@@ -339,7 +339,7 @@ def all_months_plot(COLS, df_thresholds, plt, pct_sel, ref_window):
 
 
 @app.cell
-def aug_obs_plot(df_obs, obs_pct, plt, ref_window):
+def aug_obs_plot(df_obs, obs_pct, plt):
     _df = df_obs.reset_index().sort_values("year")
     _fig, _ax = plt.subplots(figsize=(10, 3.5))
     _ax.plot(
@@ -347,7 +347,7 @@ def aug_obs_plot(df_obs, obs_pct, plt, ref_window):
         _df["obs_threshold"],
         lw=1.8,
         color="darkorange",
-        label=f"Rolling {ref_window}-yr Aug threshold (bottom {obs_pct}%)",
+        label=f"Full historical Aug threshold (bottom {obs_pct}%)",
     )
     _trig = _df[_df["trig_obsv"]]
     _no_trig = _df[~_df["trig_obsv"]]
@@ -369,7 +369,7 @@ def aug_obs_plot(df_obs, obs_pct, plt, ref_window):
         label="Not triggered",
     )
     _ax.set_title(
-        f"Aug observation arm — rolling {ref_window}-yr threshold at bottom {obs_pct}%"
+        f"Aug observation arm — full historical threshold at bottom {obs_pct}%"
     )
     _ax.set_xlabel("Year")
     _ax.set_ylabel("Aug value")

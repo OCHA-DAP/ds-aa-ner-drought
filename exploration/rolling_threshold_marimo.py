@@ -8,6 +8,7 @@ app = marimo.App(width="full")
 def imports():
     import calendar
 
+    import jinja2  # noqa: F401 — required by pandas.style in Pyodide
     import marimo as mo
     import matplotlib.pyplot as plt
     import numpy as np
@@ -416,10 +417,19 @@ def trigger_detail_table(COLS, calendar, df_results, mo, mos, pct_sel):
         .rename(columns=_rename)
         .reset_index(drop=True)
     )
+    _highlight_cols = [c for c in _display.columns if c != "year"]
+    _styled = _display.style.map(
+        lambda v: (
+            "background-color: #ffaaaa; color: #7a0000; font-weight: bold"
+            if v is True
+            else ""
+        ),
+        subset=_highlight_cols,
+    )
     mo.vstack(
         [
             mo.md(f"### Per-year trigger detail (pct = {_pct}%)"),
-            mo.ui.table(_display),
+            mo.Html(_styled.to_html()),
         ]
     )
 
@@ -428,7 +438,13 @@ def trigger_detail_table(COLS, calendar, df_results, mo, mos, pct_sel):
 def correlation_plot(
     COLS, df_iri, df_results, np, plt, pct_sel, start_eval_year
 ):
-    from scipy.stats import pearsonr
+    def _corr(x, y):
+        _mask = ~(np.isnan(x.astype(float)) | np.isnan(y.astype(float)))
+        if _mask.sum() < 3:
+            return float("nan")
+        return float(
+            np.corrcoef(x[_mask].astype(float), y[_mask].astype(float))[0, 1]
+        )
 
     _pct = pct_sel.value
     _eval = df_iri[df_iri["year"] >= start_eval_year].sort_values("year")
@@ -441,11 +457,8 @@ def correlation_plot(
         .loc[_eval["year"].values]
     )
 
-    _raw_r = [pearsonr(_eval[c].values, _jas)[0] for c in COLS]
-    _bin_r = [
-        pearsonr(_df_trig[f"trig_{c}"].astype(float).values, _jas)[0]
-        for c in COLS
-    ]
+    _raw_r = [_corr(_eval[c].values, _jas) for c in COLS]
+    _bin_r = [_corr(_df_trig[f"trig_{c}"].values, _jas) for c in COLS]
 
     _x = np.arange(len(COLS))
     _w = 0.35

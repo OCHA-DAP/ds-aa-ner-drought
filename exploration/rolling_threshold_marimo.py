@@ -436,7 +436,7 @@ def trigger_detail_table(COLS, calendar, df_results, mo, mos, pct_sel):
 
 @app.cell
 def correlation_plot(
-    COLS, df_iri, df_results, np, plt, pct_sel, start_eval_year
+    COLS, df_iri, df_results, df_thresholds, np, plt, pct_sel, start_eval_year
 ):
     def _corr(x, y):
         _mask = ~(np.isnan(x.astype(float)) | np.isnan(y.astype(float)))
@@ -457,14 +457,24 @@ def correlation_plot(
         .loc[_eval["year"].values]
     )
 
+    # distance = actual - threshold: positive when triggered, removes rolling climatology
+    _df_dist = (
+        df_thresholds[df_thresholds["pct"] == _pct]
+        .assign(distance=lambda d: d["actual"] - d["threshold"])
+        .set_index(["year", "month"])["distance"]
+        .unstack("month")[COLS]
+        .loc[_eval["year"].values]
+    )
+
     _raw_r = [_corr(_eval[c].values, _jas) for c in COLS]
+    _dist_r = [_corr(_df_dist[c].values, _jas) for c in COLS]
     _bin_r = [_corr(_df_trig[f"trig_{c}"].values, _jas) for c in COLS]
 
     _x = np.arange(len(COLS))
-    _w = 0.35
-    _fig, _ax = plt.subplots(figsize=(9, 4))
+    _w = 0.25
+    _fig, _ax = plt.subplots(figsize=(10, 4))
     _ax.bar(
-        _x - _w / 2,
+        _x - _w,
         _raw_r,
         _w,
         label="Raw IRI value",
@@ -472,7 +482,15 @@ def correlation_plot(
         alpha=0.85,
     )
     _ax.bar(
-        _x + _w / 2,
+        _x,
+        _dist_r,
+        _w,
+        label="Distance from threshold",
+        color="seagreen",
+        alpha=0.85,
+    )
+    _ax.bar(
+        _x + _w,
         _bin_r,
         _w,
         label=f"Binary trigger (top {_pct}%)",

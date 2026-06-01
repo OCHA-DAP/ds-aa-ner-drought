@@ -13,11 +13,10 @@ def imports():
     import matplotlib.pyplot as plt
     import numpy as np
     import pandas as pd
-    import plotly.graph_objects as go
 
     COLS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"]
 
-    return COLS, calendar, go, mo, np, pd, plt
+    return COLS, calendar, mo, np, pd, plt
 
 
 @app.cell
@@ -319,8 +318,10 @@ def selector_ui(COLS, closest_pct, mo, pct_steps):
 
 @app.cell
 def threshold_evolution_plot(
-    df_iri, df_thresholds, go, month_sel, pct_sel, ref_window, start_eval_year
+    df_iri, df_thresholds, month_sel, pct_sel, ref_window, start_eval_year
 ):
+    import plotly.graph_objects as go
+
     _month = month_sel.value
     _pct = pct_sel.value
     _df = df_thresholds[

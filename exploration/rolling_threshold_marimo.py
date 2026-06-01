@@ -477,11 +477,17 @@ def trigger_detail_table(COLS, calendar, df_results, mo, mos, pct_sel):
             else ""
         ),
         subset=_highlight_cols,
-    )
+    ).set_uuid("trigger_detail")
+    _css = """<style>
+#T_trigger_detail tbody tr:hover td {
+    background-color: #dde8f8;
+    cursor: default;
+}
+</style>"""
     mo.vstack(
         [
             mo.md(f"### Per-year trigger detail (pct = {_pct}%)"),
-            mo.Html(_styled.to_html()),
+            mo.Html(_css + _styled.to_html()),
         ]
     )
 

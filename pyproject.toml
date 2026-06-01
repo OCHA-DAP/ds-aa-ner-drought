@@ -13,7 +13,7 @@ dependencies = [
     "geopandas>=1.0",
     "xarray>=2024.0",
     "rioxarray>=0.18",
-    "plotly>=5.0",
+    "altair>=5.0",
 ]
 
 [tool.black]

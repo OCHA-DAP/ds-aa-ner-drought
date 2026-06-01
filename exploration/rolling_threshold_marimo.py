@@ -318,97 +318,122 @@ def selector_ui(COLS, closest_pct, mo, pct_steps):
 
 @app.cell
 def threshold_evolution_plot(
-    df_iri, df_thresholds, month_sel, pct_sel, ref_window, start_eval_year
+    df_iri, df_thresholds, mo, month_sel, pct_sel, ref_window, start_eval_year
 ):
-    import plotly.graph_objects as go
+    import altair as alt
 
     _month = month_sel.value
     _pct = pct_sel.value
-    _df = df_thresholds[
-        (df_thresholds["month"] == _month) & (df_thresholds["pct"] == _pct)
-    ].sort_values("year")
+    _df = (
+        df_thresholds[
+            (df_thresholds["month"] == _month) & (df_thresholds["pct"] == _pct)
+        ]
+        .sort_values("year")
+        .copy()
+    )
 
-    # Build hover text for threshold line: show each reference year and its value
-    _thresh_hover = []
+    # Pre-compute tooltip columns for the threshold line
+    _ref_strs, _ref_sorted = [], []
     for _, _row in _df.iterrows():
         _yr = int(_row["year"])
         _ref = df_iri[
             df_iri["year"].between(_yr - ref_window, _yr - 1)
-        ].sort_values("year")[["year", _month]]
-        _ref_lines = "<br>".join(
-            f"  {int(r.year)}: {r[_month]:.1%}" for _, r in _ref.iterrows()
+        ].sort_values("year")
+        _ref_strs.append(
+            f"{int(_ref['year'].min())}–{int(_ref['year'].max())}: "
+            + ", ".join(
+                f"{int(r['year'])}: {r[_month]:.0%}"
+                for _, r in _ref.iterrows()
+            )
         )
-        _thresh_hover.append(
-            f"<b>Year {_yr}</b><br>"
-            f"Threshold (top {_pct}%): <b>{_row['threshold']:.1%}</b><br>"
-            f"Reference: {int(_ref['year'].min())}–{int(_ref['year'].max())} "
-            f"({len(_ref)} yrs)<br><br>"
-            f"Reference values:<br>{_ref_lines}"
+        _ref_sorted.append(
+            "sorted ↑: "
+            + ", ".join(f"{v:.0%}" for v in sorted(_ref[_month].values))
         )
+    _df["ref_years"] = _ref_strs
+    _df["ref_sorted"] = _ref_sorted
+    _df["thresh_fmt"] = (_df["threshold"] * 100).round(1).astype(str) + "%"
+    _df["actual_fmt"] = (_df["actual"] * 100).round(1).astype(str) + "%"
+    _df["status"] = _df["triggered"].map(
+        {True: "Triggered", False: "Not triggered"}
+    )
 
-    # Pre-evaluation actuals (reference period only, no threshold computed)
-    _pre = df_iri[df_iri["year"] < start_eval_year].sort_values("year")
-    _triggered = _df[_df["triggered"]]
-    _not_triggered = _df[~_df["triggered"]]
+    # Pre-eval data
+    _pre = (
+        df_iri[df_iri["year"] < start_eval_year][["year", _month]]
+        .rename(columns={_month: "actual"})
+        .copy()
+    )
+    _pre["actual_fmt"] = (_pre["actual"] * 100).round(1).astype(str) + "%"
 
-    _fig = go.Figure()
-
-    # Reference-period-only years (faint, shown for context)
-    _fig.add_trace(
-        go.Scatter(
-            x=_pre["year"],
-            y=_pre[_month],
-            mode="markers",
-            name=f"Pre-{start_eval_year} (reference only)",
-            marker=dict(color="lightgray", size=7, opacity=0.7),
-            hovertemplate="<b>%{x}</b><br>Actual: %{y:.1%}<br>Reference period only<extra></extra>",
+    _pre_chart = (
+        alt.Chart(_pre)
+        .mark_point(color="#cccccc", size=55, filled=True, opacity=0.8)
+        .encode(
+            x=alt.X("year:O", title="Year"),
+            y=alt.Y(
+                "actual:Q",
+                title="IRI forecast probability",
+                axis=alt.Axis(format=".0%"),
+            ),
+            tooltip=[
+                alt.Tooltip("year:O", title="Year"),
+                alt.Tooltip("actual_fmt:N", title="Actual"),
+            ],
         )
     )
-    # Threshold line starts at start_eval_year
-    _fig.add_trace(
-        go.Scatter(
-            x=_df["year"],
-            y=_df["threshold"],
-            mode="lines+markers",
-            name=f"Rolling {ref_window}-yr threshold (top {_pct}%)",
-            line=dict(color="steelblue", width=2),
-            marker=dict(size=7, color="steelblue"),
-            hovertext=_thresh_hover,
-            hoverinfo="text",
+    _line = (
+        alt.Chart(_df)
+        .mark_line(color="steelblue", strokeWidth=2)
+        .encode(x="year:O", y="threshold:Q")
+    )
+    _thresh_pts = (
+        alt.Chart(_df)
+        .mark_point(color="steelblue", size=65, filled=True)
+        .encode(
+            x="year:O",
+            y="threshold:Q",
+            tooltip=[
+                alt.Tooltip("year:O", title="Year"),
+                alt.Tooltip("thresh_fmt:N", title=f"Threshold (top {_pct}%)"),
+                alt.Tooltip("ref_years:N", title="Reference window"),
+                alt.Tooltip("ref_sorted:N", title="Sorted values"),
+            ],
         )
     )
-    _fig.add_trace(
-        go.Scatter(
-            x=_triggered["year"],
-            y=_triggered["actual"],
-            mode="markers",
-            name="Triggered",
-            marker=dict(color="crimson", size=11, symbol="circle"),
-            hovertemplate="<b>%{x}</b><br>Actual: %{y:.1%}<br>Triggered<extra></extra>",
+    _scatter = (
+        alt.Chart(_df)
+        .mark_point(size=90, filled=True, opacity=0.9)
+        .encode(
+            x="year:O",
+            y="actual:Q",
+            color=alt.Color(
+                "status:N",
+                scale=alt.Scale(
+                    domain=["Triggered", "Not triggered"],
+                    range=["crimson", "#888888"],
+                ),
+                title=None,
+            ),
+            tooltip=[
+                alt.Tooltip("year:O", title="Year"),
+                alt.Tooltip("actual_fmt:N", title="Actual"),
+                alt.Tooltip("thresh_fmt:N", title="Threshold"),
+                alt.Tooltip("status:N", title="Status"),
+            ],
         )
     )
-    _fig.add_trace(
-        go.Scatter(
-            x=_not_triggered["year"],
-            y=_not_triggered["actual"],
-            mode="markers",
-            name="Not triggered",
-            marker=dict(color="gray", size=8, opacity=0.7),
-            hovertemplate="<b>%{x}</b><br>Actual: %{y:.1%}<extra></extra>",
+    _chart = (
+        (_pre_chart + _line + _thresh_pts + _scatter)
+        .properties(
+            title=f"{_month} — rolling {ref_window}-yr threshold at top {_pct}%",
+            width=720,
+            height=340,
         )
+        .configure_axis(grid=False)
+        .configure_view(strokeWidth=0)
     )
-    _fig.update_layout(
-        title=f"{_month} — rolling {ref_window}-yr threshold at top {_pct}%",
-        xaxis_title="Year",
-        yaxis=dict(title="IRI forecast probability", tickformat=".0%"),
-        hovermode="closest",
-        template="simple_white",
-        height=420,
-        legend=dict(
-            orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0
-        ),
-    )
-    _fig
+    mo.ui.altair_chart(_chart)
 
 
 @app.cell

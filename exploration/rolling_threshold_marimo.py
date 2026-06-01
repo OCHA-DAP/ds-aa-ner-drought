@@ -13,10 +13,11 @@ def imports():
     import matplotlib.pyplot as plt
     import numpy as np
     import pandas as pd
+    import plotly.graph_objects as go
 
     COLS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"]
 
-    return COLS, calendar, mo, np, pd, plt
+    return COLS, calendar, go, mo, np, pd, plt
 
 
 @app.cell
@@ -95,8 +96,40 @@ def obs_ui(mo):
         label="Obs arm: Aug percentile threshold",
         show_value=True,
     )
-    mo.md(f"**Observational threshold:** {obs_pct_slider}")
     return (obs_pct_slider,)
+
+
+@app.cell
+def compute_obs_triggers(
+    df_iri, end_eval_year, np, obs_pct_slider, pd, start_eval_year
+):
+    _obs_pct = obs_pct_slider.value
+    _eval_years = list(range(start_eval_year, end_eval_year + 1))
+    _obs_thresh = float(np.percentile(df_iri["Aug"].values, _obs_pct))
+    _obs_rows = []
+    for _year in _eval_years:
+        _actual = df_iri[df_iri["year"] == _year].iloc[0]
+        _act_aug = float(_actual["Aug"])
+        _trig_obsv = _act_aug <= _obs_thresh
+        _obs_rows.append(
+            {
+                "year": _year,
+                "obs_threshold": _obs_thresh,
+                "actual_aug": _act_aug,
+                "trig_obsv": _trig_obsv,
+            }
+        )
+    df_obs = pd.DataFrame(_obs_rows).set_index("year")
+    return (df_obs,)
+
+
+@app.cell
+def obs_display(df_obs, mo, obs_pct_slider):
+    _n = int(df_obs["trig_obsv"].sum())
+    mo.md(
+        f"**Observational threshold:** {obs_pct_slider} "
+        f"→ **{_n} trigger year{'s' if _n != 1 else ''}**"
+    )
 
 
 @app.cell
@@ -165,30 +198,6 @@ def compute_forecast_triggers(
     df_forecast = pd.DataFrame(_result_rows)
     df_thresholds = pd.DataFrame(_thresh_rows)
     return df_forecast, df_thresholds
-
-
-@app.cell
-def compute_obs_triggers(
-    df_iri, end_eval_year, np, obs_pct_slider, pd, start_eval_year
-):
-    _obs_pct = obs_pct_slider.value
-    _eval_years = list(range(start_eval_year, end_eval_year + 1))
-    _obs_thresh = float(np.percentile(df_iri["Aug"].values, _obs_pct))
-    _obs_rows = []
-    for _year in _eval_years:
-        _actual = df_iri[df_iri["year"] == _year].iloc[0]
-        _act_aug = float(_actual["Aug"])
-        _trig_obsv = _act_aug <= _obs_thresh
-        _obs_rows.append(
-            {
-                "year": _year,
-                "obs_threshold": _obs_thresh,
-                "actual_aug": _act_aug,
-                "trig_obsv": _trig_obsv,
-            }
-        )
-    df_obs = pd.DataFrame(_obs_rows).set_index("year")
-    return (df_obs,)
 
 
 @app.cell
@@ -311,7 +320,7 @@ def selector_ui(COLS, closest_pct, mo, pct_steps):
 
 @app.cell
 def threshold_evolution_plot(
-    df_thresholds, month_sel, plt, pct_sel, ref_window
+    df_iri, df_thresholds, go, month_sel, pct_sel, ref_window
 ):
     _month = month_sel.value
     _pct = pct_sel.value
@@ -319,41 +328,72 @@ def threshold_evolution_plot(
         (df_thresholds["month"] == _month) & (df_thresholds["pct"] == _pct)
     ].sort_values("year")
 
-    _fig, _ax = plt.subplots(figsize=(10, 4))
-    _ax.plot(
-        _df["year"],
-        _df["threshold"],
-        lw=1.8,
-        color="steelblue",
-        label=f"Rolling {ref_window}-yr threshold (top {_pct}%)",
-    )
+    # Build hover text for threshold line: show each reference year and its value
+    _thresh_hover = []
+    for _, _row in _df.iterrows():
+        _yr = int(_row["year"])
+        _ref = df_iri[
+            df_iri["year"].between(_yr - ref_window, _yr - 1)
+        ].sort_values("year")[["year", _month]]
+        _ref_lines = "<br>".join(
+            f"  {int(r.year)}: {r[_month]:.1%}" for _, r in _ref.iterrows()
+        )
+        _thresh_hover.append(
+            f"<b>Year {_yr}</b><br>"
+            f"Threshold (top {_pct}%): <b>{_row['threshold']:.1%}</b><br>"
+            f"Reference: {int(_ref['year'].min())}–{int(_ref['year'].max())} "
+            f"({len(_ref)} yrs)<br><br>"
+            f"Reference values:<br>{_ref_lines}"
+        )
+
     _triggered = _df[_df["triggered"]]
     _not_triggered = _df[~_df["triggered"]]
-    _ax.scatter(
-        _triggered["year"],
-        _triggered["actual"],
-        color="crimson",
-        zorder=5,
-        s=70,
-        label="Triggered",
+
+    _fig = go.Figure()
+
+    _fig.add_trace(
+        go.Scatter(
+            x=_df["year"],
+            y=_df["threshold"],
+            mode="lines+markers",
+            name=f"Rolling {ref_window}-yr threshold (top {_pct}%)",
+            line=dict(color="steelblue", width=2),
+            marker=dict(size=7, color="steelblue"),
+            hovertext=_thresh_hover,
+            hoverinfo="text",
+        )
     )
-    _ax.scatter(
-        _not_triggered["year"],
-        _not_triggered["actual"],
-        color="gray",
-        zorder=4,
-        s=45,
-        alpha=0.7,
-        label="Not triggered",
+    _fig.add_trace(
+        go.Scatter(
+            x=_triggered["year"],
+            y=_triggered["actual"],
+            mode="markers",
+            name="Triggered",
+            marker=dict(color="crimson", size=11, symbol="circle"),
+            hovertemplate="<b>%{x}</b><br>Actual: %{y:.1%}<br>Triggered<extra></extra>",
+        )
     )
-    _ax.set_title(
-        f"{_month} — rolling {ref_window}-yr threshold at top {_pct}%"
+    _fig.add_trace(
+        go.Scatter(
+            x=_not_triggered["year"],
+            y=_not_triggered["actual"],
+            mode="markers",
+            name="Not triggered",
+            marker=dict(color="gray", size=8, opacity=0.7),
+            hovertemplate="<b>%{x}</b><br>Actual: %{y:.1%}<extra></extra>",
+        )
     )
-    _ax.set_xlabel("Year")
-    _ax.set_ylabel("IRI forecast probability")
-    _ax.legend()
-    _ax.spines[["top", "right"]].set_visible(False)
-    plt.tight_layout()
+    _fig.update_layout(
+        title=f"{_month} — rolling {ref_window}-yr threshold at top {_pct}%",
+        xaxis_title="Year",
+        yaxis=dict(title="IRI forecast probability", tickformat=".0%"),
+        hovermode="closest",
+        template="simple_white",
+        height=420,
+        legend=dict(
+            orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0
+        ),
+    )
     _fig
 
 

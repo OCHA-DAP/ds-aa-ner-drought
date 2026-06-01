@@ -90,9 +90,10 @@ def note_obs(mo):
         """
 ## 1 · Set the observational trigger threshold
 
-The **observational arm** uses the August IRI forecast value as a drought proxy.
-Set the slider to choose what bottom-percentile of the full historical August record
-counts as a trigger. This threshold is fixed across all years (not rolling).
+The **observational component** uses the ENACTS MON Jun–Jul SPI exported from the
+Maproom as an observational indicator (not a forecast). Set the slider to choose
+what bottom-percentile of the full historical record counts as a trigger.
+This threshold is fixed across all evaluation years (not rolling).
 """
     )
 
@@ -138,7 +139,7 @@ def compute_obs_triggers(
 def obs_display(df_obs, mo, obs_pct_slider):
     _n = int(df_obs["trig_obsv"].sum())
     mo.md(
-        f"**Observational threshold:** {obs_pct_slider} "
+        f"**ENACTS SPI threshold (observational):** {obs_pct_slider} "
         f"→ **{_n} trigger year{'s' if _n != 1 else ''}**"
     )
 
@@ -231,10 +232,10 @@ def note_sweep(mo):
 ## 2 · Forecast threshold sweep → return period table
 
 For every candidate percentile level, each evaluation year is assessed: the
-**forecast arm** triggers if any two consecutive months (Jan+Feb, Feb+Mar, …,
+**forecast component** triggers if any two consecutive months (Jan+Feb, Feb+Mar, …,
 May+Jun) both exceed their rolling 10-year historical threshold. The table
-below shows, for each percentile, how many years trigger under each arm and
-the implied return period.
+below shows, for each percentile, how many years trigger under each component and
+the implied return period when combined with the observational component.
 """
     )
 
@@ -274,8 +275,8 @@ def trigger_summary(
                 "pct_triggering": _pct,
                 "n_fcast": _n_fcast,
                 "rp_fcast": _rp_fcast,
-                f"n_obsv (Aug≤{_obs_pct}%)": _n_obsv,
-                f"rp_obsv (Aug≤{_obs_pct}%)": _rp_obsv,
+                f"n_obsv (SPI≤{_obs_pct}%)": _n_obsv,
+                f"rp_obsv (SPI≤{_obs_pct}%)": _rp_obsv,
                 "n_either": _n_either,
                 "rp_either": _rp_either,
             }
@@ -296,7 +297,7 @@ def trigger_summary(
         [
             mo.md(
                 f"### Trigger counts by percentile threshold\n\n"
-                f"Obs arm (Aug) fixed at bottom **{_obs_pct}%** of full record. {_note}"
+                f"ENACTS SPI (observational) fixed at bottom **{_obs_pct}%** of full record. {_note}"
             ),
             mo.ui.table(df_summary),
         ]
@@ -323,7 +324,7 @@ def note_auto_select(mo, rp_target):
 
 The forecast percentile whose **combined return period is closest to {rp_target} years**
 is auto-selected and applied to all plots below. The years that would have triggered
-under each arm are listed here, and the dropdowns are pre-set to this percentile.
+under each component are listed here, and the dropdowns are pre-set to this percentile.
 """
     )
 
@@ -339,8 +340,8 @@ def triggered_years_detail(
     _either_years = sorted(_grp[_grp["trig_either"]]["year"].tolist())
     mo.md(
         f"At **pct = {closest_pct}%** (closest to RP {rp_target}):  \n"
-        f"Forecast arm: **{_fcast_years}**  \n"
-        f"Obs arm (Aug ≤{_obs_pct}%): **{_obsv_years}**  \n"
+        f"Forecast component: **{_fcast_years}**  \n"
+        f"Observational component (ENACTS SPI ≤{_obs_pct}%): **{_obsv_years}**  \n"
         f"Combined: **{_either_years}**"
     )
 
@@ -351,12 +352,13 @@ def note_plots(mo):
         """
 ## 4 · Monthly historical forecast plots
 
-The interactive chart below shows the rolling 10-year threshold (blue line, starting
-from 2001) and the actual forecast values for a selected month. Hover the blue
-threshold markers to see the exact reference years and values that produced each
-threshold. Light gray dots are pre-2001 reference-period years. The 2×3 grid
-shows all six forecast months together. Use the dropdowns to explore different
-months and percentile levels.
+The interactive chart shows the rolling 10-year threshold (blue line, from 2001)
+and actual IRI forecast values. Hover the blue threshold markers to see the
+reference years and values behind each threshold. Light gray dots are pre-2001
+reference-period years. The 2×3 grid shows all six forecast months together.
+
+**Month** selects which forecast month is shown in the detail timeseries below.
+**% triggering from top** overrides the auto-selected percentile and updates all plots.
 """
     )
 
@@ -556,7 +558,7 @@ def aug_obs_plot(df_iri, df_obs, obs_pct_slider, plt, start_eval_year):
         _obs_thresh,
         lw=1.8,
         color="darkorange",
-        label=f"Aug threshold (bottom {_obs_pct}% of full record)",
+        label=f"ENACTS SPI threshold (bottom {_obs_pct}% of full record)",
     )
     _ax.scatter(
         _pre["year"],
@@ -573,7 +575,7 @@ def aug_obs_plot(df_iri, df_obs, obs_pct_slider, plt, start_eval_year):
         color="crimson",
         zorder=5,
         s=70,
-        label="Obs triggered",
+        label="ENACTS SPI triggered",
     )
     _ax.scatter(
         _no_trig_eval["year"],
@@ -585,7 +587,7 @@ def aug_obs_plot(df_iri, df_obs, obs_pct_slider, plt, start_eval_year):
         label="Not triggered",
     )
     _ax.set_title(
-        f"Aug observation arm — full historical threshold at bottom {_obs_pct}%"
+        f"ENACTS SPI (observational component) — full historical threshold at bottom {_obs_pct}%"
     )
     _ax.set_xlabel("Year")
     _ax.set_ylabel("Aug value")
@@ -601,23 +603,32 @@ def note_activation(mo):
         """
 ## 5 · Historical activation record
 
-The table below shows the full year-by-year trigger record at the selected percentile.
-Each column shows whether that month, consecutive-month pair, or arm triggered.
-Red cells = triggered. Hover rows to highlight. The correlation chart shows how
-each month's raw forecast, distance-from-threshold, and binary trigger signal
-correlate with observed JAS rainfall.
+The table below shows the full year-by-year trigger record at the selected percentile,
+with a return period summary for this threshold. Each column shows whether that month,
+consecutive-month pair, or component triggered. Red cells = triggered. Hover rows to highlight.
 """
     )
 
 
 @app.cell
-def trigger_detail_table(COLS, calendar, df_results, mo, mos, pct_sel):
+def trigger_detail_table(
+    COLS, calendar, df_results, df_summary, mo, mos, pct_sel
+):
     _pct = pct_sel.value
     _df = (
         df_results[df_results["pct"] == _pct]
         .copy()
         .sort_values("year", ascending=False)
     )
+
+    # Return period summary for the selected percentile
+    _row = df_summary[df_summary["pct_triggering"] == _pct].iloc[0]
+    _rp_fcast = _row["rp_fcast"]
+    _rp_obsv_col = next(
+        c for c in df_summary.columns if c.startswith("rp_obsv")
+    )
+    _rp_obsv = _row[_rp_obsv_col]
+    _rp_either = _row["rp_either"]
 
     _month_cols = [f"trig_{c}" for c in COLS]
     _pair_cols = [
@@ -632,8 +643,8 @@ def trigger_detail_table(COLS, calendar, df_results, mo, mos, pct_sel):
             )
             for i in range(len(mos) - 1)
         },
-        "trig_fcast": "Fcast",
-        "trig_obsv": "Obs",
+        "trig_fcast": "Forecast",
+        "trig_obsv": "ENACTS SPI",
         "trig_either": "Either",
     }
     _display = (
@@ -663,86 +674,15 @@ def trigger_detail_table(COLS, calendar, df_results, mo, mos, pct_sel):
 </style>"""
     mo.vstack(
         [
-            mo.md(f"### Per-year trigger detail (pct = {_pct}%)"),
+            mo.md(
+                f"### Per-year trigger detail (pct = {_pct}%)\n\n"
+                f"Forecast component RP: **{_rp_fcast}** · "
+                f"ENACTS SPI (observational) RP: **{_rp_obsv}** · "
+                f"Combined RP: **{_rp_either}**"
+            ),
             mo.Html(_css + _styled.to_html()),
         ]
     )
-
-
-@app.cell
-def correlation_plot(
-    COLS, df_iri, df_results, df_thresholds, np, plt, pct_sel, start_eval_year
-):
-    def _corr(x, y):
-        _mask = ~(np.isnan(x.astype(float)) | np.isnan(y.astype(float)))
-        if _mask.sum() < 3:
-            return float("nan")
-        return float(
-            np.corrcoef(x[_mask].astype(float), y[_mask].astype(float))[0, 1]
-        )
-
-    _pct = pct_sel.value
-    _eval = df_iri[df_iri["year"] >= start_eval_year].sort_values("year")
-    _jas = _eval["JAS_SPI"].values
-
-    _df_trig = (
-        df_results[df_results["pct"] == _pct]
-        .sort_values("year")
-        .set_index("year")
-        .loc[_eval["year"].values]
-    )
-
-    # distance = actual - threshold: positive when triggered, removes rolling climatology
-    _df_dist = (
-        df_thresholds[df_thresholds["pct"] == _pct]
-        .assign(distance=lambda d: d["actual"] - d["threshold"])
-        .set_index(["year", "month"])["distance"]
-        .unstack("month")[COLS]
-        .loc[_eval["year"].values]
-    )
-
-    _raw_r = [_corr(_eval[c].values, _jas) for c in COLS]
-    _dist_r = [_corr(_df_dist[c].values, _jas) for c in COLS]
-    _bin_r = [_corr(_df_trig[f"trig_{c}"].values, _jas) for c in COLS]
-
-    _x = np.arange(len(COLS))
-    _w = 0.25
-    _fig, _ax = plt.subplots(figsize=(10, 4))
-    _ax.bar(
-        _x - _w,
-        _raw_r,
-        _w,
-        label="Raw IRI value",
-        color="steelblue",
-        alpha=0.85,
-    )
-    _ax.bar(
-        _x,
-        _dist_r,
-        _w,
-        label="Distance from threshold",
-        color="seagreen",
-        alpha=0.85,
-    )
-    _ax.bar(
-        _x + _w,
-        _bin_r,
-        _w,
-        label=f"Binary trigger (top {_pct}%)",
-        color="crimson",
-        alpha=0.85,
-    )
-    _ax.axhline(0, color="black", lw=0.8)
-    _ax.set_xticks(_x)
-    _ax.set_xticklabels(COLS)
-    _ax.set_ylabel("Pearson r with JAS SPI")
-    _ax.set_title(
-        "Correlation with observed JAS rainfall (negative = drought signal)"
-    )
-    _ax.legend()
-    _ax.spines[["top", "right"]].set_visible(False)
-    plt.tight_layout()
-    _fig
 
 
 if __name__ == "__main__":

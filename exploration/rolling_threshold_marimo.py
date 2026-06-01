@@ -62,7 +62,7 @@ def load_data(mo, pd):
 def params(mo):
     ref_window = 10
     start_eval_year = (
-        1998  # RP calc starts here; ref window may be <10 yrs for 1998–2000
+        2001  # first year with full 10-yr reference window (data starts 1991)
     )
     end_eval_year = 2025
     pct_steps = list(
@@ -72,8 +72,7 @@ def params(mo):
     rp_target = 3.5
     mo.md(
         f"Evaluation years: **{start_eval_year}–{end_eval_year}** "
-        f"({end_eval_year - start_eval_year + 1} years), "
-        f"reference window: **{ref_window} years** (truncated for {start_eval_year}–{start_eval_year + 2}), "
+        f"({end_eval_year - start_eval_year + 1} years, full {ref_window}-yr window throughout), "
         f"target RP: **{rp_target}**"
     )
     return (
@@ -320,7 +319,7 @@ def selector_ui(COLS, closest_pct, mo, pct_steps):
 
 @app.cell
 def threshold_evolution_plot(
-    df_iri, df_thresholds, go, month_sel, pct_sel, ref_window
+    df_iri, df_thresholds, go, month_sel, pct_sel, ref_window, start_eval_year
 ):
     _month = month_sel.value
     _pct = pct_sel.value
@@ -346,11 +345,25 @@ def threshold_evolution_plot(
             f"Reference values:<br>{_ref_lines}"
         )
 
+    # Pre-evaluation actuals (reference period only, no threshold computed)
+    _pre = df_iri[df_iri["year"] < start_eval_year].sort_values("year")
     _triggered = _df[_df["triggered"]]
     _not_triggered = _df[~_df["triggered"]]
 
     _fig = go.Figure()
 
+    # Reference-period-only years (faint, shown for context)
+    _fig.add_trace(
+        go.Scatter(
+            x=_pre["year"],
+            y=_pre[_month],
+            mode="markers",
+            name=f"Pre-{start_eval_year} (reference only)",
+            marker=dict(color="lightgray", size=7, opacity=0.7),
+            hovertemplate="<b>%{x}</b><br>Actual: %{y:.1%}<br>Reference period only<extra></extra>",
+        )
+    )
+    # Threshold line starts at start_eval_year
     _fig.add_trace(
         go.Scatter(
             x=_df["year"],
@@ -398,14 +411,27 @@ def threshold_evolution_plot(
 
 
 @app.cell
-def all_months_plot(COLS, df_thresholds, plt, pct_sel, ref_window):
+def all_months_plot(
+    COLS, df_iri, df_thresholds, plt, pct_sel, ref_window, start_eval_year
+):
     _pct = pct_sel.value
     _fig, _axes = plt.subplots(2, 3, figsize=(14, 7), sharey=False)
+    _pre = df_iri[df_iri["year"] < start_eval_year].sort_values("year")
 
     for _col, _ax in zip(COLS, _axes.flat):
         _df = df_thresholds[
             (df_thresholds["month"] == _col) & (df_thresholds["pct"] == _pct)
         ].sort_values("year")
+        # Pre-evaluation actuals (reference period)
+        _ax.scatter(
+            _pre["year"],
+            _pre[_col],
+            color="lightgray",
+            zorder=2,
+            s=28,
+            alpha=0.7,
+        )
+        # Threshold line from start_eval_year
         _ax.plot(_df["year"], _df["threshold"], lw=1.5, color="steelblue")
         _trig = _df[_df["triggered"]]
         _no_trig = _df[~_df["triggered"]]
@@ -433,29 +459,42 @@ def all_months_plot(COLS, df_thresholds, plt, pct_sel, ref_window):
 
 
 @app.cell
-def aug_obs_plot(df_obs, obs_pct_slider, plt):
+def aug_obs_plot(df_iri, df_obs, obs_pct_slider, plt, start_eval_year):
     _obs_pct = obs_pct_slider.value
-    _df = df_obs.reset_index().sort_values("year")
+    _obs_thresh = df_obs["obs_threshold"].iloc[0]
+    _all = df_iri.sort_values("year")
+    _pre = _all[_all["year"] < start_eval_year]
+    _eval = _all[_all["year"] >= start_eval_year]
+    _trig_eval = _eval[_eval["Aug"] <= _obs_thresh]
+    _no_trig_eval = _eval[_eval["Aug"] > _obs_thresh]
+
     _fig, _ax = plt.subplots(figsize=(10, 3.5))
     _ax.axhline(
-        _df["obs_threshold"].iloc[0],
+        _obs_thresh,
         lw=1.8,
         color="darkorange",
         label=f"Aug threshold (bottom {_obs_pct}% of full record)",
     )
-    _trig = _df[_df["trig_obsv"]]
-    _no_trig = _df[~_df["trig_obsv"]]
     _ax.scatter(
-        _trig["year"],
-        _trig["actual_aug"],
+        _pre["year"],
+        _pre["Aug"],
+        color="lightgray",
+        zorder=2,
+        s=40,
+        alpha=0.7,
+        label=f"Pre-{start_eval_year} (reference only)",
+    )
+    _ax.scatter(
+        _trig_eval["year"],
+        _trig_eval["Aug"],
         color="crimson",
         zorder=5,
         s=70,
         label="Obs triggered",
     )
     _ax.scatter(
-        _no_trig["year"],
-        _no_trig["actual_aug"],
+        _no_trig_eval["year"],
+        _no_trig_eval["Aug"],
         color="gray",
         zorder=4,
         s=45,

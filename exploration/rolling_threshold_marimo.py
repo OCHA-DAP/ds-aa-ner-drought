@@ -85,6 +85,16 @@ def params(mo):
 
 
 @app.cell
+def note_data(mo):
+    mo.md(
+        """
+> **Data source:** Historical IRI forecasts exported from the Maproom on **25 April 2026**,
+> using the **OCHA Certification** model with the Frequency slider set to **35%**.
+"""
+    )
+
+
+@app.cell
 def note_obs(mo):
     mo.md(
         """

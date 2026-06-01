@@ -85,6 +85,19 @@ def params(mo):
 
 
 @app.cell
+def note_obs(mo):
+    mo.md(
+        """
+## 1 · Set the observational trigger threshold
+
+The **observational arm** uses the August IRI forecast value as a drought proxy.
+Set the slider to choose what bottom-percentile of the full historical August record
+counts as a trigger. This threshold is fixed across all years (not rolling).
+"""
+    )
+
+
+@app.cell
 def obs_ui(mo):
     obs_pct_slider = mo.ui.slider(
         start=5,
@@ -212,6 +225,21 @@ def combine_results(df_forecast, df_obs, pd, pct_steps):
 
 
 @app.cell
+def note_sweep(mo):
+    mo.md(
+        """
+## 2 · Forecast threshold sweep → return period table
+
+For every candidate percentile level, each evaluation year is assessed: the
+**forecast arm** triggers if any two consecutive months (Jan+Feb, Feb+Mar, …,
+May+Jun) both exceed their rolling 10-year historical threshold. The table
+below shows, for each percentile, how many years trigger under each arm and
+the implied return period.
+"""
+    )
+
+
+@app.cell
 def trigger_summary(
     df_results,
     end_eval_year,
@@ -288,6 +316,19 @@ def find_closest_pct(df_summary, rp_target):
 
 
 @app.cell
+def note_auto_select(mo, rp_target):
+    mo.md(
+        f"""
+## 3 · Automatic threshold selection
+
+The forecast percentile whose **combined return period is closest to {rp_target} years**
+is auto-selected and applied to all plots below. The years that would have triggered
+under each arm are listed here, and the dropdowns are pre-set to this percentile.
+"""
+    )
+
+
+@app.cell
 def triggered_years_detail(
     closest_pct, df_results, mo, obs_pct_slider, rp_target
 ):
@@ -301,6 +342,22 @@ def triggered_years_detail(
         f"Forecast arm: **{_fcast_years}**  \n"
         f"Obs arm (Aug ≤{_obs_pct}%): **{_obsv_years}**  \n"
         f"Combined: **{_either_years}**"
+    )
+
+
+@app.cell
+def note_plots(mo):
+    mo.md(
+        """
+## 4 · Monthly historical forecast plots
+
+The interactive chart below shows the rolling 10-year threshold (blue line, starting
+from 2001) and the actual forecast values for a selected month. Hover the blue
+threshold markers to see the exact reference years and values that produced each
+threshold. Light gray dots are pre-2001 reference-period years. The 2×3 grid
+shows all six forecast months together. Use the dropdowns to explore different
+months and percentile levels.
+"""
     )
 
 
@@ -536,6 +593,21 @@ def aug_obs_plot(df_iri, df_obs, obs_pct_slider, plt, start_eval_year):
     _ax.spines[["top", "right"]].set_visible(False)
     plt.tight_layout()
     _fig
+
+
+@app.cell
+def note_activation(mo):
+    mo.md(
+        """
+## 5 · Historical activation record
+
+The table below shows the full year-by-year trigger record at the selected percentile.
+Each column shows whether that month, consecutive-month pair, or arm triggered.
+Red cells = triggered. Hover rows to highlight. The correlation chart shows how
+each month's raw forecast, distance-from-threshold, and binary trigger signal
+correlate with observed JAS rainfall.
+"""
+    )
 
 
 @app.cell

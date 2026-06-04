@@ -69,11 +69,6 @@ def params(mo):
     )  # fraction triggering from top: 0%, 5%, ..., 100%
     mos = [1, 2, 3, 4, 5, 6]
     rp_target = 3.5
-    mo.md(
-        f"Evaluation years: **{start_eval_year}–{end_eval_year}** "
-        f"({end_eval_year - start_eval_year + 1} years, full {ref_window}-yr window throughout), "
-        f"target RP: **{rp_target}**"
-    )
     return (
         end_eval_year,
         mos,
@@ -95,15 +90,18 @@ def note_data(mo):
 
 
 @app.cell
-def note_obs(mo):
+def note_plots(mo):
     mo.md(
         """
-## 1 · Set the observational trigger threshold
+## Forecast and observational thresholds
 
-The **observational component** uses the ENACTS MON Jun–Jul SPI exported from the
-Maproom as an observational indicator (not a forecast). Set the slider to choose
-what bottom-percentile of the full historical record counts as a trigger.
-This threshold is fixed across all evaluation years (not rolling).
+Use the sliders to set the threshold for each trigger component. The **forecast component**
+triggers if any two consecutive months (Jan+Feb, Feb+Mar, …, May+Jun) both fall in the
+top X% of their rolling 10-year historical reference window. The **observational component**
+triggers if the ENACTS SPI falls in the bottom Y% of the full historical record.
+
+The 2×3 grid shows all six forecast months. The observational chart shows ENACTS SPI
+against the fixed historical threshold. Red markers = triggered.
 """
     )
 
@@ -113,12 +111,25 @@ def obs_ui(mo):
     obs_pct_slider = mo.ui.slider(
         start=5,
         stop=50,
-        step=5,
-        value=20,
-        label="Obs arm: Aug percentile threshold",
+        step=1,
+        value=15,
+        label="Observational component: Aug percentile threshold",
         show_value=True,
     )
     return (obs_pct_slider,)
+
+
+@app.cell
+def pct_ui(mo):
+    pct_sel = mo.ui.slider(
+        start=0,
+        stop=100,
+        step=5,
+        value=35,
+        label="Forecast component: % triggering from top",
+        show_value=True,
+    )
+    return (pct_sel,)
 
 
 @app.cell
@@ -127,7 +138,13 @@ def compute_obs_triggers(
 ):
     _obs_pct = obs_pct_slider.value
     _eval_years = list(range(start_eval_year, end_eval_year + 1))
-    _obs_thresh = float(np.percentile(df_iri["Aug"].values, _obs_pct))
+    _all_aug = df_iri["Aug"].values
+    _n_hist = len(_all_aug)
+    if _obs_pct == 0:
+        _obs_thresh = float("-inf")
+    else:
+        _k_obs = int(np.ceil(_obs_pct / 100 * _n_hist))
+        _obs_thresh = float(sorted(_all_aug)[_k_obs - 1])
     _obs_rows = []
     for _year in _eval_years:
         _actual = df_iri[df_iri["year"] == _year].iloc[0]
@@ -146,15 +163,6 @@ def compute_obs_triggers(
 
 
 @app.cell
-def obs_display(df_obs, mo, obs_pct_slider):
-    _n = int(df_obs["trig_obsv"].sum())
-    mo.md(
-        f"**ENACTS SPI threshold (observational):** {obs_pct_slider} "
-        f"→ **{_n} trigger year{'s' if _n != 1 else ''}**"
-    )
-
-
-@app.cell
 def compute_forecast_triggers(
     COLS,
     calendar,
@@ -167,7 +175,7 @@ def compute_forecast_triggers(
     ref_window,
     start_eval_year,
 ):
-    """Forecast arm only — does not depend on obs_pct so slider won't rerun this."""
+    """Forecast component only — does not depend on obs_pct so slider won't rerun this."""
     _eval_years = list(range(start_eval_year, end_eval_year + 1))
     _consec_pairs = [(mos[i], mos[i + 1]) for i in range(len(mos) - 1)]
 
@@ -181,10 +189,17 @@ def compute_forecast_triggers(
             ]
             _actual = df_iri[df_iri["year"] == _year].iloc[0]
 
+            _n_ref = len(_ref)
+            _k = int(np.ceil(_pct / 100 * _n_ref)) if _pct > 0 else 0
             _trig_month = {}
             for _col in COLS:
-                # threshold at (100 - pct)th percentile; pct = top-fraction that triggers
-                _thresh = float(np.percentile(_ref[_col].values, 100 - _pct))
+                # k-th highest value in reference window; locks threshold to an actual historical value
+                if _k == 0:
+                    _thresh = float("inf")
+                else:
+                    _thresh = float(
+                        sorted(_ref[_col].values, reverse=True)[_k - 1]
+                    )
                 _act_val = float(_actual[_col])
                 _trig = _act_val >= _thresh
                 _trig_month[_col] = _trig
@@ -236,29 +251,8 @@ def combine_results(df_forecast, df_obs, pd, pct_steps):
 
 
 @app.cell
-def note_sweep(mo):
-    mo.md(
-        """
-## 2 · Forecast threshold sweep → return period table
-
-For every candidate percentile level, each evaluation year is assessed: the
-**forecast component** triggers if any two consecutive months (Jan+Feb, Feb+Mar, …,
-May+Jun) both exceed their rolling 10-year historical threshold. The table
-below shows, for each percentile, how many years trigger under each component and
-the implied return period when combined with the observational component.
-"""
-    )
-
-
-@app.cell
-def trigger_summary(
-    df_results,
-    end_eval_year,
-    mo,
-    obs_pct_slider,
-    pd,
-    rp_target,
-    start_eval_year,
+def compute_summary(
+    df_results, end_eval_year, obs_pct_slider, pd, rp_target, start_eval_year
 ):
     _obs_pct = obs_pct_slider.value
     _n_years = end_eval_year - start_eval_year + 1
@@ -292,26 +286,6 @@ def trigger_summary(
             }
         )
     df_summary = pd.DataFrame(_rows)
-
-    _near_target = df_summary[
-        df_summary["rp_either"].apply(
-            lambda x: isinstance(x, float) and abs(x - rp_target) <= 0.6
-        )
-    ]
-    _note = (
-        f"Rows closest to target RP {rp_target}: pct = {_near_target['pct_triggering'].tolist()}"
-        if len(_near_target)
-        else f"No rows within 0.6 of target RP {rp_target}"
-    )
-    mo.vstack(
-        [
-            mo.md(
-                f"### Trigger counts by percentile threshold\n\n"
-                f"ENACTS SPI (observational) fixed at bottom **{_obs_pct}%** of full record. {_note}"
-            ),
-            mo.ui.table(df_summary),
-        ]
-    )
     return (df_summary,)
 
 
@@ -327,14 +301,483 @@ def find_closest_pct(df_summary, rp_target):
 
 
 @app.cell
+def bad_years_data(pd):
+    df_bad_years = pd.DataFrame(
+        {
+            "year": [
+                2021,
+                2020,
+                2019,
+                2018,
+                2017,
+                2016,
+                2015,
+                2014,
+                2013,
+                2012,
+                2011,
+                2010,
+                2009,
+                2008,
+                2007,
+                2006,
+                2005,
+                2004,
+                2003,
+                2002,
+                2001,
+                2000,
+                1999,
+                1998,
+                1997,
+                1996,
+                1995,
+                1994,
+                1993,
+                1992,
+                1991,
+            ],
+            "bad_year_rank": [
+                9,
+                2,
+                32,
+                32,
+                7,
+                32,
+                5,
+                12,
+                17,
+                16,
+                4,
+                14,
+                1,
+                13,
+                32,
+                32,
+                11,
+                10,
+                15,
+                32,
+                3,
+                32,
+                32,
+                32,
+                8,
+                32,
+                32,
+                32,
+                32,
+                32,
+                32,
+            ],
+        }
+    )
+    return (df_bad_years,)
+
+
+@app.cell
+def obs_display(df_obs, mo, obs_pct_slider, pct_sel):
+    _n = int(df_obs["trig_obsv"].sum())
+    mo.vstack(
+        [
+            mo.md(f"**Forecast component:** {pct_sel}"),
+            mo.md(
+                f"**Observational component (ENACTS SPI):** {obs_pct_slider} "
+                f"→ **{_n} trigger year{'s' if _n != 1 else ''}**"
+            ),
+        ]
+    )
+
+
+@app.cell
+def rp_readout(df_summary, mo, pct_sel):
+    _pct = pct_sel.value
+    _row = df_summary[df_summary["pct_triggering"] == _pct].iloc[0]
+    _rp_fcast = _row["rp_fcast"]
+    _rp_obsv_col = next(
+        c for c in df_summary.columns if c.startswith("rp_obsv")
+    )
+    _rp_obsv = _row[_rp_obsv_col]
+    _rp_either = _row["rp_either"]
+    mo.md(
+        f"Forecast component RP: **{_rp_fcast}** · "
+        f"Observational component RP: **{_rp_obsv}** · "
+        f"Combined RP: **{_rp_either}**"
+    )
+
+
+@app.cell
+def trigger_bars(
+    df_bad_years, df_results, df_summary, mo, np, obs_pct_slider, pct_sel, plt
+):
+    from scipy.stats import spearmanr as _spearmanr
+
+    _pct = pct_sel.value
+    _obs_pct = obs_pct_slider.value
+    _grp = df_results[df_results["pct"] == _pct]
+
+    _n_fcast = int(_grp["trig_fcast"].sum())
+    _n_obsv = int(_grp["trig_obsv"].sum())
+    _n_either = int(_grp["trig_either"].sum())
+
+    _row = df_summary[df_summary["pct_triggering"] == _pct].iloc[0]
+    _rp_fcast = _row["rp_fcast"]
+    _rp_obsv_col = next(
+        c for c in df_summary.columns if c.startswith("rp_obsv")
+    )
+    _rp_obsv = _row[_rp_obsv_col]
+    _rp_either = _row["rp_either"]
+
+    _merged = _grp.set_index("year").join(
+        df_bad_years.set_index("year")["bad_year_rank"], how="inner"
+    )
+    _max_rank = int(_merged["bad_year_rank"].max())
+    _severity = _max_rank + 1 - _merged["bad_year_rank"]
+
+    _labels = [f"Forecast ({_pct}%)", f"Observational ({_obs_pct}%)", "Either"]
+    _colors = ["steelblue", "darkorange", "crimson"]
+    _counts = [_n_fcast, _n_obsv, _n_either]
+    _trig_cols = ["trig_fcast", "trig_obsv", "trig_either"]
+
+    _rs, _ps = [], []
+    for _col in _trig_cols:
+        _r, _p = _spearmanr(_merged[_col].astype(int), _severity)
+        _rs.append(float(_r))
+        _ps.append(float(_p))
+
+    _fig, (_ax1, _ax2) = plt.subplots(1, 2, figsize=(10, 4))
+
+    _b1 = _ax1.bar(_labels, _counts, color=_colors, alpha=0.8)
+    _ax1.bar_label(_b1)
+    _ax1.set_ylabel("Trigger years")
+    _ax1.set_title("Trigger counts")
+    _ax1.spines[["top", "right"]].set_visible(False)
+
+    _b2 = _ax2.bar(_labels, _rs, color=_colors, alpha=0.8)
+    for _bar, _r, _p in zip(_b2, _rs, _ps):
+        _stars = (
+            "***"
+            if _p < 0.001
+            else "**" if _p < 0.01 else "*" if _p < 0.05 else ""
+        )
+        _ax2.text(
+            _bar.get_x() + _bar.get_width() / 2,
+            _r + (0.03 if _r >= 0 else -0.03),
+            f"{_r:.2f}{_stars}",
+            ha="center",
+            va="bottom" if _r >= 0 else "top",
+            fontsize=9,
+        )
+    _ax2.axhline(0, color="black", lw=0.8)
+    _ax2.set_ylim(-1, 1)
+    _ax2.set_ylabel("Spearman r")
+    _ax2.set_title("Bad year correlation (↑ = triggers in worse years)")
+    _ax2.spines[["top", "right"]].set_visible(False)
+
+    _rp_line = (
+        f"Forecast RP: {_rp_fcast}  ·  "
+        f"Observational RP: {_rp_obsv}  ·  "
+        f"Combined RP: {_rp_either}"
+    )
+    plt.tight_layout()
+    plt.subplots_adjust(bottom=0.18)
+    _fig.text(
+        0.5,
+        0.03,
+        _rp_line,
+        ha="center",
+        va="bottom",
+        fontsize=9,
+        color="#555555",
+    )
+    _fig
+
+
+@app.cell
+def all_months_plot(
+    COLS, df_iri, df_thresholds, plt, pct_sel, ref_window, start_eval_year
+):
+    _pct = pct_sel.value
+    _fig, _axes = plt.subplots(2, 3, figsize=(14, 7), sharey=False)
+    _pre = df_iri[df_iri["year"] < start_eval_year].sort_values("year")
+
+    for _col, _ax in zip(COLS, _axes.flat):
+        _df = df_thresholds[
+            (df_thresholds["month"] == _col) & (df_thresholds["pct"] == _pct)
+        ].sort_values("year")
+        # Pre-evaluation actuals (reference period)
+        _ax.scatter(
+            _pre["year"],
+            _pre[_col],
+            color="lightgray",
+            zorder=2,
+            s=28,
+            alpha=0.7,
+        )
+        # Threshold line from start_eval_year
+        _ax.plot(_df["year"], _df["threshold"], lw=1.5, color="steelblue")
+        _trig = _df[_df["triggered"]]
+        _no_trig = _df[~_df["triggered"]]
+        _ax.scatter(
+            _trig["year"], _trig["actual"], color="crimson", zorder=5, s=55
+        )
+        _ax.scatter(
+            _no_trig["year"],
+            _no_trig["actual"],
+            color="gray",
+            zorder=4,
+            s=35,
+            alpha=0.6,
+        )
+        _ax.set_title(_col)
+        _ax.spines[["top", "right"]].set_visible(False)
+        _ax.tick_params(labelsize=8)
+
+    _fig.suptitle(
+        f"Rolling {ref_window}-yr threshold at top {_pct}% — red = triggered",
+        fontsize=12,
+    )
+    plt.tight_layout()
+    _fig
+
+
+@app.cell
+def aug_obs_plot(df_iri, df_obs, obs_pct_slider, plt, start_eval_year):
+    _obs_pct = obs_pct_slider.value
+    _obs_thresh = df_obs["obs_threshold"].iloc[0]
+    _all = df_iri.sort_values("year")
+    _pre = _all[_all["year"] < start_eval_year]
+    _eval = _all[_all["year"] >= start_eval_year]
+    _trig_eval = _eval[_eval["Aug"] <= _obs_thresh]
+    _no_trig_eval = _eval[_eval["Aug"] > _obs_thresh]
+
+    _fig, _ax = plt.subplots(figsize=(10, 3.5))
+    _ax.axhline(
+        _obs_thresh,
+        lw=1.8,
+        color="darkorange",
+        label=f"ENACTS SPI threshold (bottom {_obs_pct}% of full record)",
+    )
+    _ax.scatter(
+        _pre["year"],
+        _pre["Aug"],
+        color="lightgray",
+        zorder=2,
+        s=40,
+        alpha=0.7,
+        label=f"Pre-{start_eval_year} (reference only)",
+    )
+    _ax.scatter(
+        _trig_eval["year"],
+        _trig_eval["Aug"],
+        color="crimson",
+        zorder=5,
+        s=70,
+        label="Observational component triggered",
+    )
+    _ax.scatter(
+        _no_trig_eval["year"],
+        _no_trig_eval["Aug"],
+        color="gray",
+        zorder=4,
+        s=45,
+        alpha=0.7,
+        label="Not triggered",
+    )
+    _ax.set_title(
+        f"ENACTS SPI (observational component) — full historical threshold at bottom {_obs_pct}%"
+    )
+    _ax.set_xlabel("Year")
+    _ax.set_ylabel("Aug value")
+    _ax.legend()
+    _ax.spines[["top", "right"]].set_visible(False)
+    plt.tight_layout()
+    _fig
+
+
+@app.cell
+def note_activation(mo):
+    mo.md(
+        """
+## Activation record
+
+The table below shows the full year-by-year trigger record at the selected thresholds,
+with return periods for each component. Each column shows whether that month,
+consecutive-month pair, or component triggered. Red cells = triggered. Hover rows to highlight.
+"""
+    )
+
+
+@app.cell
+def trigger_detail_table(
+    COLS, calendar, df_bad_years, df_results, mo, mos, np, pd, pct_sel
+):
+    _pct = pct_sel.value
+    _df = (
+        df_results[df_results["pct"] == _pct]
+        .copy()
+        .sort_values("year", ascending=False)
+    )
+    _df = _df.join(
+        df_bad_years.set_index("year")["bad_year_rank"], on="year", how="left"
+    )
+
+    _month_cols = [f"trig_{c}" for c in COLS]
+    _pair_cols = [
+        f"trig_{calendar.month_abbr[mos[i]]}_{calendar.month_abbr[mos[i+1]]}"
+        for i in range(len(mos) - 1)
+    ]
+    _rename = {
+        **{f"trig_{c}": c for c in COLS},
+        **{
+            f"trig_{calendar.month_abbr[mos[i]]}_{calendar.month_abbr[mos[i+1]]}": (
+                f"{calendar.month_abbr[mos[i]]}+{calendar.month_abbr[mos[i+1]]}"
+            )
+            for i in range(len(mos) - 1)
+        },
+        "trig_fcast": "Forecast",
+        "trig_obsv": "ENACTS SPI",
+        "trig_either": "Either",
+        "bad_year_rank": "Bad year",
+    }
+    _display = (
+        _df[
+            ["year"]
+            + _month_cols
+            + _pair_cols
+            + ["trig_fcast", "trig_obsv", "trig_either", "bad_year_rank"]
+        ]
+        .rename(columns=_rename)
+        .reset_index(drop=True)
+    )
+
+    _rank_vals = df_bad_years["bad_year_rank"].values
+    _p20 = float(np.percentile(_rank_vals, 20))
+    _p33 = float(np.percentile(_rank_vals, 33))
+    _p66 = float(np.percentile(_rank_vals, 66))
+
+    def _rank_style(v):
+        if pd.isna(v):
+            return "background-color: #f4f4f4; color: #cccccc"
+        elif v <= _p20:
+            return "background-color: #ff9999"
+        elif v <= _p33:
+            return "background-color: #ffcc88"
+        elif v < _p66:
+            return ""
+        else:
+            return "background-color: #cceecc"
+
+    _highlight_cols = [
+        c for c in _display.columns if c not in ("year", "Bad year")
+    ]
+    _styled = (
+        _display.style.map(
+            lambda v: (
+                "background-color: #ffaaaa; color: #7a0000; font-weight: bold"
+                if v is True
+                else ""
+            ),
+            subset=_highlight_cols,
+        )
+        .map(_rank_style, subset=["Bad year"])
+        .format({"Bad year": lambda v: "" if pd.isna(v) else str(int(v))})
+        .set_uuid("trigger_detail")
+    )
+    _css = """<style>
+#T_trigger_detail tbody tr:hover td {
+    background-color: #dde8f8;
+    cursor: default;
+}
+</style>"""
+    mo.vstack(
+        [
+            mo.md(
+                f"### Per-year trigger detail (forecast component: top {_pct}%)"
+            ),
+            mo.Html(_css + _styled.hide(axis="index").to_html()),
+        ]
+    )
+
+
+@app.cell
+def note_analysis(mo):
+    mo.md("---\n\n## Optimization")
+
+
+@app.cell
+def note_optimization_params(
+    end_eval_year, mo, ref_window, rp_target, start_eval_year
+):
+    mo.md(
+        f"Evaluation years: **{start_eval_year}–{end_eval_year}** "
+        f"({end_eval_year - start_eval_year + 1} years, full {ref_window}-yr window throughout), "
+        f"target RP: **{rp_target}**"
+    )
+
+
+@app.cell
+def note_obs(mo):
+    mo.md(
+        """
+## 1 · Set the observational trigger threshold
+
+The **observational component** uses the ENACTS MON Jun–Jul SPI exported from the
+Maproom as an observational indicator (not a forecast). Set the slider to choose
+what bottom-percentile of the full historical record counts as a trigger.
+This threshold is fixed across all evaluation years (not rolling).
+"""
+    )
+
+
+@app.cell
+def note_sweep(mo):
+    mo.md(
+        """
+## 2 · Forecast threshold sweep → return period table
+
+For every candidate percentile level, each evaluation year is assessed: the
+**forecast component** triggers if any two consecutive months (Jan+Feb, Feb+Mar, …,
+May+Jun) both exceed their rolling 10-year historical threshold. The table
+below shows, for each percentile, how many years trigger under each component and
+the implied return period when combined with the observational component.
+"""
+    )
+
+
+@app.cell
+def trigger_summary(df_summary, mo, obs_pct_slider, rp_target):
+    _obs_pct = obs_pct_slider.value
+    _near_target = df_summary[
+        df_summary["rp_either"].apply(
+            lambda x: isinstance(x, float) and abs(x - rp_target) <= 0.6
+        )
+    ]
+    _note = (
+        f"Rows closest to target RP {rp_target}: pct = {_near_target['pct_triggering'].tolist()}"
+        if len(_near_target)
+        else f"No rows within 0.6 of target RP {rp_target}"
+    )
+    mo.vstack(
+        [
+            mo.md(
+                f"### Trigger counts by percentile threshold\n\n"
+                f"Observational component fixed at bottom **{_obs_pct}%** of full record. {_note}"
+            ),
+            mo.ui.table(df_summary),
+        ]
+    )
+
+
+@app.cell
 def note_auto_select(mo, rp_target):
     mo.md(
         f"""
 ## 3 · Automatic threshold selection
 
 The forecast percentile whose **combined return period is closest to {rp_target} years**
-is auto-selected and applied to all plots below. The years that would have triggered
-under each component are listed here, and the dropdowns are pre-set to this percentile.
+is identified automatically. The years that would have triggered under each component
+are listed here.
 """
     )
 
@@ -357,32 +800,26 @@ def triggered_years_detail(
 
 
 @app.cell
-def note_plots(mo):
+def note_single_month(mo):
     mo.md(
         """
-## 4 · Monthly historical forecast plots
+### Single-month detail
 
 The interactive chart shows the rolling 10-year threshold (blue line, from 2001)
-and actual IRI forecast values. Hover the blue threshold markers to see the
-reference years and values behind each threshold. Light gray dots are pre-2001
-reference-period years. The 2×3 grid shows all six forecast months together.
+and actual IRI forecast values for the selected month. Hover the blue threshold
+markers to see the reference years and sorted values behind each threshold.
 
-**Month** selects which forecast month is shown in the detail timeseries below.
-**% triggering from top** overrides the auto-selected percentile and updates all plots.
+**Month** selects which forecast month is shown. **% triggering from top** is
+controlled by the slider at the top of the page.
 """
     )
 
 
 @app.cell
-def selector_ui(COLS, closest_pct, mo, pct_steps):
+def month_ui(COLS, mo):
     month_sel = mo.ui.dropdown(options=COLS, value="Jan", label="Month")
-    pct_sel = mo.ui.dropdown(
-        options=pct_steps,
-        value=closest_pct,
-        label="% triggering from top",
-    )
-    mo.hstack([month_sel, pct_sel])
-    return month_sel, pct_sel
+    month_sel
+    return (month_sel,)
 
 
 @app.cell
@@ -503,196 +940,6 @@ def threshold_evolution_plot(
         .configure_view(strokeWidth=0)
     )
     mo.ui.altair_chart(_chart)
-
-
-@app.cell
-def all_months_plot(
-    COLS, df_iri, df_thresholds, plt, pct_sel, ref_window, start_eval_year
-):
-    _pct = pct_sel.value
-    _fig, _axes = plt.subplots(2, 3, figsize=(14, 7), sharey=False)
-    _pre = df_iri[df_iri["year"] < start_eval_year].sort_values("year")
-
-    for _col, _ax in zip(COLS, _axes.flat):
-        _df = df_thresholds[
-            (df_thresholds["month"] == _col) & (df_thresholds["pct"] == _pct)
-        ].sort_values("year")
-        # Pre-evaluation actuals (reference period)
-        _ax.scatter(
-            _pre["year"],
-            _pre[_col],
-            color="lightgray",
-            zorder=2,
-            s=28,
-            alpha=0.7,
-        )
-        # Threshold line from start_eval_year
-        _ax.plot(_df["year"], _df["threshold"], lw=1.5, color="steelblue")
-        _trig = _df[_df["triggered"]]
-        _no_trig = _df[~_df["triggered"]]
-        _ax.scatter(
-            _trig["year"], _trig["actual"], color="crimson", zorder=5, s=55
-        )
-        _ax.scatter(
-            _no_trig["year"],
-            _no_trig["actual"],
-            color="gray",
-            zorder=4,
-            s=35,
-            alpha=0.6,
-        )
-        _ax.set_title(_col)
-        _ax.spines[["top", "right"]].set_visible(False)
-        _ax.tick_params(labelsize=8)
-
-    _fig.suptitle(
-        f"Rolling {ref_window}-yr threshold at top {_pct}% — red = triggered",
-        fontsize=12,
-    )
-    plt.tight_layout()
-    _fig
-
-
-@app.cell
-def aug_obs_plot(df_iri, df_obs, obs_pct_slider, plt, start_eval_year):
-    _obs_pct = obs_pct_slider.value
-    _obs_thresh = df_obs["obs_threshold"].iloc[0]
-    _all = df_iri.sort_values("year")
-    _pre = _all[_all["year"] < start_eval_year]
-    _eval = _all[_all["year"] >= start_eval_year]
-    _trig_eval = _eval[_eval["Aug"] <= _obs_thresh]
-    _no_trig_eval = _eval[_eval["Aug"] > _obs_thresh]
-
-    _fig, _ax = plt.subplots(figsize=(10, 3.5))
-    _ax.axhline(
-        _obs_thresh,
-        lw=1.8,
-        color="darkorange",
-        label=f"ENACTS SPI threshold (bottom {_obs_pct}% of full record)",
-    )
-    _ax.scatter(
-        _pre["year"],
-        _pre["Aug"],
-        color="lightgray",
-        zorder=2,
-        s=40,
-        alpha=0.7,
-        label=f"Pre-{start_eval_year} (reference only)",
-    )
-    _ax.scatter(
-        _trig_eval["year"],
-        _trig_eval["Aug"],
-        color="crimson",
-        zorder=5,
-        s=70,
-        label="ENACTS SPI triggered",
-    )
-    _ax.scatter(
-        _no_trig_eval["year"],
-        _no_trig_eval["Aug"],
-        color="gray",
-        zorder=4,
-        s=45,
-        alpha=0.7,
-        label="Not triggered",
-    )
-    _ax.set_title(
-        f"ENACTS SPI (observational component) — full historical threshold at bottom {_obs_pct}%"
-    )
-    _ax.set_xlabel("Year")
-    _ax.set_ylabel("Aug value")
-    _ax.legend()
-    _ax.spines[["top", "right"]].set_visible(False)
-    plt.tight_layout()
-    _fig
-
-
-@app.cell
-def note_activation(mo):
-    mo.md(
-        """
-## 5 · Historical activation record
-
-The table below shows the full year-by-year trigger record at the selected percentile,
-with a return period summary for this threshold. Each column shows whether that month,
-consecutive-month pair, or component triggered. Red cells = triggered. Hover rows to highlight.
-"""
-    )
-
-
-@app.cell
-def trigger_detail_table(
-    COLS, calendar, df_results, df_summary, mo, mos, pct_sel
-):
-    _pct = pct_sel.value
-    _df = (
-        df_results[df_results["pct"] == _pct]
-        .copy()
-        .sort_values("year", ascending=False)
-    )
-
-    # Return period summary for the selected percentile
-    _row = df_summary[df_summary["pct_triggering"] == _pct].iloc[0]
-    _rp_fcast = _row["rp_fcast"]
-    _rp_obsv_col = next(
-        c for c in df_summary.columns if c.startswith("rp_obsv")
-    )
-    _rp_obsv = _row[_rp_obsv_col]
-    _rp_either = _row["rp_either"]
-
-    _month_cols = [f"trig_{c}" for c in COLS]
-    _pair_cols = [
-        f"trig_{calendar.month_abbr[mos[i]]}_{calendar.month_abbr[mos[i+1]]}"
-        for i in range(len(mos) - 1)
-    ]
-    _rename = {
-        **{f"trig_{c}": c for c in COLS},
-        **{
-            f"trig_{calendar.month_abbr[mos[i]]}_{calendar.month_abbr[mos[i+1]]}": (
-                f"{calendar.month_abbr[mos[i]]}+{calendar.month_abbr[mos[i+1]]}"
-            )
-            for i in range(len(mos) - 1)
-        },
-        "trig_fcast": "Forecast",
-        "trig_obsv": "ENACTS SPI",
-        "trig_either": "Either",
-    }
-    _display = (
-        _df[
-            ["year"]
-            + _month_cols
-            + _pair_cols
-            + ["trig_fcast", "trig_obsv", "trig_either"]
-        ]
-        .rename(columns=_rename)
-        .reset_index(drop=True)
-    )
-    _highlight_cols = [c for c in _display.columns if c != "year"]
-    _styled = _display.style.map(
-        lambda v: (
-            "background-color: #ffaaaa; color: #7a0000; font-weight: bold"
-            if v is True
-            else ""
-        ),
-        subset=_highlight_cols,
-    ).set_uuid("trigger_detail")
-    _css = """<style>
-#T_trigger_detail tbody tr:hover td {
-    background-color: #dde8f8;
-    cursor: default;
-}
-</style>"""
-    mo.vstack(
-        [
-            mo.md(
-                f"### Per-year trigger detail (pct = {_pct}%)\n\n"
-                f"Forecast component RP: **{_rp_fcast}** · "
-                f"ENACTS SPI (observational) RP: **{_rp_obsv}** · "
-                f"Combined RP: **{_rp_either}**"
-            ),
-            mo.Html(_css + _styled.to_html()),
-        ]
-    )
 
 
 if __name__ == "__main__":

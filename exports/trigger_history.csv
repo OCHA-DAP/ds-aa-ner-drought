@@ -1,5 +1,5 @@
 year,jan_feb,feb_mar,mar_apr,apr_may,may_jun,forecast_arm,obs_arm,aug_spi,obs_threshold,ner_drought_v1_wt1,ner_drought_v1_wt2,either
-2001,1,1,1,0,0,1,0,0.547,-0.484,True,False,True
+2001,1,1,1,0,0,1,0,0.547,-0.484,True,True,True
 2002,0,0,0,0,0,0,0,0.136,-0.484,False,False,False
 2003,0,0,0,0,0,0,0,1.268,-0.484,False,False,False
 2004,0,0,0,0,0,0,1,-0.484,-0.484,False,True,True

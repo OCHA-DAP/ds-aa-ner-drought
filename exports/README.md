@@ -30,31 +30,41 @@ A year triggers if **either** arm fires (logical OR):
 
 ### Windows
 
+Each consecutive forecast pair is assigned to a window by its **decision month** — the
+*later* month of the pair. So `Mar+Apr` (decided in April) belongs to Window 2.
+
 | window | column | components |
 |---|---|---|
-| Window 1 (Jan/Feb/Mar forecast) | `ner_drought_v1_wt1` | pairs Jan+Feb, Feb+Mar, Mar+Apr |
-| Window 2 (Apr/May/Jun forecast **or** Aug obs) | `ner_drought_v1_wt2` | pairs Apr+May, May+Jun, **or** the observation arm |
+| Window 1 (decisions Feb–Mar) | `ner_drought_v1_wt1` | pairs Jan+Feb, Feb+Mar |
+| Window 2 (decisions Apr–Jun, or Aug obs) | `ner_drought_v1_wt2` | pairs Mar+Apr, Apr+May, May+Jun, **or** the observation arm |
 
-The **Mar+Apr** pair straddles the two windows and is assigned to Window 1 so that
-`wt1 OR wt2` exactly reconstructs the authoritative either-arm record. In this dataset
-Mar+Apr only fires in 2001, which already triggers Window 1 via Jan+Feb and Feb+Mar, so
-the assignment has no effect on the result.
+The **Mar+Apr** pair fires in 2001, so **2001 triggers both windows**. This reproduces the
+authoritative per-window statistics below.
 
 ---
 
-## Trigger years (2001–2025, default thresholds)
+## Trigger years & statistics (2001–2025, default thresholds)
 
-| Component | Years |
-|---|---|
-| **Combined (either arm)** | **2001, 2004, 2006, 2009, 2011, 2013, 2022, 2023** (8 yrs, RP ≈ 3.2) |
-| Forecast arm | 2001, 2009, 2011, 2023 |
-| Observation arm | 2004, 2006, 2013, 2022 |
-| **Window 1** (`wt1`) | 2001, 2009, 2011 |
-| **Window 2** (`wt2`) | 2004, 2006, 2013, 2022, 2023 |
+Return period = `(n_years + 1) / k` (Weibull, n_years = 25); activation prob = `k / (n_years + 1)`.
+
+| Trigger | Return period | Activation prob | Activated years |
+|---|---|---|---|
+| **Window 1** (`wt1`) | 8.7 yr | 12 % | 2001, 2009, 2011 |
+| **Window 2** (`wt2`) | 4.3 yr | 23 % | 2001, 2004, 2006, 2013, 2022, 2023 |
+| **Global** (either) | 3.3 yr | 31 % | 2001, 2004, 2006, 2009, 2011, 2013, 2022, 2023 |
+
+Underlying arms: forecast arm fires in 2001, 2009, 2011, 2023; observation arm in
+2004, 2006, 2013, 2022. See `trigger_stats.csv`.
 
 ---
 
 ## Files
+
+### `trigger_stats.csv` (3 rows)
+
+Per-trigger summary (Window 1, Window 2, Global) — return period, activation probability,
+count, and the activated-year list. Mirrors the "Statistiques par déclencheur" table on the
+deployed page.
 
 ### `trigger_history.csv` (25 rows, 2001–2025)
 

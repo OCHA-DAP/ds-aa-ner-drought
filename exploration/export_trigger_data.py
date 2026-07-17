@@ -19,13 +19,13 @@ Trigger design (two independent arms, OR):
   Observation arm -- ENACTS Jun-Jul SPI (column ``Aug``). Fires if the value is in the
                    bottom OBS_PCT% of the FULL historical record (single fixed threshold).
 
-Windows (per framework request):
-  wt1 = Window 1 (Jan/Feb/Mar forecast): pairs Jan+Feb, Feb+Mar, Mar+Apr
-  wt2 = Window 2 (Apr/May/Jun forecast OR Aug obs): pairs Apr+May, May+Jun, or the obs arm
-The Mar+Apr pair straddles the two windows; it is assigned to wt1 so that
-wt1 OR wt2 exactly reconstructs the authoritative "either-arm" record. (In this
-dataset Mar+Apr only fires in 2001, which already triggers wt1 via the other pairs,
-so the assignment has no effect on the result.)
+Windows (per the authoritative deployment). Each consecutive pair is assigned to a
+window by its DECISION month = the later month of the pair:
+  wt1 = Window 1 (decisions Feb-Mar): pairs Jan+Feb, Feb+Mar
+  wt2 = Window 2 (decisions Apr-Jun, or Aug obs): pairs Mar+Apr, Apr+May, May+Jun, or obs
+The Mar+Apr pair (decided in April) belongs to Window 2. It fires in 2001, so 2001
+triggers BOTH windows -- matching the authoritative per-window stats (F1: 3 years,
+RP 8.7; F2: 6 years, RP 4.3; global: 8 years, RP 3.3).
 """
 
 import calendar
@@ -48,8 +48,9 @@ OBS_PCT = 15  # marimo slider default
 RP_TARGET = 3.5
 
 PAIRS = [(MONTHS[i], MONTHS[i + 1]) for i in range(len(MONTHS) - 1)]
-W1_PAIRS = ["Jan+Feb", "Feb+Mar", "Mar+Apr"]  # Mar+Apr assigned to W1 (see docstring)
-W2_PAIRS = ["Apr+May", "May+Jun"]
+# Each pair assigned by its decision (later) month: Mar+Apr -> Window 2.
+W1_PAIRS = ["Jan+Feb", "Feb+Mar"]
+W2_PAIRS = ["Mar+Apr", "Apr+May", "May+Jun"]
 
 
 def load_raw():
@@ -126,16 +127,41 @@ def main():
     hist = pd.DataFrame(hist_rows)
     hist.to_csv(EXPORT_DIR / "trigger_history.csv", index=False)
 
-    n = hist["either"].sum()
+    # per-trigger stats (Weibull: RP = (n+1)/k, annual activation prob = k/(n+1))
+    n_years = END_EVAL - START_EVAL + 1
+
+    def _round_half_up(x, dp=0):
+        f = 10**dp
+        return np.floor(x * f + 0.5) / f
+
+    stats_rows = []
+    for label, col in [
+        ("Window 1", "ner_drought_v1_wt1"),
+        ("Window 2", "ner_drought_v1_wt2"),
+        ("Global (either)", "either"),
+    ]:
+        yrs = list(hist.loc[hist[col].astype(bool), "year"])
+        k = len(yrs)
+        rp = _round_half_up((n_years + 1) / k, 1) if k else float("inf")
+        prob = int(_round_half_up(100 * k / (n_years + 1))) if k else 0
+        stats_rows.append(
+            {
+                "trigger": label,
+                "return_period_yrs": rp,
+                "activation_prob": f"{prob}%",
+                "n_activations": k,
+                "activated_years": ", ".join(str(y) for y in yrs),
+            }
+        )
+    stats = pd.DataFrame(stats_rows)
+    stats.to_csv(EXPORT_DIR / "trigger_stats.csv", index=False)
+
     print(f"forecast k=ceil({FORECAST_PCT}%*{REF_WINDOW})={k}   "
-          f"obs threshold (bottom {OBS_PCT}%) = {obs_thresh:.3f}")
+          f"obs threshold (bottom {OBS_PCT}%) = {obs_thresh:.3f}   n_years={n_years}")
     print(hist.to_string(index=False))
-    print(f"\nEITHER (authoritative): "
-          f"{list(hist.loc[hist['either'], 'year'])}  "
-          f"= {n} yrs, RP={round((END_EVAL - START_EVAL + 2) / n, 2)}")
-    print(f"W1: {list(hist.loc[hist['ner_drought_v1_wt1'], 'year'])}")
-    print(f"W2: {list(hist.loc[hist['ner_drought_v1_wt2'], 'year'])}")
-    print(f"\nwrote 3 files -> {EXPORT_DIR}")
+    print()
+    print(stats.to_string(index=False))
+    print(f"\nwrote 4 files -> {EXPORT_DIR}")
     return hist
 
 

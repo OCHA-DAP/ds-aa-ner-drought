@@ -602,8 +602,13 @@ def note_activation(mo):
 ## Activation record
 
 The table below shows the full year-by-year trigger record at the selected thresholds,
-with return periods for each component. Each column shows whether that month,
-consecutive-month pair, or component triggered. Red cells = triggered. Hover rows to highlight.
+with return periods for each component. A **T** marks a trigger (red cells); blank = no
+trigger. Hover rows to highlight.
+
+Each consecutive-month pair belongs to a framework window by its *decision month* (the
+later month of the pair): **Window 1** = Jan+Feb, Feb+Mar (decisions Feb–Mar);
+**Window 2** = Mar+Apr, Apr+May, May+Jun (decisions Apr–Jun) *or* the observational
+component.
 """
     )
 
@@ -627,6 +632,17 @@ def trigger_detail_table(
         f"trig_{calendar.month_abbr[mos[i]]}_{calendar.month_abbr[mos[i+1]]}"
         for i in range(len(mos) - 1)
     ]
+    # Window by decision month (the later month of the pair):
+    # Feb–Mar decisions -> Window 1; Apr–Jun decisions (or obs component) -> Window 2
+    _w1_pairs = [
+        _pair_cols[i] for i in range(len(_pair_cols)) if mos[i + 1] <= 3
+    ]
+    _w2_pairs = [
+        _pair_cols[i] for i in range(len(_pair_cols)) if mos[i + 1] >= 4
+    ]
+    _df["wt1"] = _df[_w1_pairs].any(axis=1)
+    _df["wt2"] = _df[_w2_pairs].any(axis=1) | _df["trig_obsv"]
+
     _rename = {
         **{f"trig_{c}": c for c in COLS},
         **{
@@ -637,6 +653,8 @@ def trigger_detail_table(
         },
         "trig_fcast": "Forecast",
         "trig_obsv": "ENACTS SPI",
+        "wt1": "Window 1",
+        "wt2": "Window 2",
         "trig_either": "Either",
         "bad_year_rank": "Bad year",
     }
@@ -645,7 +663,14 @@ def trigger_detail_table(
             ["year"]
             + _month_cols
             + _pair_cols
-            + ["trig_fcast", "trig_obsv", "trig_either", "bad_year_rank"]
+            + [
+                "trig_fcast",
+                "trig_obsv",
+                "wt1",
+                "wt2",
+                "trig_either",
+                "bad_year_rank",
+            ]
         ]
         .rename(columns=_rename)
         .reset_index(drop=True)
@@ -675,16 +700,29 @@ def trigger_detail_table(
         _display.style.map(
             lambda v: (
                 "background-color: #ffaaaa; color: #7a0000; font-weight: bold"
-                if v is True
+                if bool(v)
                 else ""
             ),
             subset=_highlight_cols,
         )
         .map(_rank_style, subset=["Bad year"])
         .format({"Bad year": lambda v: "" if pd.isna(v) else str(int(v))})
+        .format(lambda v: "T" if bool(v) else "", subset=_highlight_cols)
         .set_uuid("trigger_detail")
     )
     _css = """<style>
+#T_trigger_detail {
+    border-collapse: collapse;
+    border-top: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+}
+#T_trigger_detail thead th {
+    border-bottom: 1px solid currentColor;
+    padding: 5px 9px;
+}
+#T_trigger_detail tbody td {
+    padding: 3px 9px;
+}
 #T_trigger_detail tbody tr:hover td {
     background-color: #dde8f8;
     cursor: default;

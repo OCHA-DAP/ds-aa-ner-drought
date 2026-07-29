@@ -710,23 +710,45 @@ def trigger_detail_table(
         .format(lambda v: "T" if bool(v) else "", subset=_highlight_cols)
         .set_uuid("trigger_detail")
     )
-    _css = """<style>
-#T_trigger_detail {
+    # Fine vertical separators after each logical column group
+    _fine_line = "1px solid rgba(128, 128, 128, 0.45)"
+    _sep_after = [
+        "year",
+        "Jun",
+        "May+Jun",
+        "Forecast",
+        "ENACTS SPI",
+        "Window 2",
+        "Either",
+    ]
+    _cols_list = list(_display.columns)
+    _vline_css = "\n".join(
+        f"#T_trigger_detail .col{_cols_list.index(_c)} "
+        f"{{ border-right: {_fine_line}; }}"
+        for _c in _sep_after
+    )
+    _css = f"""<style>
+#T_trigger_detail {{
     border-collapse: collapse;
     border-top: 2px solid currentColor;
     border-bottom: 2px solid currentColor;
-}
-#T_trigger_detail thead th {
+}}
+#T_trigger_detail thead th {{
     border-bottom: 1px solid currentColor;
     padding: 5px 9px;
-}
-#T_trigger_detail tbody td {
+}}
+#T_trigger_detail tbody td {{
     padding: 3px 9px;
-}
-#T_trigger_detail tbody tr:hover td {
+    border-bottom: {_fine_line};
+}}
+#T_trigger_detail tbody tr:last-child td {{
+    border-bottom: none;
+}}
+{_vline_css}
+#T_trigger_detail tbody tr:hover td {{
     background-color: #dde8f8;
     cursor: default;
-}
+}}
 </style>"""
     mo.vstack(
         [

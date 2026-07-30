@@ -408,7 +408,18 @@ def rp_readout(df_summary, mo, pct_sel):
 
 @app.cell
 def trigger_bars(
-    df_bad_years, df_results, df_summary, mo, np, obs_pct_slider, pct_sel, plt
+    COLS,
+    df_bad_years,
+    df_obs,
+    df_results,
+    df_summary,
+    df_thresholds,
+    mo,
+    np,
+    obs_pct_slider,
+    pct_sel,
+    pd,
+    plt,
 ):
     from scipy.stats import spearmanr as _spearmanr
 
@@ -445,7 +456,41 @@ def trigger_bars(
         _rs.append(float(_r))
         _ps.append(float(_p))
 
-    _fig, (_ax1, _ax2) = plt.subplots(1, 2, figsize=(10, 4))
+    # Indicator-value correlations (not just the binary trigger).
+    # Forecast: per-month margin = value − rolling threshold; per year the
+    # continuous analogue of the pair rule — max over consecutive pairs of the
+    # smaller margin (≥ 0 exactly when the forecast component triggers).
+    # ENACTS SPI is sign-flipped so higher = drier for both indicators.
+    _th = df_thresholds[df_thresholds["pct"] == _pct]
+    _margin = _th.assign(margin=_th["actual"] - _th["threshold"]).pivot(
+        index="year", columns="month", values="margin"
+    )
+    _pair_margin = pd.DataFrame(
+        {
+            f"{_m1}+{_m2}": np.minimum(_margin[_m1], _margin[_m2])
+            for _m1, _m2 in zip(COLS[:-1], COLS[1:])
+        }
+    )
+    _vals = pd.DataFrame(
+        {
+            "fcast_margin": _pair_margin.max(axis=1),
+            "neg_spi": -df_obs["actual_aug"],
+        }
+    ).join(_severity.rename("severity"), how="inner")
+
+    _val_labels = [f"Fcast − thresh ({_pct}%)", "− ENACTS SPI"]
+    _val_colors = ["steelblue", "darkorange"]
+    _val_rs, _val_ps = [], []
+    for _col in ("fcast_margin", "neg_spi"):
+        _x = _vals[_col]
+        if np.isfinite(_x).any() and _x.nunique() > 1:
+            _r, _p = _spearmanr(_x, _vals["severity"])
+        else:
+            _r, _p = float("nan"), float("nan")
+        _val_rs.append(float(_r))
+        _val_ps.append(float(_p))
+
+    _fig, (_ax1, _ax2, _ax3) = plt.subplots(1, 3, figsize=(14, 4))
 
     _b1 = _ax1.bar(_labels, _counts, color=_colors, alpha=0.8)
     _ax1.bar_label(_b1)
@@ -453,26 +498,55 @@ def trigger_bars(
     _ax1.set_title("Trigger counts")
     _ax1.spines[["top", "right"]].set_visible(False)
 
-    _b2 = _ax2.bar(_labels, _rs, color=_colors, alpha=0.8)
-    for _bar, _r, _p in zip(_b2, _rs, _ps):
-        _stars = (
-            "***"
-            if _p < 0.001
-            else "**" if _p < 0.01 else "*" if _p < 0.05 else ""
+    def _corr_panel(_ax, _lbls, _rvals, _pvals, _clrs, _title):
+        _bars = _ax.bar(
+            _lbls,
+            [0.0 if np.isnan(_r) else _r for _r in _rvals],
+            color=_clrs,
+            alpha=0.8,
         )
-        _ax2.text(
-            _bar.get_x() + _bar.get_width() / 2,
-            _r + (0.03 if _r >= 0 else -0.03),
-            f"{_r:.2f}{_stars}",
-            ha="center",
-            va="bottom" if _r >= 0 else "top",
-            fontsize=9,
-        )
-    _ax2.axhline(0, color="black", lw=0.8)
-    _ax2.set_ylim(-1, 1)
-    _ax2.set_ylabel("Spearman r")
-    _ax2.set_title("Bad year correlation (↑ = triggers in worse years)")
-    _ax2.spines[["top", "right"]].set_visible(False)
+        for _bar, _r, _p in zip(_bars, _rvals, _pvals):
+            if np.isnan(_r):
+                _txt, _y, _va = "n/a", 0.03, "bottom"
+            else:
+                _stars = (
+                    "***"
+                    if _p < 0.001
+                    else "**" if _p < 0.01 else "*" if _p < 0.05 else ""
+                )
+                _txt = f"{_r:.2f}{_stars}"
+                _y = _r + (0.03 if _r >= 0 else -0.03)
+                _va = "bottom" if _r >= 0 else "top"
+            _ax.text(
+                _bar.get_x() + _bar.get_width() / 2,
+                _y,
+                _txt,
+                ha="center",
+                va=_va,
+                fontsize=9,
+            )
+        _ax.axhline(0, color="black", lw=0.8)
+        _ax.set_ylim(-1, 1)
+        _ax.set_ylabel("Spearman r")
+        _ax.set_title(_title, fontsize=10)
+        _ax.spines[["top", "right"]].set_visible(False)
+
+    _corr_panel(
+        _ax2,
+        _labels,
+        _rs,
+        _ps,
+        _colors,
+        "Bad year correlation — binary trigger",
+    )
+    _corr_panel(
+        _ax3,
+        _val_labels,
+        _val_rs,
+        _val_ps,
+        _val_colors,
+        "Bad year correlation — indicator values (↑ = drier)",
+    )
 
     _rp_line = (
         f"Forecast RP: {_rp_fcast}  ·  "

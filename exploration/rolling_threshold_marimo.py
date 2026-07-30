@@ -376,6 +376,38 @@ def bad_years_data(pd):
 
 
 @app.cell
+def cerf_data(pd):
+    # CERF Rapid Response allocations for drought in Niger, attributed to the
+    # rainy-SEASON year via the allocation's validity period (team DB,
+    # aa.cerf_allocation + aa.cerf_supplement, queried 2026-07-30).
+    # - 10-RR-NER-8451 (May 2010) and 10-RR-NER-8465 (Aug 2010) respond to the
+    #   failed Jun-Sep 2009 season.
+    # - 11-RR-NER-8545 (Nov 2011) and 12-RR-NER-8564 (Apr 2012) respond to the
+    #   failed Jun-Sep 2011 season.
+    # - 22-RR-NER-54991 (Aug 2022) is the AA framework's own anticipatory
+    #   allocation (Jun-Jul 2022 SPI trigger).
+    # - 08-RR-NER-8416 is excluded: supplement flags it not_drought (2008
+    #   food-price crisis, not a failed rainy season).
+    df_cerf = pd.DataFrame(
+        {
+            "year": [2009, 2009, 2011, 2011, 2022],
+            "application_code": [
+                "10-RR-NER-8451",
+                "10-RR-NER-8465",
+                "11-RR-NER-8545",
+                "12-RR-NER-8564",
+                "22-RR-NER-54991",
+            ],
+            "amount_usd": [13991081, 15024435, 6001432, 15933118, 9513802],
+        }
+    )
+    cerf_rr_yearly = (
+        df_cerf.groupby("year")["amount_usd"].sum().rename("cerf_rr_usd")
+    )
+    return (cerf_rr_yearly,)
+
+
+@app.cell
 def obs_display(df_obs, mo, obs_pct_slider, pct_sel):
     _n = int(df_obs["trig_obsv"].sum())
     mo.vstack(
@@ -683,13 +715,30 @@ Each consecutive-month pair belongs to a framework window by its *decision month
 later month of the pair): **Window 1** = Jan+Feb, Feb+Mar (decisions Feb–Mar);
 **Window 2** = Mar+Apr, Apr+May, May+Jun (decisions Apr–Jun) *or* the observational
 component.
+
+**CERF RR** (blue) shows CERF Rapid Response allocations for drought in Niger (total
+USD per season), attributed to the *rainy-season* year via each allocation's validity
+period — allocations often land the following calendar year (e.g. the 2010 allocations
+respond to the failed Jun–Sep 2009 rains). The 2022 amount is the framework's own
+anticipatory allocation. A 2008 drought-labelled allocation is excluded (food-price
+crisis, not a failed season). Source: team DB `aa.cerf_allocation` +
+`aa.cerf_supplement`.
 """
     )
 
 
 @app.cell
 def trigger_detail_table(
-    COLS, calendar, df_bad_years, df_results, mo, mos, np, pd, pct_sel
+    COLS,
+    calendar,
+    cerf_rr_yearly,
+    df_bad_years,
+    df_results,
+    mo,
+    mos,
+    np,
+    pd,
+    pct_sel,
 ):
     _pct = pct_sel.value
     _df = (
@@ -700,6 +749,7 @@ def trigger_detail_table(
     _df = _df.join(
         df_bad_years.set_index("year")["bad_year_rank"], on="year", how="left"
     )
+    _df = _df.join(cerf_rr_yearly, on="year", how="left")
 
     _month_cols = [f"trig_{c}" for c in COLS]
     _pair_cols = [
@@ -730,6 +780,7 @@ def trigger_detail_table(
         "wt1": "Window 1",
         "wt2": "Window 2",
         "trig_either": "Either",
+        "cerf_rr_usd": "CERF RR",
         "bad_year_rank": "Bad year",
     }
     _display = (
@@ -743,6 +794,7 @@ def trigger_detail_table(
                 "wt1",
                 "wt2",
                 "trig_either",
+                "cerf_rr_usd",
                 "bad_year_rank",
             ]
         ]
@@ -768,7 +820,7 @@ def trigger_detail_table(
             return "background-color: #cceecc"
 
     _highlight_cols = [
-        c for c in _display.columns if c not in ("year", "Bad year")
+        c for c in _display.columns if c not in ("year", "CERF RR", "Bad year")
     ]
     _styled = (
         _display.style.map(
@@ -780,7 +832,19 @@ def trigger_detail_table(
             subset=_highlight_cols,
         )
         .map(_rank_style, subset=["Bad year"])
+        .map(
+            lambda v: (
+                ""
+                if pd.isna(v)
+                else "background-color: #cfe2f3; font-weight: bold"
+            ),
+            subset=["CERF RR"],
+        )
         .format({"Bad year": lambda v: "" if pd.isna(v) else str(int(v))})
+        .format(
+            lambda v: "" if pd.isna(v) else f"${v / 1e6:.1f}M",
+            subset=["CERF RR"],
+        )
         .format(lambda v: "T" if bool(v) else "", subset=_highlight_cols)
         .set_uuid("trigger_detail")
     )

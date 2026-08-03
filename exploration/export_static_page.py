@@ -2,7 +2,7 @@
 
 Runs ``marimo export html`` on the rolling-threshold app (which executes it at
 its default slider values — forecast 35%, observational 15%) once per language
-(EN at docs/static/, FR at docs/static/fr/ via ``-- -lang fr``), then applies
+(2026 framework: EN at docs/static/2026/, FR at docs/static/2026/fr/ via ``-- -lang fr``), then applies
 the static-page post-processing: page title, snapshot banner with an EN | FR
 toggle, and locking the interactive controls.
 
@@ -40,19 +40,19 @@ FR_MONTHS = [
 
 LANGS = {
     "en": {
-        "out": ROOT / "docs" / "static" / "index.html",
+        "out": ROOT / "docs" / "static" / "2026" / "index.html",
         "args": [],
-        "title": "Niger Drought AA Trigger — Static Snapshot",
-        "explorer_href": "../",
+        "title": "Niger Drought AA Trigger (2026) — Static Snapshot",
+        "explorer_href": "../../",
         "toggle": (
             '<strong>EN</strong> | <a href="fr/" style="color:#aed6f1;">FR</a>'
         ),
     },
     "fr": {
-        "out": ROOT / "docs" / "static" / "fr" / "index.html",
+        "out": ROOT / "docs" / "static" / "2026" / "fr" / "index.html",
         "args": ["--", "-lang", "fr"],
-        "title": "Déclencheur AA sécheresse Niger — instantané statique",
-        "explorer_href": "../../",
+        "title": "Déclencheur AA sécheresse Niger (2026) — instantané statique",
+        "explorer_href": "../../../",
         "toggle": (
             '<a href="../" style="color:#aed6f1;">EN</a> | <strong>FR</strong>'
         ),

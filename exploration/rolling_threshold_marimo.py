@@ -510,7 +510,10 @@ def cerf_data(pd):
     cerf_rr_yearly = (
         df_cerf.groupby("year")["amount_usd"].sum().rename("cerf_rr_usd")
     )
-    return (cerf_rr_yearly,)
+    # Season years whose allocation is the AA framework's own anticipatory
+    # allocation (footnoted with * in the trigger detail table).
+    aa_alloc_years = {2022}
+    return aa_alloc_years, cerf_rr_yearly
 
 
 @app.cell
@@ -852,8 +855,8 @@ def note_activation(LANG, mo):
 ## Historique des activations
 
 Le tableau ci-dessous montre le registre annuel complet du déclencheur aux seuils
-sélectionnés, avec les périodes de retour de chaque composante. Un **T** marque un
-déclenchement (cellules rouges) ; vide = pas de déclenchement. Survolez les lignes
+sélectionnés, avec les périodes de retour de chaque composante. Les cellules rouges
+marquent un déclenchement ; vide = pas de déclenchement. Survolez les lignes
 pour les surligner.
 
 Chaque paire de mois consécutifs appartient à une fenêtre de déclenchement selon son
@@ -875,8 +878,8 @@ allocation de 2008 étiquetée sécheresse est exclue (crise des prix alimentair
 ## Activation record
 
 The table below shows the full year-by-year trigger record at the selected thresholds,
-with return periods for each component. A **T** marks a trigger (red cells); blank = no
-trigger. Hover rows to highlight.
+with return periods for each component. Red cells mark a trigger; blank = no trigger.
+Hover rows to highlight.
 
 Each consecutive-month pair belongs to a framework window by its *decision month* (the
 later month of the pair): **Window 1** = Jan+Feb, Feb+Mar (decisions Feb–Mar);
@@ -898,6 +901,7 @@ crisis, not a failed season). Source: team DB `aa.cerf_allocation` +
 def trigger_detail_table(
     COLS,
     LANG,
+    aa_alloc_years,
     calendar,
     cerf_rr_yearly,
     df_bad_years,
@@ -994,6 +998,17 @@ def trigger_detail_table(
         for c in _display.columns
         if c not in (t("year"), t("CERF RR"), t("Bad year"))
     ]
+    # Pre-format CERF amounts as strings so the framework's own anticipatory
+    # allocation can carry a * (footnoted below the table).
+    _cerf_name = t("CERF RR")
+    _display[_cerf_name] = [
+        (
+            ""
+            if pd.isna(_v)
+            else f"${_v / 1e6:.1f}M" + ("*" if _y in aa_alloc_years else "")
+        )
+        for _y, _v in zip(_display[t("year")], _display[_cerf_name])
+    ]
     _styled = (
         _display.style.map(
             lambda v: (
@@ -1006,18 +1021,12 @@ def trigger_detail_table(
         .map(_rank_style, subset=[t("Bad year")])
         .map(
             lambda v: (
-                ""
-                if pd.isna(v)
-                else "background-color: #cfe2f3; font-weight: bold"
+                "background-color: #cfe2f3; font-weight: bold" if v else ""
             ),
-            subset=[t("CERF RR")],
+            subset=[_cerf_name],
         )
         .format({t("Bad year"): lambda v: "" if pd.isna(v) else str(int(v))})
-        .format(
-            lambda v: "" if pd.isna(v) else f"${v / 1e6:.1f}M",
-            subset=[t("CERF RR")],
-        )
-        .format(lambda v: "T" if bool(v) else "", subset=_highlight_cols)
+        .format(lambda v: "", subset=_highlight_cols)
         .set_uuid("trigger_detail")
     )
     # Fine vertical separators after each logical column group
@@ -1054,6 +1063,12 @@ def trigger_detail_table(
 #T_trigger_detail tbody tr:last-child td {{
     border-bottom: none;
 }}
+#T_trigger_detail th, #T_trigger_detail td {{
+    border-right: 1px solid rgba(128, 128, 128, 0.18);
+}}
+#T_trigger_detail th:last-child, #T_trigger_detail td:last-child {{
+    border-right: none;
+}}
 {_vline_css}
 #T_trigger_detail tbody tr:hover td {{
     background-color: #dde8f8;
@@ -1074,6 +1089,19 @@ def trigger_detail_table(
                 )
             ),
             mo.Html(_css + _styled.hide(axis="index").to_html()),
+            mo.Html(
+                '<small style="color:#777;">'
+                + (
+                    "* Allocation anticipatoire au titre du cadre "
+                    "d’action anticipatoire lui-même."
+                    if LANG == "fr"
+                    else (
+                        "* Anticipatory allocation under the AA framework "
+                        "itself."
+                    )
+                )
+                + "</small>"
+            ),
         ]
     )
 

@@ -83,12 +83,12 @@ Certification model, frequency slider at **35%**. Blob path:
 
 ## 2026 Jun–Jul rainfall monitoring page
 
-A static page at [`/rainfall/`](https://ocha-dap.github.io/ds-aa-ner-drought/rainfall/)
+A static, self-contained page at
+[`/rainfall/`](https://ocha-dap.github.io/ds-aa-ner-drought/rainfall/)
 (`docs/rainfall/index.html`) tracks how close the 2026 season is to the
 observational trigger threshold using ERA5 and CHIRPS as proxies for the
 not-yet-available ENACTS Jun–Jul SPI:
 
-- **Source notebook:** `exploration/jun_jul_rainfall_marimo.py`
 - **Data prep:** `exploration/jun_jul_rainfall_make_data.py` — reads ERA5
   monthly COGs from the team prod raster blob and CHIRPS v2.0 Africa
   monthly from CHC, computes the Jun–Jul zonal mean over Niger south of
@@ -96,9 +96,11 @@ not-yet-available ENACTS Jun–Jul SPI:
   `exploration/public/junjul_rainfall.csv` + map grids
   (`junjul_rainfall_grids_2026.npz`), plus a CSV copy to blob under
   `ds-aa-ner-drought/processed/rainfall/`.
+- **Page renderer:** `exploration/jun_jul_rainfall_page.py` — plain
+  HTML with embedded matplotlib figures (no marimo).
 - **Regenerate:**
   `uv run python exploration/jun_jul_rainfall_make_data.py` then
-  `uv run marimo export html exploration/jun_jul_rainfall_marimo.py --no-include-code -o docs/rainfall/index.html`.
+  `uv run python exploration/jun_jul_rainfall_page.py`.
 
 ## Other files
 

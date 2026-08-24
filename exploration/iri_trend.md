@@ -6,7 +6,7 @@ jupyter:
       extension: .md
       format_name: markdown
       format_version: '1.3'
-      jupytext_version: 1.16.1
+      jupytext_version: 1.19.1
   kernelspec:
     display_name: ds-aa-ner-drought
     language: python
@@ -197,6 +197,10 @@ df_activations["total_spend"] = (
     df_activations["w1"] * WINDOW_1_BUDGET
     + df_activations["w2"] * WINDOW_2_BUDGET
 )
+```
+
+```python
+8/28
 ```
 
 ```python

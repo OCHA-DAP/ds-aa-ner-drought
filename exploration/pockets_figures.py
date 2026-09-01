@@ -441,3 +441,127 @@ def fig_hnrp(summary):
         title_fontsize=8,
     )
     return _b64(fig)
+
+
+# --- combined drought indicator (CDI-style) ---------------------------------
+CDI_COLORS = {
+    0: "#f2f2ed",  # none
+    1: "#fec44f",  # rainfall watch (rain RP 5-10)
+    2: "#ec7014",  # severe rainfall deficit (rain RP >= 10)
+    3: "#cb181d",  # compound rain + vegetation
+    4: "#67000d",  # severe compound
+    5: "#74a9cf",  # vegetation stress only
+    6: "#e4e2da",  # not assessed (Saharan, outside ENACTS coverage)
+}
+CDI_LABELS = {
+    0: "–",
+    1: "5–10",
+    2: "≥ 10",
+    3: "5–10 +veg",
+    4: "≥ 10 +veg",
+    5: "veg",
+    6: "n/a",
+}
+
+
+def cdi_map(ax, adm1, adm2, cls_by_pcode, hatch_pcodes=None, labels=True):
+    g = adm2.merge(
+        cls_by_pcode.rename("cls"),
+        left_on="ADM2_PCODE",
+        right_index=True,
+        how="left",
+    )
+    for k, color in CDI_COLORS.items():
+        sub = g[g["cls"] == k]
+        if len(sub):
+            sub.plot(
+                ax=ax,
+                color=color,
+                edgecolor="#ffffff",
+                linewidth=0.4,
+                zorder=2,
+            )
+    missing = g[g["cls"].isna()]
+    if len(missing):
+        missing.plot(
+            ax=ax,
+            color="#e9e9e9",
+            edgecolor="#ffffff",
+            linewidth=0.4,
+            zorder=2,
+        )
+    if hatch_pcodes:
+        sel = g[g["ADM2_PCODE"].isin(hatch_pcodes)]
+        if len(sel):
+            sel.plot(
+                ax=ax,
+                facecolor="none",
+                edgecolor="#1a1a1a",
+                hatch="///",
+                linewidth=1.2,
+                zorder=5,
+            )
+    _basemap(ax, adm1, labels=labels)
+
+
+def cdi_legend_handles(with_hatch=False):
+    hs = [
+        Patch(
+            facecolor=CDI_COLORS[k], edgecolor="#cccccc", label=CDI_LABELS[k]
+        )
+        for k in (0, 1, 2, 3, 4, 5, 6)
+    ]
+    if with_hatch:
+        hs.append(
+            Patch(
+                facecolor="none",
+                edgecolor="#1a1a1a",
+                hatch="///",
+                label="HNRP 4",
+            )
+        )
+    return hs
+
+
+def fig_cdi(summary):
+    adm1, adm2 = _load_admins()
+    fig, ax = plt.subplots(figsize=(9.2, 6.8))
+    s = summary.set_index("pcode")
+    hatch = summary.loc[summary["final_severity"] >= 4, "pcode"].tolist()
+    cdi_map(ax, adm1, adm2, s["cdi_class"], hatch_pcodes=hatch)
+    ax.legend(
+        handles=cdi_legend_handles(with_hatch=True),
+        loc="lower left",
+        fontsize=8,
+        ncol=8,
+        frameon=False,
+        title="RP pluie/rain (ans/yrs)",
+        title_fontsize=8,
+    )
+    return _b64(fig)
+
+
+def fig_cdi_history(comp, years):
+    """Small multiples: the CDI as it stood at 1 Sep of each year."""
+    adm1, adm2 = _load_admins()
+    n = len(years)
+    fig, axes = plt.subplots(1, n, figsize=(3.4 * n, 3.2))
+    for ax, year in zip(np.atleast_1d(axes), years):
+        cls = comp[comp["year"] == year].set_index("pcode")["cdi"]
+        cdi_map(ax, adm1, adm2, cls, labels=False)
+        ax.set_title(
+            str(year),
+            fontsize=11,
+            fontweight="bold" if year == 2026 else "normal",
+        )
+    fig.legend(
+        handles=cdi_legend_handles(),
+        loc="lower center",
+        fontsize=8,
+        ncol=7,
+        frameon=False,
+        title="RP pluie/rain (ans/yrs)",
+        title_fontsize=8,
+    )
+    fig.tight_layout(rect=(0, 0.12, 1, 1))
+    return _b64(fig)

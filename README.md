@@ -121,8 +121,13 @@ department and overlaying 2026 HNRP severity:
   `pockets_fetch_gauges.py`, `pockets_fetch_seas5.py`,
   `pockets_fetch_enacts.py`, `pockets_fetch_other.py` (ASIS, IMERG/ERA5
   DB, HNRP, CODAB) — all into `exploration/public/pockets/`.
-- **Analysis:** `exploration/pockets_build_summary.py` (Weibull return
-  periods, 5-indicator convergence count).
+- **Analysis:** `exploration/pockets_build_summary.py` — Weibull return
+  periods per indicator, plus a combined drought indicator (rain pillar =
+  median RP of the four rainfall witnesses; vegetation pillar = worst of
+  ASI/VHI; JRC-CDI-style classes), reconstructed for 2026 and for each
+  CERF drought season (2008, 2009, 2011, 2021 — mapped to the drought's
+  valid growing season from `aa.cerf_allocation`; the 2022 AA allocation
+  excluded).
 - **Page:** `exploration/pockets_figures.py` +
   `exploration/pockets_page.py` (plain HTML, embedded matplotlib figures,
   D86-style EN/FR toggle; no marimo).

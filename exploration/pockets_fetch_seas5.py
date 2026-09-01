@@ -47,6 +47,9 @@ ISSUED_MONTH = 8
 TRIMS = ["JJA", "JAS", "ASO", "SON"]
 SEASON_YEAR = 2026
 OUT = Path(__file__).parent / "public" / "pockets" / "seas5_skill_ner.csv"
+OUT_SERIES = (
+    Path(__file__).parent / "public" / "pockets" / "seas5_hybrid_series.csv"
+)
 
 
 def combo_stats(df_s_all, df_e_all, trimester):
@@ -76,11 +79,18 @@ def combo_stats(df_s_all, df_e_all, trimester):
     raw = _forecast_position(df_s_norm, df_e_log)
     if raw is None:
         return None
-    dt = _forecast_position(*_detrend(df_s_norm, df_e_log))
+    df_s_dt, df_e_dt = _detrend(df_s_norm, df_e_log)
+    dt = _forecast_position(df_s_dt, df_e_dt)
     row = {"trimester": trimester, **raw}
     if dt is not None:
         row.update({f"{k}_dt": v for k, v in dt.items()})
-    return row
+    # full yearly hybrid series (normalized log space, raw + detrended) so
+    # any historical year's position can be ranked, not just 2026's
+    series = df_s_norm.rename(columns={"forecast_mean": "fc_log"}).merge(
+        df_s_dt.rename(columns={"forecast_mean": "fc_log_dt"}),
+        on="season_year",
+    )
+    return row, series
 
 
 def _forecast_position(df_s, df_e):
@@ -154,6 +164,7 @@ def main():
     ] + [(p, 2, n) for p, n in zip(adm2["ADM2_PCODE"], adm2["ADM2_FR"])]
 
     rows = []
+    series_rows = []
     for pcode, level, name in units:
         try:
             df_s = load_seas5(pcode)
@@ -166,14 +177,19 @@ def main():
             if st is None:
                 print(f"{pcode} {trim}: no stats", flush=True)
                 continue
+            row, series = st
             rows.append(
-                {"pcode": pcode, "adm_level": level, "name": name, **st}
+                {"pcode": pcode, "adm_level": level, "name": name, **row}
+            )
+            series_rows.append(
+                series.assign(pcode=pcode, adm_level=level, trimester=trim)
             )
         print(f"{pcode} ({name}) done", flush=True)
 
     OUT.parent.mkdir(parents=True, exist_ok=True)
     pd.DataFrame(rows).to_csv(OUT, index=False)
-    print(f"wrote {len(rows)} rows", flush=True)
+    pd.concat(series_rows, ignore_index=True).to_csv(OUT_SERIES, index=False)
+    print(f"wrote {len(rows)} rows (+ hybrid series)", flush=True)
 
 
 if __name__ == "__main__":

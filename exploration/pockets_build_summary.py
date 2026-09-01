@@ -31,6 +31,57 @@ ASIS_DEKAD = ("08", 2)
 SEAS5_SKILL_MIN_R = 0.30  # below this, SEAS5 is not shown (no-skill mask)
 CONVERGENCE_RP = 5.0
 
+# Combined drought indicator (CDI-style, cf. the JRC/EDO typology):
+# rain pillar = median exceedance probability across the four rainfall
+# witnesses (CHIRPS Jun-Jul, IMERG Jun-Aug, ENACTS Jun-Jul SPI, detrended
+# SEAS5+ERA5 JAS hybrid) -> RP; vegetation pillar = worst of regional
+# ASI/VHI RP at the mid-August dekad. Classes:
+CDI_CLASSES = {
+    0: "none",
+    1: "watch",  # rain RP 5-10, veg < 5
+    2: "severe_watch",  # rain RP >= 10, veg < 5
+    3: "compound",  # rain RP 5-10 AND veg >= 5
+    4: "severe_compound",  # rain RP >= 10 AND veg >= 5
+    5: "veg_only",  # veg >= 5, rain < 5
+    6: "not_assessed",  # Saharan, outside ENACTS coverage
+}
+# seasons with a CERF drought allocation (mapped to the drought's VALID
+# growing season, not the allocation date; 2022 AA excluded):
+# - 2008: 08-RR-NER-8416 (Sep 2008; small, season ambiguous - no narrative)
+# - 2009: 10-UF-8444 (Jan 2010) + 10-RR-8451 (May) + 10-RR-8465 (Aug 2010),
+#         the 2009 harvest failure -> 2010 crisis
+# - 2011: 11-RR-8545 (Nov 2011) + 12-RR-8564 (Apr 2012), the 2011 failure
+#         -> 2012 Sahel crisis
+# - 2021: 22-UF-51060 (Dec 2021; "cereal yields down 39% ... lower-than-
+#         normal rainfall")
+CERF_SEASONS = [2008, 2009, 2011, 2021]
+CDI_YEARS = CERF_SEASONS + [2026]
+
+
+def dry_p(series_by_year, year, lower_is_worse=True):
+    """Exceedance probability of `year` within its full record."""
+    s = series_by_year.dropna()
+    if year not in s.index:
+        return np.nan
+    v = s.loc[year]
+    if lower_is_worse:
+        rank = int((s < v).sum()) + 1
+    else:
+        rank = int((s > v).sum()) + 1
+    return rank / (len(s) + 1)
+
+
+def cdi_class(rain_rp, veg_rp):
+    if np.isnan(rain_rp):
+        return np.nan
+    veg5 = (not np.isnan(veg_rp)) and veg_rp >= 5
+    if rain_rp >= 10:
+        return 4 if veg5 else 2
+    if rain_rp >= 5:
+        return 3 if veg5 else 1
+    return 5 if veg5 else 0
+
+
 # WMO-id -> (lat, lon), from NOAA ISD station history; fallback where the
 # OGIMET coordinate scrape comes back empty
 STATION_COORDS = {
@@ -258,6 +309,74 @@ def main():
         )
         adm1 = adm1.merge(t, on="adm1_pcode", how="left")
     adm1.to_csv(D / "summary_adm1.csv", index=False)
+
+    # --- combined drought indicator, for 2026 and the CERF drought seasons
+    hyb = pd.read_csv(D / "seas5_hybrid_series.csv")
+    hyb = hyb[(hyb["adm_level"] == 2) & (hyb["trimester"] == "JAS")]
+
+    def hybrid_p(pcode, year):
+        s = hyb[hyb["pcode"] == pcode].set_index("season_year")["fc_log_dt"]
+        s = s.dropna()
+        if year not in s.index:
+            return np.nan
+        others = s.drop(index=year)
+        rank = int((others < s.loc[year]).sum()) + 1
+        return rank / (len(others) + 1)
+
+    asi_full = load_asis("asi_dekad.csv", "v")
+    vhi_full = load_asis("vhi_dekad.csv", "v")
+    # ENACTS's own validity mask: Saharan departments it declines to cover
+    # (Arlit, Bilma, Iferouane) are shown as "not assessed" rather than
+    # classed on near-zero rainfall totals
+    enacts_cov = set(e2["pcode"].unique())
+    comp_rows = []
+    for pcode in out["pcode"]:
+        adm1_pc = pcode[:5]
+        region = {v: k for k, v in region_to_adm1.items()}.get(adm1_pc)
+        c_s = chirps[chirps["pcode"] == pcode].set_index("year")["junjul_mm"]
+        i_s = imerg[imerg["pcode"] == pcode].set_index("year")["junaug_mm"]
+        e_s = e2[e2["pcode"] == pcode].set_index("year")["spi"]
+        a_s = asi_full[asi_full["region"] == region].set_index("year")["v"]
+        v_s = vhi_full[vhi_full["region"] == region].set_index("year")["v"]
+        for year in CDI_YEARS:
+            ps = [
+                dry_p(c_s, year),
+                dry_p(i_s, year),
+                dry_p(e_s, year),
+                hybrid_p(pcode, year),
+            ]
+            ps = [x for x in ps if not np.isnan(x)]
+            rain_p = float(np.median(ps)) if ps else np.nan
+            rain_rp = 1.0 / rain_p if rain_p else np.nan
+            veg_rps = []
+            pa = dry_p(a_s, year, lower_is_worse=False)
+            pv = dry_p(v_s, year, lower_is_worse=True)
+            for x in (pa, pv):
+                if not np.isnan(x):
+                    veg_rps.append(1.0 / x)
+            veg_rp = max(veg_rps) if veg_rps else np.nan
+            comp_rows.append(
+                {
+                    "pcode": pcode,
+                    "year": year,
+                    "n_rain": len(ps),
+                    "rain_rp": rain_rp,
+                    "veg_rp": veg_rp,
+                    "cdi": (
+                        6
+                        if pcode not in enacts_cov
+                        else cdi_class(rain_rp, veg_rp)
+                    ),
+                }
+            )
+    comp = pd.DataFrame(comp_rows)
+    comp.to_csv(D / "composite_adm2.csv", index=False)
+    c26 = comp[comp["year"] == 2026][["pcode", "rain_rp", "cdi"]].rename(
+        columns={"rain_rp": "rain_rp_med", "cdi": "cdi_class"}
+    )
+    out = out.drop(columns=["rain_rp_med", "cdi_class"], errors="ignore")
+    out = out.merge(c26, on="pcode", how="left")
+    out.to_csv(D / "summary_adm2.csv", index=False)
 
     # --- gauges
     g = pd.read_csv(D / "gauges_monthly.csv", dtype={"wmo_id": str})

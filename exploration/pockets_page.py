@@ -61,6 +61,25 @@ def sev_cell(v):
     return f'<td class="rp{dark}" style="background:{color}">{v}</td>'
 
 
+CDI_CHIP = {
+    0: ("#f2f2ed", "–", "–", False),
+    1: ("#fec44f", "Watch", "Vigilance", False),
+    2: ("#ec7014", "Severe", "Sévère", True),
+    3: ("#cb181d", "Compound", "Composé", True),
+    4: ("#67000d", "Severe compound", "Composé sévère", True),
+    5: ("#74a9cf", "Vegetation", "Végétation", False),
+    6: ("#e4e2da", "n/a", "n/a", False),
+}
+
+
+def cdi_cell(v):
+    if pd.isna(v):
+        return '<td class="na">–</td>'
+    color, en, fr, dark = CDI_CHIP[int(v)]
+    d = " dark" if dark else ""
+    return f'<td class="rp{d}" style="background:{color}">' f"{T(en, fr)}</td>"
+
+
 def main():
     summary = pd.read_csv(D / "summary_adm2.csv")
     gauges = pd.read_csv(D / "gauges_summary.csv", dtype={"wmo_id": str})
@@ -82,7 +101,10 @@ def main():
     vhi_h = dekad_series(vhi)
 
     print("rendering figures…", flush=True)
-    img_conv = figs.fig_convergence(summary)
+    img_cdi = figs.fig_cdi(summary)
+    comp = pd.read_csv(D / "composite_adm2.csv")
+    cdi_years = sorted(comp["year"].unique())
+    img_cdi_hist = figs.fig_cdi_history(comp, cdi_years)
     img_pixel = figs.fig_pixel_percentile()
     img_rain = figs.fig_rain_rp_trio(summary)
     img_gauge = figs.fig_gauge_map(gauges)
@@ -115,7 +137,13 @@ def main():
         ).any(axis=1)
         | (summary["final_severity"] >= 4)
     ].copy()
-    flag = flag.sort_values(["conv_n", "rain_rp"], ascending=[False, False])
+    flag = flag.sort_values(
+        ["cdi_class", "rain_rp_med"],
+        ascending=[False, False],
+        key=lambda c: (
+            c.replace({5: -1, 6: -2}) if c.name == "cdi_class" else c
+        ),
+    )
 
     def flag_rows():
         out = []
@@ -132,8 +160,9 @@ def main():
                 + rp_cell(r["vhi_rp"])
                 + sev_cell(r["final_severity"])
                 + f"<td>{'' if pd.isna(r['final_pin']) else format(int(r['final_pin']), ',')}</td>"
-                f"<td><b>{int(r['conv_n'])}</b></td>"
-                "</tr>"
+                + rp_cell(r["rain_rp_med"])
+                + cdi_cell(r["cdi_class"])
+                + "</tr>"
             )
         return "\n".join(out)
 
@@ -290,27 +319,33 @@ def main():
   "sévères. (Ses amplitudes à Gaya et Dioundiou portent un biais sec "
   "post-2021 — voir la réserve plus bas.)")}</li>
 <li>{T(
-  "The sharpest pocket is southern Dosso: Gaya and Dioundiou have 4 of 5 "
-  "indicators at RP ≥ 5 — CHIRPS, IMERG, the DMN's own ENACTS SPI and the "
-  "end-of-season hybrid all agree (3 of 5 without the caveated ENACTS "
-  "leg). Fourteen more departments are at 3 of "
-  "5: the rest of Dosso region, the Tahoua belt (Illéla, Keita, Ville de "
-  "Tahoua, Bouza, Bagaroua), Filingué (Tillabéri), Tanout and Tesker "
-  "(Zinder) and Maïné-Soroa / N'Gourti (Diffa). A second, needs-critical "
-  "pocket covers eastern Diffa (N'Guigmi, Bosso, Diffa) and western "
-  "Tillabéri (Téra, Bankilaré, Torodi), driven by IMERG June–August "
-  "deficits and the dry end-of-season outlook.",
-  "La poche la plus nette est le sud de Dosso&nbsp;: à Gaya et Dioundiou, "
-  "4 indicateurs sur 5 sont à PR ≥ 5 — CHIRPS, IMERG, le SPI ENACTS de la "
-  "DMN elle-même et l’hybride de fin de saison concordent (3 sur 5 sans "
-  "le volet ENACTS sous réserve). Quatorze autres "
-  "départements sont à 3 sur 5&nbsp;: le reste de la région de Dosso, la "
-  "bande de Tahoua (Illéla, Keita, Ville de Tahoua, Bouza, Bagaroua), "
-  "Filingué (Tillabéri), Tanout et Tesker (Zinder) et Maïné-Soroa / "
-  "N'Gourti (Diffa). Une seconde poche, critique du point de vue des "
-  "besoins, couvre l’est de Diffa (N'Guigmi, Bosso, Diffa) et l’ouest de "
-  "Tillabéri (Téra, Bankilaré, Torodi), portée par les déficits IMERG de "
-  "juin–août et la perspective sèche de fin de saison.")}</li>
+  "The combined indicator (median of the four rainfall witnesses × "
+  "vegetation) puts six departments in severe rainfall deficit — median "
+  "RP ≥ 10 years: Keita (Tahoua), Dioundiou, Dosso, Gaya, Loga (Dosso) "
+  "and Tanout (Zinder) — with 17 more on rainfall watch: the Tahoua belt "
+  "(Illéla, Ville de Tahoua, Tahoua, Bagaroua, Bouza, Birni N'Konni), "
+  "the rest of Dosso, eastern Diffa (N'Gourti, Maïné-Soroa, Diffa, "
+  "N'Guigmi, Bosso), Filingué and Tesker. Of the HNRP severity-4 "
+  "departments only N'Guigmi makes the watch list: in Téra, Bankilaré "
+  "and Torodi the deficit is seen by IMERG and the hybrid but not by "
+  "CHIRPS or ENACTS, so the majority rule keeps them out — the "
+  "disagreement is visible in the individual maps below. No department "
+  "reaches the compound rain + vegetation class yet — the vegetation "
+  "pillar has not confirmed.",
+  "L’indicateur combiné (médiane des quatre témoins pluviométriques × "
+  "végétation) place six départements en déficit pluviométrique sévère — "
+  "PR médiane ≥ 10 ans&nbsp;: Keita (Tahoua), Dioundiou, Dosso, Gaya, "
+  "Loga (Dosso) et Tanout (Zinder) — et 17 autres en vigilance "
+  "pluviométrique&nbsp;: la bande de Tahoua (Illéla, Ville de Tahoua, "
+  "Tahoua, Bagaroua, Bouza, Birni N'Konni), le reste de Dosso, l’est de "
+  "Diffa (N'Gourti, Maïné-Soroa, Diffa, N'Guigmi, Bosso), Filingué et "
+  "Tesker. Parmi les départements en sévérité 4 du HNRP, seul N'Guigmi "
+  "figure en vigilance&nbsp;: à Téra, Bankilaré et Torodi, le déficit "
+  "est vu par IMERG et l’hybride mais pas par CHIRPS ni ENACTS, la règle "
+  "majoritaire les laisse donc en dehors — le désaccord est visible dans "
+  "les cartes individuelles plus bas. Aucun département n’atteint encore "
+  "la classe composée pluie + végétation — le pilier végétation n’a pas "
+  "confirmé.")}</li>
 <li>{T(
   "Vegetation stress is, so far, milder than the rainfall deficits: no "
   "region's ASI or VHI has crossed a 5-year return period at the 11–20 "
@@ -345,6 +380,25 @@ def main():
   "volet juillet de l’hybride hérite de l’anomalie sèche marquée d’ERA5 "
   "en 2026.")}</li>
 <li>{T(
+  "Backtested against CERF drought seasons: on 1 September 2009 the same "
+  "composite already showed 27 departments at watch or worse — 13 of "
+  "them in the compound rain + vegetation classes across the Maradi–"
+  "Zinder agropastoral belt and western Tillabéri — and 2011 showed the "
+  "western pockets. The 2021 late-season failure was invisible at this "
+  "vantage (its rains only collapsed in September): a real limitation of "
+  "any 1-September assessment. 2026's rainfall extent is comparable to "
+  "2009's at the same date, without vegetation confirmation so far.",
+  "Contre-épreuve sur les saisons de sécheresse CERF&nbsp;: au 1ᵉʳ "
+  "septembre 2009, le même composite montrait déjà 27 départements en "
+  "vigilance ou pire — dont 13 dans les classes composées pluie + "
+  "végétation sur la bande agropastorale Maradi–Zinder et l’ouest de "
+  "Tillabéri — et 2011 montrait les poches de l’ouest. L’échec tardif de "
+  "la saison 2021 était invisible à ce stade (ses pluies ne se sont "
+  "effondrées qu’en septembre)&nbsp;: une vraie limite de toute "
+  "évaluation au 1ᵉʳ septembre. L’étendue pluviométrique de 2026 est "
+  "comparable à celle de 2009 à la même date, sans confirmation par la "
+  "végétation à ce jour.")}</li>
+<li>{T(
   f"{len(sev4)} departments hold the highest HNRP intersectoral severity "
   f"(class 4): {sev4_names}. All four also show at least one drought signal "
   "at RP ≥ 5 in 2026.",
@@ -354,33 +408,52 @@ def main():
 </ul>
 </div>
 
-<h2>{T("Where the signals converge", "Où les signaux convergent")}</h2>
+<h2>{T("Combined drought indicator", "Indicateur de sécheresse combiné")}</h2>
 <p>{T(
-  "The map counts how many of five indicators are at a ≥ 5-year return "
-  "period in each department: CHIRPS June–July rainfall, IMERG June–August "
-  "rainfall, the ENACTS June–July SPI, the skill-filtered SEAS5+ERA5 "
-  "end-of-season hybrid (JAS, detrended), and regional vegetation (worst "
-  "of ASI / VHI). The indicators are related but not redundant — the "
-  "rainfall witnesses use different sensors, windows and gauge inputs, and "
-  "they disagree regionally in 2026. Hatching marks the four departments "
-  "in HNRP severity class 4.",
-  "La carte compte, pour chaque département, combien de cinq indicateurs "
-  "sont à une période de retour ≥ 5&nbsp;ans&nbsp;: précipitations CHIRPS "
-  "juin–juillet, précipitations IMERG juin–août, SPI juin–juillet ENACTS, "
-  "hybride SEAS5+ERA5 de fin de saison filtré selon la performance (JAS, "
-  "détendancé), et végétation régionale (pire de l’ASI / du VHI). Les "
-  "indicateurs sont liés mais non redondants — les témoins pluviométriques "
-  "reposent sur des capteurs, des fenêtres et des intrants pluviométriques "
-  "différents, et divergent régionalement en 2026. Les hachures marquent "
-  "les quatre départements en classe de sévérité 4 du HNRP.")}</p>
+  "The indicators are combined into a single class per department, "
+  "following the logic of combined drought indicators such as the JRC's: "
+  "a rainfall pillar and a vegetation pillar. The rainfall pillar is the "
+  "MEDIAN return period of the four rainfall witnesses (CHIRPS June–July, "
+  "IMERG June–August, ENACTS June–July SPI, and the detrended SEAS5+ERA5 "
+  "JAS hybrid) — the median demands majority agreement, so no single "
+  "product (an ENACTS artifact, ERA5's dry bias) can drive the class "
+  "alone. The vegetation pillar is the worst of the regional ASI / VHI "
+  "return periods. Classes: rainfall watch (median rain RP 5–10), severe "
+  "rainfall deficit (RP ≥ 10), and their compound counterparts when "
+  "vegetation is also at RP ≥ 5 — the stage where a rainfall deficit is "
+  "visibly hitting crops and pasture. Hatching marks the four HNRP "
+  "severity-4 departments.",
+  "Les indicateurs sont combinés en une classe unique par département, "
+  "suivant la logique des indicateurs de sécheresse combinés comme celui "
+  "du JRC&nbsp;: un pilier précipitations et un pilier végétation. Le "
+  "pilier précipitations est la période de retour MÉDIANE des quatre "
+  "témoins pluviométriques (CHIRPS juin–juillet, IMERG juin–août, SPI "
+  "juin–juillet ENACTS et hybride SEAS5+ERA5 JAS détendancé) — la médiane "
+  "exige un accord majoritaire, de sorte qu’aucun produit isolé (un "
+  "artefact ENACTS, le biais sec d’ERA5) ne peut déterminer la classe à "
+  "lui seul. Le pilier végétation est la pire des périodes de retour "
+  "régionales ASI / VHI. Classes&nbsp;: vigilance pluviométrique (PR "
+  "médiane 5–10), déficit pluviométrique sévère (PR ≥ 10), et leurs "
+  "équivalents composés lorsque la végétation est aussi à PR ≥ 5 — le "
+  "stade où le déficit de pluie atteint visiblement cultures et "
+  "pâturages. Les hachures marquent les quatre départements en sévérité "
+  "4 du HNRP.")}</p>
 <figure>
-<img src="data:image/png;base64,{img_conv}" alt="Convergence map">
+<img src="data:image/png;base64,{img_cdi}" alt="Combined drought indicator map">
 <figcaption>{T(
-  "Number of indicators (0–5) at return period ≥ 5 years, by department; "
-  "hatched: HNRP 2026 intersectoral severity 4.",
-  "Nombre d’indicateurs (0–5) à une période de retour ≥ 5 ans, par "
-  "département&nbsp;; hachures&nbsp;: sévérité intersectorielle 4 du "
-  "HNRP 2026.")}</figcaption>
+  "Combined drought indicator, 1 September 2026. Yellow/orange: median "
+  "rainfall RP 5–10 / ≥ 10 years; reds: rainfall + vegetation compound; "
+  "blue: vegetation stress without a majority rainfall deficit; pale "
+  "grey n/a: Saharan departments outside ENACTS coverage (Arlit, Bilma, "
+  "Iferouane), not assessed; hatched: HNRP 2026 intersectoral severity "
+  "4.",
+  "Indicateur de sécheresse combiné, 1ᵉʳ septembre 2026. Jaune/orange : "
+  "PR pluviométrique médiane 5–10 / ≥ 10 ans&nbsp;; rouges&nbsp;: composé "
+  "pluie + végétation&nbsp;; bleu&nbsp;: stress de la végétation sans "
+  "déficit pluviométrique majoritaire&nbsp;; gris pâle n/a&nbsp;: "
+  "départements sahariens hors couverture ENACTS (Arlit, Bilma, "
+  "Iferouane), non évalués&nbsp;; hachures&nbsp;: sévérité "
+  "intersectorielle 4 du HNRP 2026.")}</figcaption>
 </figure>
 
 <div class="tablewrap">
@@ -396,7 +469,8 @@ def main():
   <th>{T("VHI RP*", "VHI PR*")}</th>
   <th>{T("HNRP severity", "Sévérité HNRP")}</th>
   <th>{T("People in need", "Personnes dans le besoin")}</th>
-  <th>{T("Convergence", "Convergence")}</th>
+  <th>{T("Rain RP (median)", "PR pluie (médiane)")}</th>
+  <th>{T("Class", "Classe")}</th>
 </tr>
 {flag_rows()}
 </table>
@@ -415,6 +489,51 @@ def main():
   "couverture. SEAS5 (l’hybride SEAS5+ERA5 JAS détendancé) est vide "
   "lorsque la performance historique du modèle est insuffisante "
   "(r &lt; 0,30).")}</p>
+
+<h2>{T("The same picture in past CERF drought seasons",
+       "La même image lors des saisons de sécheresse financées par le CERF")}</h2>
+<p>{T(
+  "As a reality check, the identical composite is reconstructed for every "
+  "growing season that later drew a CERF drought allocation — mapped to "
+  "the season the drought actually occurred in, not the allocation date: "
+  "the January–August 2010 allocations respond to the failed 2009 season, "
+  "the November 2011 and April 2012 ones to the 2011 season, and the "
+  "December 2021 food-security allocation to the 2021 season ('cereal "
+  "yields down 39% … lower-than-normal rainfall'). A small September 2008 "
+  "drought allocation is shown against the 2008 season, though its "
+  "narrative is not archived and the mapping is uncertain. The 2022 "
+  "anticipatory-action allocation is excluded — it was triggered by the "
+  "framework, not a conventional response. Each panel uses only what was "
+  "observable by 1 September of that year (the same windows and the "
+  "issued-August hybrid), reconstructed with today's datasets.",
+  "Comme contre-épreuve, le même composite est reconstruit pour chaque "
+  "saison agricole ayant ensuite donné lieu à une allocation CERF pour "
+  "sécheresse — rattachée à la saison où la sécheresse a réellement eu "
+  "lieu, pas à la date de l’allocation&nbsp;: les allocations de janvier–"
+  "août 2010 répondent à la saison 2009 échouée, celles de novembre 2011 "
+  "et d’avril 2012 à la saison 2011, et l’allocation sécurité alimentaire "
+  "de décembre 2021 à la saison 2021 («&nbsp;rendements céréaliers en "
+  "baisse de 39&nbsp;% … précipitations inférieures à la "
+  "normale&nbsp;»). Une petite allocation sécheresse de septembre 2008 "
+  "est montrée face à la saison 2008, bien que son narratif ne soit pas "
+  "archivé et que le rattachement soit incertain. L’allocation d’action "
+  "anticipatoire de 2022 est exclue — déclenchée par le cadre, ce n’est "
+  "pas une réponse classique. Chaque panneau n’utilise que ce qui était "
+  "observable au 1ᵉʳ septembre de l’année concernée (mêmes fenêtres, "
+  "hybride émis en août), reconstruit avec les jeux de données "
+  "d’aujourd’hui.")}</p>
+<figure>
+<img src="data:image/png;base64,{img_cdi_hist}" alt="CDI in past CERF drought seasons">
+<figcaption>{T(
+  "The combined drought indicator as it would have stood on 1 September "
+  "of each CERF drought season, and 2026 (bold). IMERG is available from "
+  "1998 and ENACTS from 1991, so all panels rest on the same four "
+  "rainfall witnesses.",
+  "L’indicateur de sécheresse combiné tel qu’il se serait présenté au "
+  "1ᵉʳ septembre de chaque saison de sécheresse CERF, et 2026 (en gras). "
+  "IMERG est disponible depuis 1998 et ENACTS depuis 1991, donc tous les "
+  "panneaux reposent sur les quatre mêmes témoins pluviométriques.")}</figcaption>
+</figure>
 
 <h2>{T("Observed rainfall — CHIRPS, IMERG and ENACTS",
        "Précipitations observées — CHIRPS, IMERG et ENACTS")}</h2>
@@ -732,6 +851,22 @@ def main():
   "2026)&nbsp;; archive CLIMAT d’OGIMET pour les pluviomètres "
   "(2008–2026)&nbsp;; sévérité et PiN du HNRP via le miroir HPC de l’OCHA "
   "(plan 2026).")}</li>
+<li>{T(
+  "Combined indicator: rain pillar = median of the four rainfall "
+  "witnesses' exceedance probabilities (each the Weibull rank within its "
+  "own record; the hybrid ranked against all other hindcast years), "
+  "converted back to a return period; vegetation pillar = worst of the "
+  "regional ASI/VHI RPs at the mid-August dekad. CERF allocations from "
+  "the OCHA CERF records (aa.cerf_allocation mirror), drought-typed "
+  "applications mapped to their valid growing season.",
+  "Indicateur combiné&nbsp;: pilier pluie = médiane des probabilités de "
+  "dépassement des quatre témoins pluviométriques (chacune le rang de "
+  "Weibull dans son propre historique&nbsp;; l’hybride classé face à "
+  "toutes les autres années de re-prévision), reconvertie en période de "
+  "retour&nbsp;; pilier végétation = pire des PR régionales ASI/VHI à la "
+  "décade mi-août. Allocations CERF issues des registres CERF de l’OCHA "
+  "(miroir aa.cerf_allocation), demandes de type sécheresse rattachées à "
+  "leur saison agricole de validité.")}</li>
 <li>{T(
   "This is a monitoring analysis, not the AA framework trigger: the "
   "framework's own observational indicator (ENACTS June–July SPI over the "

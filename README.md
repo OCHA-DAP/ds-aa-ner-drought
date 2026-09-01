@@ -102,6 +102,32 @@ not-yet-available ENACTS Jun–Jul SPI:
   `uv run python exploration/jun_jul_rainfall_make_data.py` then
   `uv run python exploration/jun_jul_rainfall_page.py`.
 
+## 2026 drought-pockets page
+
+A static, bilingual (EN/FR toggle) page at
+[`/pockets/`](https://ocha-dap.github.io/ds-aa-ner-drought/pockets/)
+(`docs/pockets/index.html`) maps where drought could be emerging in the
+2026 season, expressing every indicator as an empirical return period per
+department and overlaying 2026 HNRP severity:
+
+- **Indicators:** CHIRPS Jun–Jul and IMERG Jun–Aug rainfall (per-adm2
+  zonal, plus a CHIRPS pixel percentile map), DMN rain gauges via OGIMET
+  CLIMAT, FAO ASIS ASI/VHI per region, and the SEAS5 issued-August
+  forecast (skill methodology reused from `ds-seas5-skill`, including the
+  in-season JAS composite recomputed with 2026 ERA5).
+- **Fetch:** `exploration/pockets_fetch_chirps.py`,
+  `pockets_fetch_gauges.py`, `pockets_fetch_seas5.py`,
+  `pockets_fetch_other.py` (ASIS, IMERG/ERA5 DB, HNRP, CODAB) — all into
+  `exploration/public/pockets/`.
+- **Analysis:** `exploration/pockets_build_summary.py` (Weibull return
+  periods, 4-indicator convergence count).
+- **Page:** `exploration/pockets_figures.py` +
+  `exploration/pockets_page.py` (plain HTML, embedded matplotlib figures,
+  D86-style EN/FR toggle; no marimo).
+- **Regenerate:** run the four fetch scripts, then
+  `uv run python exploration/pockets_build_summary.py`, then
+  `cd exploration && uv run python pockets_page.py`.
+
 ## Other files
 
 - `exploration/detrending_marimo.py` — earlier detrending-based trigger exploration.

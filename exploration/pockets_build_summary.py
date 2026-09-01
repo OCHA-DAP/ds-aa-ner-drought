@@ -268,6 +268,14 @@ def main():
     # excluded from the ranking (kept in gauges_monthly.csv).
     bad = (g["wmo_id"] == "61085") & (g["year"] == 2026) & (g["month"] == 7)
     g = g[~bad]
+    # Gaya's June 2026 report (163 mm — jointly the wettest June of its own
+    # archive) was NOT ingested by CHC's station screening for CHIRPS
+    # (absent from global.stationsUsed.2026.06.csv; the July report was
+    # accepted), and sits well above the CHIRPS pixel at the town (131 mm,
+    # at its median). Its July (121 mm, ~35% below the pixel's climatology)
+    # corroborates the dryness. The near-normal seasonal total therefore
+    # rests entirely on the suspect June value: kept, but flagged.
+    GAUGE_FLAGS = {"61099": "jun2026_suspect"}
     if "lat" not in g or g["lat"].isna().all():
         g["lat"] = g["wmo_id"].map(
             lambda i: STATION_COORDS.get(i, (np.nan,))[0]
@@ -320,6 +328,7 @@ def main():
                 "q_jul": q26.get(7, np.nan),
                 "q_aug": q26.get(8, np.nan),
                 "aug_2026_mm": aug26.iloc[0] if len(aug26) else np.nan,
+                "flag": GAUGE_FLAGS.get(wmo_id),
             }
         )
     pd.DataFrame(rows).to_csv(D / "gauges_summary.csv", index=False)

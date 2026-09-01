@@ -150,10 +150,11 @@ def main():
                 if pd.isna(r["rank"])
                 else f"{int(r['rank'])}/{int(r['n_years'])}"
             )
+            dag = "†" if isinstance(r.get("flag"), str) else ""
             out.append(
                 "<tr>"
-                f"<td>{html_mod.escape(r['name'])} ({r['wmo_id']})</td>"
-                f"<td>{mm26}</td>"
+                f"<td>{html_mod.escape(r['name'])} ({r['wmo_id']}){dag}</td>"
+                f"<td>{mm26}{dag}</td>"
                 f"<td>{rank}</td>" + rp_cell(r["rp"]) + "</tr>"
             )
         return "\n".join(out)
@@ -276,7 +277,8 @@ def main():
   "(Maïné-Soroa, N'Gourti) and southern Dosso (Dioundiou SPI −1.3, RP 9; "
   "Gaya −1.0). Being gauge-anchored, it reads the Tahoua belt as "
   "near-normal, like the town gauges — where satellite and reanalysis "
-  "products are severe.",
+  "products are severe. (Its magnitudes in Gaya and Dioundiou carry a "
+  "post-2021 dry bias — see the caveat below.)",
   "ENACTS — l’analyse de la DMN derrière le déclencheur observationnel "
   "du cadre, extraite ici par département depuis le Maproom de l’IRI — "
   "vaut −0,12 sur la zone suivie (seuil de −0,71 non atteint), mais son "
@@ -285,11 +287,13 @@ def main():
   "PR 9&nbsp;; Gaya −1,0). Ancrée sur les pluviomètres, elle lit la bande "
   "de Tahoua comme proche de la normale, à l’image des stations en "
   "ville — là où les produits satellitaires et de réanalyse sont "
-  "sévères.")}</li>
+  "sévères. (Ses amplitudes à Gaya et Dioundiou portent un biais sec "
+  "post-2021 — voir la réserve plus bas.)")}</li>
 <li>{T(
   "The sharpest pocket is southern Dosso: Gaya and Dioundiou have 4 of 5 "
   "indicators at RP ≥ 5 — CHIRPS, IMERG, the DMN's own ENACTS SPI and the "
-  "end-of-season hybrid all agree. Fourteen more departments are at 3 of "
+  "end-of-season hybrid all agree (3 of 5 without the caveated ENACTS "
+  "leg). Fourteen more departments are at 3 of "
   "5: the rest of Dosso region, the Tahoua belt (Illéla, Keita, Ville de "
   "Tahoua, Bouza, Bagaroua), Filingué (Tillabéri), Tanout and Tesker "
   "(Zinder) and Maïné-Soroa / N'Gourti (Diffa). A second, needs-critical "
@@ -298,7 +302,8 @@ def main():
   "deficits and the dry end-of-season outlook.",
   "La poche la plus nette est le sud de Dosso&nbsp;: à Gaya et Dioundiou, "
   "4 indicateurs sur 5 sont à PR ≥ 5 — CHIRPS, IMERG, le SPI ENACTS de la "
-  "DMN elle-même et l’hybride de fin de saison concordent. Quatorze autres "
+  "DMN elle-même et l’hybride de fin de saison concordent (3 sur 5 sans "
+  "le volet ENACTS sous réserve). Quatorze autres "
   "départements sont à 3 sur 5&nbsp;: le reste de la région de Dosso, la "
   "bande de Tahoua (Illéla, Keita, Ville de Tahoua, Bouza, Bagaroua), "
   "Filingué (Tillabéri), Tanout et Tesker (Zinder) et Maïné-Soroa / "
@@ -450,6 +455,29 @@ def main():
   "juin–juillet le plus sec de l’historique 1981–2026 — même si ERA5 est "
   "historiquement le moins fiable des témoins face aux données de "
   "stations et s’est montré anormalement sec sur le Niger en 2026.")}</p>
+<p class="note">{T(
+  "ENACTS caveat: over a few departments the MON series shows a step "
+  "change after 2021 that looks like an artifact of the thinning DMN "
+  "station network (post-2021 mean SPI 1.2–1.5σ below the 1991–2020 mean "
+  "in Gaya, Balleyara and Dioundiou — in 2022 ENACTS read Gaya as its "
+  "2nd-driest year while both the town gauge and CHIRPS recorded a wet "
+  "season). Where gauges dropped out of the MON run, the product leans on "
+  "its satellite background, whose local climatology differs from the "
+  "gauge-anchored years the SPI was fitted on. ENACTS magnitudes in these "
+  "departments are therefore likely overstated, even where the dry "
+  "direction is corroborated by CHIRPS and IMERG.",
+  "Réserve sur ENACTS&nbsp;: sur quelques départements, la série MON "
+  "présente une rupture après 2021 qui ressemble à un artefact de "
+  "l’amincissement du réseau de stations de la DMN (SPI moyen post-2021 "
+  "de 1,2 à 1,5σ sous la moyenne 1991–2020 à Gaya, Balleyara et "
+  "Dioundiou — en 2022, ENACTS lisait Gaya comme sa 2ᵉ année la plus "
+  "sèche alors que le pluviomètre de la ville et CHIRPS enregistraient "
+  "une saison humide). Là où des stations sont sorties de l’analyse MON, "
+  "le produit s’appuie sur son fond satellitaire, dont la climatologie "
+  "locale diffère des années ancrées sur les pluviomètres ayant servi à "
+  "l’ajustement du SPI. Les amplitudes ENACTS dans ces départements sont "
+  "donc probablement surestimées, même là où la direction sèche est "
+  "corroborée par CHIRPS et IMERG.")}</p>
 <figure>
 <img src="data:image/png;base64,{img_pixel}" alt="CHIRPS pixel percentile map">
 <figcaption>{T(
@@ -536,7 +564,23 @@ def main():
   "pluviomètres, à la ville (≈ 88&nbsp;mm) et avec tous les autres "
   "signaux de sécheresse du département. Il est traité comme une erreur "
   "de transmission et exclu&nbsp;; Diffa n’affiche donc pas de valeur "
-  "pluviométrique 2026 ici.")}</div>
+  "pluviométrique 2026 ici.")}
+<br><br>{T(
+  "† Gaya's near-normal 2026 total rests entirely on its June report "
+  "(163 mm — jointly the wettest June of its own archive), which CHC's "
+  "station screening rejected from the CHIRPS June blend and which sits "
+  "well above the satellite estimate at the town (131 mm). Its July "
+  "report (121 mm, about a third below the local July climatology) was "
+  "accepted by CHC and corroborates the dryness. The value is kept but "
+  "should be read with caution.",
+  "† Le cumul 2026 proche de la normale à Gaya repose entièrement sur son "
+  "message de juin (163&nbsp;mm — à égalité le juin le plus humide de sa "
+  "propre archive), que le contrôle qualité de CHC a rejeté du mélange "
+  "CHIRPS de juin et qui se situe bien au-dessus de l’estimation "
+  "satellitaire à la ville (131&nbsp;mm). Son message de juillet "
+  "(121&nbsp;mm, environ un tiers sous la climatologie locale de "
+  "juillet) a été accepté par CHC et corrobore la sécheresse. La valeur "
+  "est conservée mais à lire avec prudence.")}</div>
 
 <h2>{T("Vegetation — FAO ASI and VHI", "Végétation — ASI et VHI de la FAO")}</h2>
 <p>{T(

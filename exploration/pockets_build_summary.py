@@ -114,14 +114,28 @@ def main():
     s2 = seas5[seas5["adm_level"] == 2]
 
     def seas5_cols(trim, prefix):
+        # displayed values are the DETRENDED variant (both sides detrended
+        # in log space, the skill explorer's "Detrended" mode); the raw
+        # variant is kept alongside with a _raw suffix
         t = s2[s2["trimester"] == trim][
-            ["pcode", "pearson_r", "forecast_percentile", "forecast_rp"]
+            [
+                "pcode",
+                "pearson_r_dt",
+                "forecast_percentile_dt",
+                "forecast_rp_dt",
+                "pearson_r",
+                "forecast_percentile",
+                "forecast_rp",
+            ]
         ]
         return t.rename(
             columns={
-                "pearson_r": f"{prefix}_r",
-                "forecast_percentile": f"{prefix}_pctile",
-                "forecast_rp": f"{prefix}_rp",
+                "pearson_r_dt": f"{prefix}_r",
+                "forecast_percentile_dt": f"{prefix}_pctile",
+                "forecast_rp_dt": f"{prefix}_rp",
+                "pearson_r": f"{prefix}_raw_r",
+                "forecast_percentile": f"{prefix}_raw_pctile",
+                "forecast_rp": f"{prefix}_raw_rp",
             }
         )
 
@@ -147,6 +161,13 @@ def main():
     veg = t_asi.merge(t_vhi, on="region")
     veg["adm1_pcode"] = veg["region"].map(region_to_adm1)
 
+    # --- ENACTS MON Jun-Jul SPI per department (IRI Maproom export API);
+    # the framework's own observational indicator, 1991-2026. Northern
+    # desert departments have no ENACTS coverage (absent here).
+    enacts = pd.read_csv(D / "enacts_spi_adm.csv", dtype={"level": str})
+    e2 = enacts[enacts["level"] == "2"][["pcode", "year", "spi"]]
+    t_enacts = rp_table(e2, "spi").add_prefix("enacts_")
+
     # --- assemble adm2 summary
     out = adm2_names[
         [
@@ -163,6 +184,7 @@ def main():
         (t_chirps, "chirps_pcode"),
         (t_imerg, "imerg_pcode"),
         (t_era5, "era5_pcode"),
+        (t_enacts, "enacts_pcode"),
     ]:
         out = out.merge(
             t.rename(columns={key: "pcode"}), on="pcode", how="left"
@@ -187,21 +209,22 @@ def main():
         how="left",
     )
 
-    # skill mask: hide SEAS5 columns where r < threshold
+    # skill mask: hide SEAS5 columns where the detrended r < threshold
     for p in ("seas5_jas", "seas5_aso"):
         low = out[f"{p}_r"] < SEAS5_SKILL_MIN_R
         out.loc[low, [f"{p}_pctile", f"{p}_rp"]] = np.nan
 
-    # convergence: how many of the four indicators are at RP >= 5
-    # (CHIRPS Jun-Jul, IMERG Jun-Aug, skill-filtered SEAS5 JAS composite,
-    # vegetation = worst of regional ASI/VHI). CHIRPS and IMERG are kept
-    # separate: different sensors and windows, and they disagree regionally
-    # in 2026.
+    # convergence: how many of the five indicators are at RP >= 5
+    # (CHIRPS Jun-Jul, IMERG Jun-Aug, ENACTS MON Jun-Jul SPI, skill-filtered
+    # SEAS5+ERA5 JAS hybrid (detrended), vegetation = worst of regional
+    # ASI/VHI). The rainfall witnesses are kept separate: different sensors,
+    # windows and gauge inputs, and they disagree regionally in 2026.
     out["rain_rp"] = out[["chirps_rp", "imerg_rp"]].max(axis=1)
     out["veg_rp"] = out[["asi_rp", "vhi_rp"]].max(axis=1)
     out["conv_n"] = (
         (out["chirps_rp"] >= CONVERGENCE_RP).astype(int)
         + (out["imerg_rp"] >= CONVERGENCE_RP).astype(int)
+        + (out["enacts_rp"] >= CONVERGENCE_RP).fillna(False).astype(int)
         + (out["veg_rp"] >= CONVERGENCE_RP).astype(int)
         + (out["seas5_jas_rp"] >= CONVERGENCE_RP).fillna(False).astype(int)
     )

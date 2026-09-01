@@ -28,7 +28,14 @@ RP_BINS = [1, 2, 5, 10, 20, 100]
 RP_COLORS = ["#f5f5eb", "#fed98e", "#fe9929", "#d95f0e", "#993404"]
 RP_LABELS = ["< 2", "2–5", "5–10", "10–20", "≥ 20"]
 
-CONV_COLORS = ["#f2f2ed", "#fdd49e", "#fc8d59", "#d7301f", "#7f0000"]
+CONV_COLORS = [
+    "#f2f2ed",
+    "#fee8c8",
+    "#fdbb84",
+    "#fc8d59",
+    "#d7301f",
+    "#7f0000",
+]
 
 SEV_COLORS = {
     1: "#cdfacd",
@@ -66,9 +73,9 @@ def _load_admins():
     return adm1, adm2
 
 
-def _basemap(ax, adm1):
+def _basemap(ax, adm1, labels=True):
     adm1.boundary.plot(ax=ax, color="#666666", linewidth=0.7, zorder=4)
-    for pcode, (x, y) in REGION_LABEL_XY.items():
+    for pcode, (x, y) in REGION_LABEL_XY.items() if labels else []:
         name = adm1.loc[adm1["ADM1_PCODE"] == pcode, "ADM1_FR"].iloc[0]
         ax.annotate(
             name,
@@ -93,7 +100,7 @@ def _rp_class(v):
     return int(np.digitize(v, RP_BINS[1:-1]))
 
 
-def rp_choropleth(ax, adm1, adm2, rp_by_pcode, hatch_pcodes=None):
+def rp_choropleth(ax, adm1, adm2, rp_by_pcode, hatch_pcodes=None, labels=True):
     """Fill adm2 polygons by RP class; optional hatched overlay set."""
     g = adm2.merge(
         rp_by_pcode.rename("rp"),
@@ -132,7 +139,7 @@ def rp_choropleth(ax, adm1, adm2, rp_by_pcode, hatch_pcodes=None):
                 linewidth=1.0,
                 zorder=5,
             )
-    _basemap(ax, adm1)
+    _basemap(ax, adm1, labels=labels)
 
 
 def rp_legend_handles():
@@ -185,7 +192,7 @@ def fig_convergence(summary, title_note=""):
         handles=handles,
         loc="lower left",
         fontsize=8,
-        ncol=6,
+        ncol=7,
         frameon=False,
         bbox_to_anchor=(0.0, -0.02),
         title=title_note,
@@ -240,14 +247,16 @@ def fig_pixel_percentile(mask_min_climo=40.0):
     return _b64(fig)
 
 
-def fig_rain_rp_pair(summary):
+def fig_rain_rp_trio(summary):
     adm1, adm2 = _load_admins()
-    fig, axes = plt.subplots(1, 2, figsize=(13.5, 5.6))
+    fig, axes = plt.subplots(1, 3, figsize=(15.5, 4.6))
     s = summary.set_index("pcode")
-    rp_choropleth(axes[0], adm1, adm2, s["chirps_rp"])
-    axes[0].set_title("CHIRPS · jun–jul", fontsize=11)
-    rp_choropleth(axes[1], adm1, adm2, s["imerg_rp"])
-    axes[1].set_title("IMERG · jun–août/aug", fontsize=11)
+    rp_choropleth(axes[0], adm1, adm2, s["chirps_rp"], labels=False)
+    axes[0].set_title("CHIRPS · jun–jul", fontsize=10)
+    rp_choropleth(axes[1], adm1, adm2, s["imerg_rp"], labels=False)
+    axes[1].set_title("IMERG · jun–août/aug", fontsize=10)
+    rp_choropleth(axes[2], adm1, adm2, s["enacts_rp"], labels=False)
+    axes[2].set_title("ENACTS · SPI jun–jul", fontsize=10)
     fig.legend(
         handles=rp_legend_handles(),
         loc="lower center",
@@ -257,7 +266,7 @@ def fig_rain_rp_pair(summary):
         title="RP",
         title_fontsize=8,
     )
-    fig.tight_layout(rect=(0, 0.06, 1, 1))
+    fig.tight_layout(rect=(0, 0.08, 1, 1))
     return _b64(fig)
 
 

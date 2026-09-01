@@ -111,20 +111,22 @@ A static, bilingual (EN/FR toggle) page at
 department and overlaying 2026 HNRP severity:
 
 - **Indicators:** CHIRPS Jun–Jul and IMERG Jun–Aug rainfall (per-adm2
-  zonal, plus a CHIRPS pixel percentile map), DMN rain gauges via OGIMET
-  CLIMAT, FAO ASIS ASI/VHI per region, and the SEAS5 issued-August
-  forecast (skill methodology reused from `ds-seas5-skill`, including the
-  in-season JAS composite recomputed with 2026 ERA5).
+  zonal, plus a CHIRPS pixel percentile map), ENACTS MON Jun–Jul SPI per
+  department (IRI fbfmaproom export API, `mode=1/2` + CODAB pcodes), DMN
+  rain gauges via OGIMET CLIMAT, FAO ASIS ASI/VHI per region, and the
+  SEAS5+ERA5 end-of-season hybrid (skill methodology reused from
+  `ds-seas5-skill`: in-season JAS blend recomputed with 2026 ERA5,
+  detrended + normalized, the app's Detrended variant).
 - **Fetch:** `exploration/pockets_fetch_chirps.py`,
   `pockets_fetch_gauges.py`, `pockets_fetch_seas5.py`,
-  `pockets_fetch_other.py` (ASIS, IMERG/ERA5 DB, HNRP, CODAB) — all into
-  `exploration/public/pockets/`.
+  `pockets_fetch_enacts.py`, `pockets_fetch_other.py` (ASIS, IMERG/ERA5
+  DB, HNRP, CODAB) — all into `exploration/public/pockets/`.
 - **Analysis:** `exploration/pockets_build_summary.py` (Weibull return
-  periods, 4-indicator convergence count).
+  periods, 5-indicator convergence count).
 - **Page:** `exploration/pockets_figures.py` +
   `exploration/pockets_page.py` (plain HTML, embedded matplotlib figures,
   D86-style EN/FR toggle; no marimo).
-- **Regenerate:** run the four fetch scripts, then
+- **Regenerate:** run the five fetch scripts, then
   `uv run python exploration/pockets_build_summary.py`, then
   `cd exploration && uv run python pockets_page.py`.
 

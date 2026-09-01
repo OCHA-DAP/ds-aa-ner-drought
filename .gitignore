@@ -15,6 +15,7 @@ temp
 
 # drought-pockets page: bulky fetched inputs (regenerate via exploration/pockets_fetch_*.py)
 exploration/public/pockets/ogimet_cache/
+exploration/public/pockets/enacts_cache/
 exploration/public/pockets/chirps_junjul_stack.npz
 exploration/public/pockets/mvhi_dekad.csv
 exploration/public/pockets/gauges_monthly_PARTIAL.csv

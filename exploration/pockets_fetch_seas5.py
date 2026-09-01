@@ -73,21 +73,30 @@ def combo_stats(df_s_all, df_e_all, trimester):
     )
     df_s_norm = normalize_seas5(df_s_log, df_e_log)
 
-    skill = compute_skill_metrics(df_s_norm, df_e_log)
+    raw = _forecast_position(df_s_norm, df_e_log)
+    if raw is None:
+        return None
+    dt = _forecast_position(*_detrend(df_s_norm, df_e_log))
+    row = {"trimester": trimester, **raw}
+    if dt is not None:
+        row.update({f"{k}_dt": v for k, v in dt.items()})
+    return row
+
+
+def _forecast_position(df_s, df_e):
+    """Skill + the 2026 forecast's position in the historical distribution."""
+    skill = compute_skill_metrics(df_s, df_e)
     if skill is None:
         return None
-
-    cur = df_s_norm[df_s_norm["season_year"] == SEASON_YEAR]
+    cur = df_s[df_s["season_year"] == SEASON_YEAR]
     if cur.empty:
         return None
     fc = float(cur["forecast_mean"].iloc[0])
-    hist = df_s_norm.merge(df_e_log, on="season_year")
+    hist = df_s.merge(df_e, on="season_year")
     hist_f = hist.loc[
         hist["season_year"] < SEASON_YEAR, "forecast_mean"
     ].values
-
     return {
-        "trimester": trimester,
         "pearson_r": skill["pearson_r"],
         "n_years": skill["n_years"],
         "forecast_mean_log": fc,
@@ -95,6 +104,46 @@ def combo_stats(df_s_all, df_e_all, trimester):
         "forecast_rp": empirical_rp(fc, hist_f, higher_is_more_extreme=False),
         "n_hist": len(hist_f),
     }
+
+
+def _detrend(df_s_norm, df_e_log):
+    """Linear detrend of both sides in log space, as in run_all_combinations.
+
+    Fit over the forecast/obs overlap years, subtract from ALL years
+    (including the current forecast), re-add the overlap mean.
+    """
+    hist_yrs = sorted(
+        set(df_e_log["season_year"]) & set(df_s_norm["season_year"])
+    )
+    if len(hist_yrs) < 2:
+        return df_s_norm, df_e_log
+    x_hist = np.array(hist_yrs, dtype=float)
+    a_mat = np.column_stack([x_hist, np.ones(len(x_hist))])
+
+    fc_hist = (
+        df_s_norm[df_s_norm["season_year"].isin(hist_yrs)]
+        .sort_values("season_year")["forecast_mean"]
+        .values
+    )
+    a, b = np.linalg.lstsq(a_mat, fc_hist, rcond=None)[0]
+    x_s = df_s_norm["season_year"].values.astype(float)
+    df_s_dt = df_s_norm.assign(
+        forecast_mean=df_s_norm["forecast_mean"].values
+        - (a * x_s + b)
+        + fc_hist.mean()
+    )
+
+    obs_hist = (
+        df_e_log[df_e_log["season_year"].isin(hist_yrs)]
+        .sort_values("season_year")["obs_mean"]
+        .values
+    )
+    a, b = np.linalg.lstsq(a_mat, obs_hist, rcond=None)[0]
+    x_e = df_e_log["season_year"].values.astype(float)
+    df_e_dt = df_e_log.assign(
+        obs_mean=df_e_log["obs_mean"].values - (a * x_e + b) + obs_hist.mean()
+    )
+    return df_s_dt, df_e_dt
 
 
 def main():

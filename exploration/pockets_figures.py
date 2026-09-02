@@ -541,27 +541,55 @@ def fig_cdi(summary):
     return _b64(fig)
 
 
-def fig_cdi_history(comp, years):
-    """Small multiples: the CDI as it stood at 1 Sep of each year."""
+def fig_cdi_history(comp, years, cerf_years=(), aa_years=(), ncols=6):
+    """Small-multiples wall: the CDI at 1 Sep of every year.
+
+    CERF drought seasons get a solid red frame, AA seasons (excluded from
+    the CERF backtest set) a dashed frame; the current year a bold title.
+    """
+    from matplotlib.patches import Rectangle
+
     adm1, adm2 = _load_admins()
     n = len(years)
-    fig, axes = plt.subplots(1, n, figsize=(3.4 * n, 3.2))
-    for ax, year in zip(np.atleast_1d(axes), years):
+    nrows = int(np.ceil(n / ncols))
+    fig, axes = plt.subplots(
+        nrows, ncols, figsize=(2.75 * ncols, 1.85 * nrows)
+    )
+    axes = np.atleast_1d(axes).ravel()
+    for ax in axes[n:]:
+        ax.set_axis_off()
+    for ax, year in zip(axes, years):
         cls = comp[comp["year"] == year].set_index("pcode")["cdi"]
         cdi_map(ax, adm1, adm2, cls, labels=False)
-        ax.set_title(
-            str(year),
-            fontsize=11,
-            fontweight="bold" if year == 2026 else "normal",
-        )
+        color, weight = "#1a1a1a", "normal"
+        if year in cerf_years:
+            color, weight = "#b3261e", "bold"
+        if year == 2026:
+            weight = "bold"
+        ax.set_title(str(year), fontsize=10, color=color, fontweight=weight)
+        if year in cerf_years or year in aa_years:
+            ax.add_patch(
+                Rectangle(
+                    (0.01, -0.02),
+                    0.98,
+                    1.14,
+                    transform=ax.transAxes,
+                    fill=False,
+                    edgecolor="#b3261e",
+                    linewidth=2.2,
+                    linestyle="--" if year in aa_years else "-",
+                    clip_on=False,
+                    zorder=10,
+                )
+            )
     fig.legend(
         handles=cdi_legend_handles(),
         loc="lower center",
-        fontsize=8,
+        fontsize=9,
         ncol=7,
         frameon=False,
         title="RP pluie/rain (ans/yrs)",
-        title_fontsize=8,
+        title_fontsize=9,
     )
-    fig.tight_layout(rect=(0, 0.12, 1, 1))
+    fig.tight_layout(rect=(0, 0.045, 1, 1))
     return _b64(fig)

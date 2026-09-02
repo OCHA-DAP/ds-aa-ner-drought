@@ -55,7 +55,10 @@ CDI_CLASSES = {
 # - 2021: 22-UF-51060 (Dec 2021; "cereal yields down 39% ... lower-than-
 #         normal rainfall")
 CERF_SEASONS = [2008, 2009, 2011, 2021]
-CDI_YEARS = CERF_SEASONS + [2026]
+AA_SEASONS = [2022]  # framework AA activation, excluded from the CERF set
+# composite reconstructed for every season since ENACTS begins (1991);
+# pre-1998 years lack IMERG (median over the remaining three witnesses)
+CDI_YEARS = list(range(1991, 2027))
 
 
 def dry_p(series_by_year, year, lower_is_worse=True):

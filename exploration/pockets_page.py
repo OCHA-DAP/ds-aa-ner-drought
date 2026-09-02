@@ -104,7 +104,9 @@ def main():
     img_cdi = figs.fig_cdi(summary)
     comp = pd.read_csv(D / "composite_adm2.csv")
     cdi_years = sorted(comp["year"].unique())
-    img_cdi_hist = figs.fig_cdi_history(comp, cdi_years)
+    img_cdi_hist = figs.fig_cdi_history(
+        comp, cdi_years, cerf_years={2008, 2009, 2011, 2021}, aa_years={2022}
+    )
     img_pixel = figs.fig_pixel_percentile()
     img_rain = figs.fig_rain_rp_trio(summary)
     img_gauge = figs.fig_gauge_map(gauges)
@@ -434,26 +436,36 @@ def main():
   "lorsque la performance historique du modèle est insuffisante "
   "(r &lt; 0,30).")}</p>
 
-<h2>{T("The same picture in past CERF drought seasons",
-       "La même image lors des saisons de sécheresse financées par le CERF")}</h2>
+<h2>{T("The same picture, every season since 1991",
+       "La même image, chaque saison depuis 1991")}</h2>
 <p>{T(
   "As a reality check, the identical composite is reconstructed for every "
-  "growing season that later drew a CERF drought allocation — mapped to "
-  "the season the drought actually occurred in, not the allocation date: "
+  "season since 1991, each panel using only what was observable by "
+  "1 September of that year. Red frames mark the growing seasons that "
+  "later drew a CERF drought allocation — mapped to the season the "
+  "drought actually occurred in, not the allocation date: "
   "the January–August 2010 allocations respond to the failed 2009 season, "
   "the November 2011 and April 2012 ones to the 2011 season, and the "
   "December 2021 food-security allocation to the 2021 season ('cereal "
   "yields down 39% … lower-than-normal rainfall'). A small September 2008 "
   "drought allocation is shown against the 2008 season, though its "
   "narrative is not archived and the mapping is uncertain. The 2022 "
-  "anticipatory-action allocation is excluded — it was triggered by the "
-  "framework, not a conventional response. Each panel uses only what was "
-  "observable by 1 September of that year (the same windows and the "
-  "issued-August hybrid), reconstructed with today's datasets.",
+  "anticipatory-action allocation (dashed frame) is excluded — it was "
+  "triggered by the framework, not a conventional response. The strong "
+  "unframed years carry their own story: 1993 and 1995–1997 are "
+  "documented poor seasons that predate CERF (created 2006), and 2006's "
+  "eastern signal — Tanout, Zinder and Diffa at their driest in three of "
+  "the four witnesses, with heavy vegetation stress — drew no "
+  "drought-typed CERF response. All panels are reconstructed with "
+  "today's datasets; before 1998 the rain pillar rests on three "
+  "witnesses (no IMERG).",
   "Comme contre-épreuve, le même composite est reconstruit pour chaque "
-  "saison agricole ayant ensuite donné lieu à une allocation CERF pour "
-  "sécheresse — rattachée à la saison où la sécheresse a réellement eu "
-  "lieu, pas à la date de l’allocation&nbsp;: les allocations de janvier–"
+  "saison depuis 1991, chaque panneau n’utilisant que ce qui était "
+  "observable au 1ᵉʳ septembre de l’année concernée. Les cadres rouges "
+  "marquent les saisons agricoles ayant ensuite donné lieu à une "
+  "allocation CERF pour sécheresse — rattachées à la saison où la "
+  "sécheresse a réellement eu lieu, pas à la date de "
+  "l’allocation&nbsp;: les allocations de janvier–"
   "août 2010 répondent à la saison 2009 échouée, celles de novembre 2011 "
   "et d’avril 2012 à la saison 2011, et l’allocation sécurité alimentaire "
   "de décembre 2021 à la saison 2021 («&nbsp;rendements céréaliers en "
@@ -461,22 +473,28 @@ def main():
   "normale&nbsp;»). Une petite allocation sécheresse de septembre 2008 "
   "est montrée face à la saison 2008, bien que son narratif ne soit pas "
   "archivé et que le rattachement soit incertain. L’allocation d’action "
-  "anticipatoire de 2022 est exclue — déclenchée par le cadre, ce n’est "
-  "pas une réponse classique. Chaque panneau n’utilise que ce qui était "
-  "observable au 1ᵉʳ septembre de l’année concernée (mêmes fenêtres, "
-  "hybride émis en août), reconstruit avec les jeux de données "
-  "d’aujourd’hui.")}</p>
+  "anticipatoire de 2022 (cadre en tirets) est exclue — déclenchée par "
+  "le cadre, ce n’est pas une réponse classique. Les années fortes sans "
+  "cadre portent leur propre histoire&nbsp;: 1993 et 1995–1997 sont des "
+  "saisons médiocres documentées antérieures au CERF (créé en 2006), et "
+  "le signal de l’est en 2006 — Tanout, Zinder et Diffa à leur plus sec "
+  "dans trois des quatre témoins, avec un fort stress de la "
+  "végétation — n’a donné lieu à aucune réponse CERF de type "
+  "sécheresse. Tous les panneaux sont reconstruits avec les jeux de "
+  "données d’aujourd’hui&nbsp;; avant 1998, le pilier pluie repose sur "
+  "trois témoins (pas d’IMERG).")}</p>
 <figure>
 <img src="data:image/png;base64,{img_cdi_hist}" alt="CDI in past CERF drought seasons">
 <figcaption>{T(
   "The combined drought indicator as it would have stood on 1 September "
-  "of each CERF drought season, and 2026 (bold). IMERG is available from "
-  "1998 and ENACTS from 1991, so all panels rest on the same four "
-  "rainfall witnesses.",
+  "of every season, 1991–2026. Solid red frames: seasons that drew a "
+  "CERF drought allocation; dashed frame: the 2022 AA activation "
+  "(excluded from the backtest set); bold: 2026.",
   "L’indicateur de sécheresse combiné tel qu’il se serait présenté au "
-  "1ᵉʳ septembre de chaque saison de sécheresse CERF, et 2026 (en gras). "
-  "IMERG est disponible depuis 1998 et ENACTS depuis 1991, donc tous les "
-  "panneaux reposent sur les quatre mêmes témoins pluviométriques.")}</figcaption>
+  "1ᵉʳ septembre de chaque saison, 1991–2026. Cadres rouges "
+  "pleins&nbsp;: saisons ayant donné lieu à une allocation CERF pour "
+  "sécheresse&nbsp;; cadre en tirets&nbsp;: l’activation AA de 2022 "
+  "(exclue de la contre-épreuve)&nbsp;; en gras&nbsp;: 2026.")}</figcaption>
 </figure>
 
 <h2>{T("Observed rainfall — CHIRPS, IMERG and ENACTS",

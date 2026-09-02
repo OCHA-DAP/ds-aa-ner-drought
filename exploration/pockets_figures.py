@@ -570,9 +570,9 @@ def fig_cdi_history(comp, years, cerf_years=(), aa_years=(), ncols=6):
         if year in cerf_years or year in aa_years:
             ax.add_patch(
                 Rectangle(
-                    (0.01, -0.02),
+                    (0.01, -0.03),
                     0.98,
-                    1.14,
+                    1.27,
                     transform=ax.transAxes,
                     fill=False,
                     edgecolor="#b3261e",

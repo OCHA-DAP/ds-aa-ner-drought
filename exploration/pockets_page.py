@@ -108,7 +108,7 @@ def main():
         comp, cdi_years, cerf_years={2008, 2009, 2011, 2021}, aa_years={2022}
     )
     img_pixel = figs.fig_pixel_percentile()
-    img_rain = figs.fig_rain_rp_trio(summary)
+    img_rain = figs.fig_rain_rp_quad(summary)
     img_gauge = figs.fig_gauge_map(gauges)
     img_veg = figs.fig_veg_strips(asi_h, vhi_h)
     img_seas5 = figs.fig_seas5_pair(summary)
@@ -526,16 +526,20 @@ def main():
   "déclenchement de −0,71 — alors même que son propre détail départemental "
   "contient des poches de 1 an sur 5 à 1 an sur 9.")}</p>
 <p class="note">{T(
-  "ERA5 (not mapped here, included in the data files) independently puts "
-  "much of the same Tahoua–Dosso belt at its driest June–July of the "
-  "1981–2026 record — though ERA5 is the weakest of the witnesses against "
-  "station data historically and has run anomalously dry over Niger in "
-  "2026.",
-  "ERA5 (non cartographié ici, inclus dans les fichiers de données) place "
-  "indépendamment une grande partie de la même bande Tahoua–Dosso à son "
-  "juin–juillet le plus sec de l’historique 1981–2026 — même si ERA5 est "
-  "historiquement le moins fiable des témoins face aux données de "
-  "stations et s’est montré anormalement sec sur le Niger en 2026.")}</p>
+  "ERA5 (fourth panel) independently puts much of the same Tahoua–Dosso "
+  "belt at its driest June–July of the 1981–2026 record — though ERA5 is "
+  "the weakest of the witnesses against station data historically and "
+  "has run anomalously dry over Niger in 2026, which is why it is shown "
+  "for corroboration but kept out of the combined indicator's rain "
+  "pillar (its July already enters through the SEAS5+ERA5 hybrid).",
+  "ERA5 (quatrième panneau) place indépendamment une grande partie de "
+  "la même bande Tahoua–Dosso à son juin–juillet le plus sec de "
+  "l’historique 1981–2026 — même si ERA5 est historiquement le moins "
+  "fiable des témoins face aux données de stations et s’est montré "
+  "anormalement sec sur le Niger en 2026, raison pour laquelle il est "
+  "montré à titre de corroboration mais tenu à l’écart du pilier pluie "
+  "de l’indicateur combiné (son mois de juillet y entre déjà via "
+  "l’hybride SEAS5+ERA5).")}</p>
 <p class="note">{T(
   "ENACTS caveat: over a few departments the MON series shows a step "
   "change after 2021 that looks like an artifact of the thinning DMN "
@@ -574,16 +578,16 @@ def main():
 <img src="data:image/png;base64,{img_rain}" alt="Rainfall return period maps">
 <figcaption>{T(
   "Return period of the 2026 season per department (rank of 2026 within "
-  "the full record, Weibull (n+1)/rank). Left: CHIRPS June–July totals "
-  "(46 years). Centre: IMERG 1 June – 30 August totals (29 years). Right: "
-  "ENACTS June–July SPI (36 years; grey: no ENACTS coverage in the "
-  "Saharan north).",
-  "Période de retour de la saison 2026 par département (rang de 2026 dans "
-  "l’historique complet, Weibull (n+1)/rang). Gauche&nbsp;: cumuls CHIRPS "
-  "juin–juillet (46&nbsp;ans). Centre&nbsp;: cumuls IMERG 1ᵉʳ juin – "
-  "30 août (29&nbsp;ans). Droite&nbsp;: SPI juin–juillet ENACTS "
-  "(36&nbsp;ans&nbsp;; gris&nbsp;: pas de couverture ENACTS dans le nord "
-  "saharien).")}</figcaption>
+  "the full record, Weibull (n+1)/rank). CHIRPS June–July totals "
+  "(46 years); IMERG 1 June – 30 August totals (29 years); ENACTS "
+  "June–July SPI (36 years; grey: no ENACTS coverage in the Saharan "
+  "north); ERA5 June–July totals (46 years).",
+  "Période de retour de la saison 2026 par département (rang de 2026 "
+  "dans l’historique complet, Weibull (n+1)/rang). Cumuls CHIRPS "
+  "juin–juillet (46&nbsp;ans)&nbsp;; cumuls IMERG 1ᵉʳ juin – 30 août "
+  "(29&nbsp;ans)&nbsp;; SPI juin–juillet ENACTS (36&nbsp;ans&nbsp;; "
+  "gris&nbsp;: pas de couverture ENACTS dans le nord saharien)&nbsp;; "
+  "cumuls ERA5 juin–juillet (46&nbsp;ans).")}</figcaption>
 </figure>
 
 <h2>{T("Observed rainfall — rain gauges",

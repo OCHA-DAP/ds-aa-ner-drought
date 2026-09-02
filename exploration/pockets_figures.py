@@ -247,16 +247,20 @@ def fig_pixel_percentile(mask_min_climo=40.0):
     return _b64(fig)
 
 
-def fig_rain_rp_trio(summary):
+def fig_rain_rp_quad(summary):
     adm1, adm2 = _load_admins()
-    fig, axes = plt.subplots(1, 3, figsize=(15.5, 4.6))
+    fig, axes = plt.subplots(2, 2, figsize=(11.5, 6.4))
+    axes = axes.ravel()
     s = summary.set_index("pcode")
-    rp_choropleth(axes[0], adm1, adm2, s["chirps_rp"], labels=False)
-    axes[0].set_title("CHIRPS · jun–jul", fontsize=10)
-    rp_choropleth(axes[1], adm1, adm2, s["imerg_rp"], labels=False)
-    axes[1].set_title("IMERG · jun–août/aug", fontsize=10)
-    rp_choropleth(axes[2], adm1, adm2, s["enacts_rp"], labels=False)
-    axes[2].set_title("ENACTS · SPI jun–jul", fontsize=10)
+    panels = [
+        ("chirps_rp", "CHIRPS · jun–jul"),
+        ("imerg_rp", "IMERG · jun–août/aug"),
+        ("enacts_rp", "ENACTS · SPI jun–jul"),
+        ("era5_rp", "ERA5 · jun–jul"),
+    ]
+    for ax, (col, title) in zip(axes, panels):
+        rp_choropleth(ax, adm1, adm2, s[col], labels=False)
+        ax.set_title(title, fontsize=10)
     fig.legend(
         handles=rp_legend_handles(),
         loc="lower center",
@@ -266,7 +270,7 @@ def fig_rain_rp_trio(summary):
         title="RP",
         title_fontsize=8,
     )
-    fig.tight_layout(rect=(0, 0.08, 1, 1))
+    fig.tight_layout(rect=(0, 0.05, 1, 1))
     return _b64(fig)
 
 

@@ -9,13 +9,18 @@ explore the two-component drought trigger and see how threshold choices affect t
 historical activation record.
 
 - **Source:** `exploration/rolling_threshold_marimo.py`
-- **Deployed:** exported to WASM in `docs/` and served via GitHub Pages from the
-  `iri-trend` branch (`docs/` folder).
+- **Deployed:** exported to WASM in `docs/app/` and served at
+  [`/app/`](https://ocha-dap.github.io/ds-aa-ner-drought/app/) via GitHub Pages
+  from the `iri-trend` branch (`docs/` folder). The site root
+  ([`/`](https://ocha-dap.github.io/ds-aa-ner-drought/)) is a landing page
+  (`docs/index.html`, hand-edited cards per the team landing-page convention)
+  linking every product; the explorer lived at the root until Sep 2026, and the
+  landing page says so for readers following older links.
 - **Static snapshot:** a non-interactive HTML export at the default sliders
   (forecast 35 %, observational 15 %) is served at
   [`/static/`](https://ocha-dap.github.io/ds-aa-ner-drought/static/)
   (`docs/static/index.html`). Regenerate with
-  `uv run marimo export html exploration/rolling_threshold_marimo.py --no-include-code -o docs/static/index.html`.
+  `uv run python exploration/export_static_page.py`.
 
 ### Trigger design
 
@@ -68,12 +73,12 @@ uv run marimo edit exploration/rolling_threshold_marimo.py
 
 # Re-export to the deployed WASM bundle after changes
 uv run marimo export html-wasm exploration/rolling_threshold_marimo.py \
-    --mode run -o docs/index.html
+    --mode run -o docs/app/index.html
 ```
 
 When running locally the notebook loads the source CSV from Azure blob storage via
 `ocha-stratus`. In the browser (WASM) it falls back to the bundled
-`docs/public/iri_data.csv`, so re-run the export whenever the data or notebook changes.
+`docs/app/public/iri_data.csv`, so re-run the export whenever the data or notebook changes.
 
 ### Data source
 
@@ -134,6 +139,23 @@ department and overlaying 2026 HNRP severity:
 - **Regenerate:** run the five fetch scripts, then
   `uv run python exploration/pockets_build_summary.py`, then
   `cd exploration && uv run python pockets_page.py`.
+
+## ENACTS investigation page
+
+A static write-up at
+[`/enacts/`](https://ocha-dap.github.io/ds-aa-ner-drought/enacts/)
+(`docs/enacts/index.html`) of why the 2026 observational decision came out
+the way it did: the live IRI Maproom ENACTS MON value and thresholds
+(queried via the public `fbfmaproom2/niger/export` API), the CHIRPS/ERA5
+disagreement and its mechanics (CHIRP vs CHIRPS station blends), what
+Niger's own gauges reported (DMN monthly CLIMAT via OGIMET; the daily-synop
+route undercounts and was superseded), the 2022 counterexample, and design
+implications. Numbers are baked into the page; provenance is documented in
+its "Method notes".
+
+- **Page renderer:** `exploration/enacts_page.py` (plain HTML, self-drawn
+  SVG charts; no marimo).
+- **Regenerate:** `uv run python exploration/enacts_page.py`.
 
 ## Other files
 

@@ -405,6 +405,15 @@ PAGE_TEMPLATE = """<!DOCTYPE html>
 </style>
 </head>
 <body>
+<!-- back to the site landing page -->
+<style>
+  .home-link {{ display:inline-block; margin:10px 0 0 12px; padding:6px 12px;
+    font:500 13px/1 system-ui,sans-serif; color:#1e795f;
+    background:#e9f5f1; border:1px solid #d4eae4; border-radius:4px;
+    text-decoration:none; }}
+  .home-link:hover {{ background:#d4eae4; }}
+</style>
+<a class="home-link" href="../">&#8592; Niger drought AA</a>
 <main>
 
 <h1>Niger 2026 Jun–Jul rainfall vs the observational trigger</h1>

@@ -254,8 +254,7 @@ def main():
   <button id="btn-en" onclick="aaSetLang('en')">EN</button>
   <button id="btn-fr" onclick="aaSetLang('fr')">FR</button>
 </div>
-<a class="home-link" href="../">{T("← Niger drought AA — trigger explorer",
-                                   "← AA sécheresse Niger — explorateur du déclencheur")}</a>
+<a class="home-link" href="../">{T("← Niger drought AA", "← AA sécheresse Niger")}</a>
 
 <h1>{T("Niger 2026 — pockets of drought", "Niger 2026 — poches de sécheresse")}</h1>
 <p class="note">{T(

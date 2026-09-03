@@ -43,7 +43,9 @@ LANGS = {
         "out": ROOT / "docs" / "static" / "2026" / "index.html",
         "args": [],
         "title": "Niger Drought AA Trigger (2026) — Static Snapshot",
-        "explorer_href": "../../",
+        "explorer_href": "../../app/",
+        "home_href": "../../",
+        "home_label": "\u2190 Niger drought AA",
         "toggle": (
             '<strong>EN</strong> | <a href="fr/" style="color:#aed6f1;">FR</a>'
         ),
@@ -52,7 +54,9 @@ LANGS = {
         "out": ROOT / "docs" / "static" / "2026" / "fr" / "index.html",
         "args": ["--", "-lang", "fr"],
         "title": "Déclencheur AA sécheresse Niger (2026) — instantané statique",
-        "explorer_href": "../../../",
+        "explorer_href": "../../../app/",
+        "home_href": "../../../",
+        "home_label": "\u2190 AA s\u00e9cheresse Niger",
         "toggle": (
             '<a href="../" style="color:#aed6f1;">EN</a> | <strong>FR</strong>'
         ),
@@ -90,6 +94,8 @@ def banner(lang: str, cfg: dict) -> str:
         "font-family:system-ui,sans-serif;font-size:0.9rem;text-align:center;"
         'position:sticky;top:0;z-index:9999;">'
         f'<span style="float:right;letter-spacing:0.05em;">{cfg["toggle"]}</span>'
+        f'<a href="{cfg["home_href"]}" style="float:left;color:#aed6f1;'
+        f'text-decoration:none;">{cfg["home_label"]}</a>'
         f"{text}</div>"
     )
 

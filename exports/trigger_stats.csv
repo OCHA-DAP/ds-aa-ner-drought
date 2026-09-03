@@ -1,0 +1,4 @@
+trigger,return_period_yrs,activation_prob,n_activations,activated_years
+Window 1,8.7,12%,3,"2001, 2009, 2011"
+Window 2,4.3,23%,6,"2001, 2004, 2006, 2013, 2022, 2023"
+Global (either),3.3,31%,8,"2001, 2004, 2006, 2009, 2011, 2013, 2022, 2023"

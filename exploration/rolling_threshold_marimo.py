@@ -1,0 +1,1436 @@
+import marimo
+
+__generated_with = "0.23.1"
+app = marimo.App(width="full")
+
+
+@app.cell
+def imports():
+    import calendar
+
+    import jinja2  # noqa: F401 — required by pandas.style in Pyodide
+    import marimo as mo
+    import matplotlib.pyplot as plt
+    import numpy as np
+    import pandas as pd
+
+    COLS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"]
+
+    return COLS, calendar, mo, np, pd, plt
+
+
+@app.cell
+def lang(mo):
+    # Language: pass `-- -lang fr` to `marimo export html` for the French
+    # build; the interactive app (no CLI args) defaults to English.
+    # Terminology follows the team glossary in ds-knowledge-base
+    # docs/I18N.md (doc-sourced from our framework documents): déclencheur,
+    # période de retour (PR), fenêtre de déclenchement, composante
+    # observationnelle, saison des pluies. Numbers keep one format across
+    # languages per the same page.
+    LANG = str(mo.cli_args().get("lang", "en")).lower()
+
+    _FR = {
+        # months (site_i18n MONTH_ABBR_FR)
+        "Jan": "janv",
+        "Feb": "févr",
+        "Mar": "mars",
+        "Apr": "avr",
+        "May": "mai",
+        "Jun": "juin",
+        # table headers
+        "year": "année",
+        "Forecast": "Prévision",
+        "ENACTS SPI": "SPI ENACTS",
+        "Window 1": "Fenêtre 1",
+        "Window 2": "Fenêtre 2",
+        "Either": "Global",
+        "CERF RR": "CERF RR",
+        "Bad year": "Mauvaise année",
+        # slider / dropdown labels
+        "Forecast component: % triggering from top": (
+            "Composante prévisionnelle : % déclenchant depuis le haut"
+        ),
+        "Observational component: Aug percentile threshold": (
+            "Composante observationnelle : seuil de centile (août)"
+        ),
+        "Month": "Mois",
+        # readouts
+        "Forecast component:": "Composante prévisionnelle :",
+        "Observational component (ENACTS SPI):": (
+            "Composante observationnelle (SPI ENACTS) :"
+        ),
+        "trigger year": "année de déclenchement",
+        "trigger years": "années de déclenchement",
+        "Forecast component RP:": "PR de la composante prévisionnelle :",
+        "Observational component RP:": "PR de la composante observationnelle :",
+        "Combined RP:": "PR globale :",
+        # bar charts
+        "Observational": "Observation",
+        "Trigger counts": "Nombre de déclenchements",
+        "Trigger years": "Années de déclenchement",
+        "Bad year correlation — binary trigger": (
+            "Corrélation mauvaises années — déclencheur binaire"
+        ),
+        "Bad year correlation — indicator values (↑ = drier)": (
+            "Corrélation mauvaises années — valeurs des indicateurs (↑ = plus sec)"
+        ),
+        "Fcast − thresh": "Prév. − seuil",
+        "− ENACTS SPI": "− SPI ENACTS",
+        "Forecast RP:": "PR prévision :",
+        "Observational RP:": "PR observation :",
+        # forecast grid / obs plot
+        "red = triggered": "rouge = déclenché",
+        "Pre-": "Avant ",
+        "(reference only)": "(référence seulement)",
+        "Observational component triggered": (
+            "Composante observationnelle déclenchée"
+        ),
+        "Not triggered": "Non déclenché",
+        "Triggered": "Déclenché",
+        "Year": "Année",
+        "Aug value": "Valeur août",
+        # altair chart
+        "IRI forecast probability": "Probabilité de prévision IRI",
+        "Actual": "Valeur",
+        "Threshold": "Seuil",
+        "Status": "Statut",
+        "Reference window": "Fenêtre de référence",
+        "Sorted values": "Valeurs triées",
+        "sorted ↑: ": "trié ↑ : ",
+    }
+
+    def t(s):
+        return _FR.get(s, s) if LANG == "fr" else s
+
+    return LANG, t
+
+
+@app.cell
+def load_data(mo, pd):
+    import importlib
+    import sys
+
+    with mo.status.spinner(subtitle="Loading data..."):
+        if sys.platform == "emscripten":
+            import io
+            import urllib.request
+
+            _url = str(mo.notebook_location() / "public" / "iri_data.csv")
+            with urllib.request.urlopen(_url) as _resp:
+                df_iri = pd.read_csv(io.StringIO(_resp.read().decode("utf-8")))
+        else:
+            _stratus = importlib.import_module("ocha_stratus")
+            blob_name = "ds-aa-ner-drought/raw/iri/ner_maproom_export_2026-04-25_thresh35 - Sheet1.csv"
+            df_iri = _stratus.load_csv_from_blob(blob_name)
+
+    df_iri.columns = [
+        "year",
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Aug",
+        "JAS_SPI",
+    ]
+    df_iri["year"] = df_iri["year"].astype(int)
+    _month_cols = [
+        c for c in df_iri.columns if c not in ("year", "Aug", "JAS_SPI")
+    ]
+    df_iri[_month_cols] = df_iri[_month_cols] / 100.0
+    df_iri = df_iri.sort_values("year").reset_index(drop=True)
+    return (df_iri,)
+
+
+@app.cell
+def params(mo):
+    ref_window = 10
+    start_eval_year = (
+        2001  # first year with full 10-yr reference window (data starts 1991)
+    )
+    end_eval_year = 2025
+    pct_steps = list(
+        range(0, 105, 5)
+    )  # fraction triggering from top: 0%, 5%, ..., 100%
+    mos = [1, 2, 3, 4, 5, 6]
+    rp_target = 3.5
+    return (
+        end_eval_year,
+        mos,
+        pct_steps,
+        ref_window,
+        rp_target,
+        start_eval_year,
+    )
+
+
+@app.cell
+def note_data(LANG, mo):
+    mo.md(
+        """
+> **Source des données :** prévisions IRI historiques exportées du Maproom le
+> **25 avril 2026**, avec le modèle **OCHA Certification** et le curseur Frequency
+> réglé à **35%**.
+"""
+        if LANG == "fr"
+        else """
+> **Data source:** Historical IRI forecasts exported from the Maproom on **25 April 2026**,
+> using the **OCHA Certification** model with the Frequency slider set to **35%**.
+"""
+    )
+
+
+@app.cell
+def note_plots(LANG, mo):
+    mo.md(
+        """
+## Seuils prévisionnel et observationnel
+
+Utilisez les curseurs pour régler le seuil de chaque composante du déclencheur. La
+**composante prévisionnelle** se déclenche si deux mois consécutifs (janv+févr,
+févr+mars, …, mai+juin) se situent tous deux dans le top X% de leur fenêtre de
+référence historique glissante de 10 ans. La **composante observationnelle** se
+déclenche si le SPI ENACTS se situe dans les Y% les plus bas de l’historique complet.
+
+La grille 2×3 montre les six mois de prévision. Le graphique observationnel montre le
+SPI ENACTS par rapport au seuil historique fixe. Marqueurs rouges = déclenché.
+"""
+        if LANG == "fr"
+        else """
+## Forecast and observational thresholds
+
+Use the sliders to set the threshold for each trigger component. The **forecast component**
+triggers if any two consecutive months (Jan+Feb, Feb+Mar, …, May+Jun) both fall in the
+top X% of their rolling 10-year historical reference window. The **observational component**
+triggers if the ENACTS SPI falls in the bottom Y% of the full historical record.
+
+The 2×3 grid shows all six forecast months. The observational chart shows ENACTS SPI
+against the fixed historical threshold. Red markers = triggered.
+"""
+    )
+
+
+@app.cell
+def obs_ui(mo, t):
+    obs_pct_slider = mo.ui.slider(
+        start=5,
+        stop=50,
+        step=1,
+        value=15,
+        label=t("Observational component: Aug percentile threshold"),
+        show_value=True,
+    )
+    return (obs_pct_slider,)
+
+
+@app.cell
+def pct_ui(mo, t):
+    pct_sel = mo.ui.slider(
+        start=0,
+        stop=100,
+        step=5,
+        value=35,
+        label=t("Forecast component: % triggering from top"),
+        show_value=True,
+    )
+    return (pct_sel,)
+
+
+@app.cell
+def compute_obs_triggers(
+    df_iri, end_eval_year, np, obs_pct_slider, pd, start_eval_year
+):
+    _obs_pct = obs_pct_slider.value
+    _eval_years = list(range(start_eval_year, end_eval_year + 1))
+    _all_aug = df_iri["Aug"].values
+    _n_hist = len(_all_aug)
+    if _obs_pct == 0:
+        _obs_thresh = float("-inf")
+    else:
+        _k_obs = int(np.ceil(_obs_pct / 100 * _n_hist))
+        _obs_thresh = float(sorted(_all_aug)[_k_obs - 1])
+    _obs_rows = []
+    for _year in _eval_years:
+        _actual = df_iri[df_iri["year"] == _year].iloc[0]
+        _act_aug = float(_actual["Aug"])
+        _trig_obsv = _act_aug <= _obs_thresh
+        _obs_rows.append(
+            {
+                "year": _year,
+                "obs_threshold": _obs_thresh,
+                "actual_aug": _act_aug,
+                "trig_obsv": _trig_obsv,
+            }
+        )
+    df_obs = pd.DataFrame(_obs_rows).set_index("year")
+    return (df_obs,)
+
+
+@app.cell
+def compute_forecast_triggers(
+    COLS,
+    calendar,
+    df_iri,
+    end_eval_year,
+    mos,
+    np,
+    pd,
+    pct_steps,
+    ref_window,
+    start_eval_year,
+):
+    """Forecast component only — does not depend on obs_pct so slider won't rerun this."""
+    _eval_years = list(range(start_eval_year, end_eval_year + 1))
+    _consec_pairs = [(mos[i], mos[i + 1]) for i in range(len(mos) - 1)]
+
+    _result_rows = []
+    _thresh_rows = []
+
+    for _pct in pct_steps:
+        for _year in _eval_years:
+            _ref = df_iri[
+                df_iri["year"].between(_year - ref_window, _year - 1)
+            ]
+            _actual = df_iri[df_iri["year"] == _year].iloc[0]
+
+            _n_ref = len(_ref)
+            _k = int(np.ceil(_pct / 100 * _n_ref)) if _pct > 0 else 0
+            _trig_month = {}
+            for _col in COLS:
+                # k-th highest value in reference window; locks threshold to an actual historical value
+                if _k == 0:
+                    _thresh = float("inf")
+                else:
+                    _thresh = float(
+                        sorted(_ref[_col].values, reverse=True)[_k - 1]
+                    )
+                _act_val = float(_actual[_col])
+                _trig = _act_val >= _thresh
+                _trig_month[_col] = _trig
+                _thresh_rows.append(
+                    {
+                        "pct": _pct,
+                        "year": _year,
+                        "month": _col,
+                        "threshold": _thresh,
+                        "actual": _act_val,
+                        "triggered": _trig,
+                    }
+                )
+
+            _pair_trigs = {
+                f"trig_{calendar.month_abbr[_m1]}_{calendar.month_abbr[_m2]}": (
+                    _trig_month[calendar.month_abbr[_m1]]
+                    and _trig_month[calendar.month_abbr[_m2]]
+                )
+                for _m1, _m2 in _consec_pairs
+            }
+            _trig_fcast = any(_pair_trigs.values())
+            _result_rows.append(
+                {
+                    "pct": _pct,
+                    "year": _year,
+                    "trig_fcast": _trig_fcast,
+                    **{f"trig_{_col}": _trig_month[_col] for _col in COLS},
+                    **_pair_trigs,
+                }
+            )
+
+    df_forecast = pd.DataFrame(_result_rows)
+    df_thresholds = pd.DataFrame(_thresh_rows)
+    return df_forecast, df_thresholds
+
+
+@app.cell
+def combine_results(df_forecast, df_obs, pd, pct_steps):
+    _obs = df_obs[["trig_obsv"]]
+    _chunks = []
+    for _pct in pct_steps:
+        _fc = df_forecast[df_forecast["pct"] == _pct].set_index("year")
+        _merged = _fc.join(_obs)
+        _merged["trig_either"] = _merged["trig_fcast"] | _merged["trig_obsv"]
+        _chunks.append(_merged.reset_index())
+    df_results = pd.concat(_chunks, ignore_index=True)
+    return (df_results,)
+
+
+@app.cell
+def compute_summary(
+    df_results, end_eval_year, obs_pct_slider, pd, rp_target, start_eval_year
+):
+    _obs_pct = obs_pct_slider.value
+    _n_years = end_eval_year - start_eval_year + 1
+    _rows = []
+    for _pct, _grp in df_results.groupby("pct"):
+        _n_fcast = int(_grp["trig_fcast"].sum())
+        _n_obsv = int(_grp["trig_obsv"].sum())
+        _n_either = int(_grp["trig_either"].sum())
+        _rp_fcast = (
+            round((_n_years + 1) / _n_fcast, 1)
+            if _n_fcast > 0
+            else float("inf")
+        )
+        _rp_obsv = (
+            round((_n_years + 1) / _n_obsv, 1) if _n_obsv > 0 else float("inf")
+        )
+        _rp_either = (
+            round((_n_years + 1) / _n_either, 1)
+            if _n_either > 0
+            else float("inf")
+        )
+        _rows.append(
+            {
+                "pct_triggering": _pct,
+                "n_fcast": _n_fcast,
+                "rp_fcast": _rp_fcast,
+                f"n_obsv (SPI≤{_obs_pct}%)": _n_obsv,
+                f"rp_obsv (SPI≤{_obs_pct}%)": _rp_obsv,
+                "n_either": _n_either,
+                "rp_either": _rp_either,
+            }
+        )
+    df_summary = pd.DataFrame(_rows)
+    return (df_summary,)
+
+
+@app.cell
+def find_closest_pct(df_summary, rp_target):
+    _finite = df_summary[df_summary["rp_either"] < float("inf")]
+    closest_pct = int(
+        _finite.iloc[
+            (_finite["rp_either"] - rp_target).abs().argsort().iloc[0]
+        ]["pct_triggering"]
+    )
+    return (closest_pct,)
+
+
+@app.cell
+def bad_years_data(pd):
+    df_bad_years = pd.DataFrame(
+        {
+            "year": [
+                2021,
+                2020,
+                2019,
+                2018,
+                2017,
+                2016,
+                2015,
+                2014,
+                2013,
+                2012,
+                2011,
+                2010,
+                2009,
+                2008,
+                2007,
+                2006,
+                2005,
+                2004,
+                2003,
+                2002,
+                2001,
+                2000,
+                1999,
+                1998,
+                1997,
+                1996,
+                1995,
+                1994,
+                1993,
+                1992,
+                1991,
+            ],
+            "bad_year_rank": [
+                9,
+                2,
+                32,
+                32,
+                7,
+                32,
+                5,
+                12,
+                17,
+                16,
+                4,
+                14,
+                1,
+                13,
+                32,
+                32,
+                11,
+                10,
+                15,
+                32,
+                3,
+                32,
+                32,
+                32,
+                8,
+                32,
+                32,
+                32,
+                32,
+                32,
+                32,
+            ],
+        }
+    )
+    return (df_bad_years,)
+
+
+@app.cell
+def cerf_data(pd):
+    # CERF Rapid Response allocations for drought in Niger, attributed to the
+    # rainy-SEASON year via the allocation's validity period (team DB,
+    # aa.cerf_allocation + aa.cerf_supplement, queried 2026-07-30).
+    # - 10-RR-NER-8451 (May 2010) and 10-RR-NER-8465 (Aug 2010) respond to the
+    #   failed Jun-Sep 2009 season.
+    # - 11-RR-NER-8545 (Nov 2011) and 12-RR-NER-8564 (Apr 2012) respond to the
+    #   failed Jun-Sep 2011 season.
+    # - 22-RR-NER-54991 (Aug 2022) is the AA framework's own anticipatory
+    #   allocation (Jun-Jul 2022 SPI trigger).
+    # - 08-RR-NER-8416 is excluded: supplement flags it not_drought (2008
+    #   food-price crisis, not a failed rainy season).
+    df_cerf = pd.DataFrame(
+        {
+            "year": [2009, 2009, 2011, 2011, 2022],
+            "application_code": [
+                "10-RR-NER-8451",
+                "10-RR-NER-8465",
+                "11-RR-NER-8545",
+                "12-RR-NER-8564",
+                "22-RR-NER-54991",
+            ],
+            "amount_usd": [13991081, 15024435, 6001432, 15933118, 9513802],
+        }
+    )
+    cerf_rr_yearly = (
+        df_cerf.groupby("year")["amount_usd"].sum().rename("cerf_rr_usd")
+    )
+    # Season years whose allocation is the AA framework's own anticipatory
+    # allocation (footnoted with * in the trigger detail table).
+    aa_alloc_years = {2022}
+    return aa_alloc_years, cerf_rr_yearly
+
+
+@app.cell
+def obs_display(df_obs, mo, obs_pct_slider, pct_sel, t):
+    _n = int(df_obs["trig_obsv"].sum())
+    _yrs = t("trigger year") if _n == 1 else t("trigger years")
+    mo.vstack(
+        [
+            mo.md(f"**{t('Forecast component:')}** {pct_sel}"),
+            mo.md(
+                f"**{t('Observational component (ENACTS SPI):')}** {obs_pct_slider} "
+                f"→ **{_n} {_yrs}**"
+            ),
+        ]
+    )
+
+
+@app.cell
+def rp_readout(df_summary, mo, pct_sel, t):
+    _pct = pct_sel.value
+    _row = df_summary[df_summary["pct_triggering"] == _pct].iloc[0]
+    _rp_fcast = _row["rp_fcast"]
+    _rp_obsv_col = next(
+        c for c in df_summary.columns if c.startswith("rp_obsv")
+    )
+    _rp_obsv = _row[_rp_obsv_col]
+    _rp_either = _row["rp_either"]
+    mo.md(
+        f"{t('Forecast component RP:')} **{_rp_fcast}** · "
+        f"{t('Observational component RP:')} **{_rp_obsv}** · "
+        f"{t('Combined RP:')} **{_rp_either}**"
+    )
+
+
+@app.cell
+def trigger_bars(
+    COLS,
+    df_bad_years,
+    df_obs,
+    df_results,
+    df_summary,
+    df_thresholds,
+    mo,
+    np,
+    obs_pct_slider,
+    pct_sel,
+    pd,
+    plt,
+    t,
+):
+    from scipy.stats import spearmanr as _spearmanr
+
+    _pct = pct_sel.value
+    _obs_pct = obs_pct_slider.value
+    _grp = df_results[df_results["pct"] == _pct]
+
+    _n_fcast = int(_grp["trig_fcast"].sum())
+    _n_obsv = int(_grp["trig_obsv"].sum())
+    _n_either = int(_grp["trig_either"].sum())
+
+    _row = df_summary[df_summary["pct_triggering"] == _pct].iloc[0]
+    _rp_fcast = _row["rp_fcast"]
+    _rp_obsv_col = next(
+        c for c in df_summary.columns if c.startswith("rp_obsv")
+    )
+    _rp_obsv = _row[_rp_obsv_col]
+    _rp_either = _row["rp_either"]
+
+    _merged = _grp.set_index("year").join(
+        df_bad_years.set_index("year")["bad_year_rank"], how="inner"
+    )
+    _max_rank = int(_merged["bad_year_rank"].max())
+    _severity = _max_rank + 1 - _merged["bad_year_rank"]
+
+    _labels = [
+        f"{t('Forecast')} ({_pct}%)",
+        f"{t('Observational')} ({_obs_pct}%)",
+        t("Either"),
+    ]
+    _colors = ["steelblue", "darkorange", "crimson"]
+    _counts = [_n_fcast, _n_obsv, _n_either]
+    _trig_cols = ["trig_fcast", "trig_obsv", "trig_either"]
+
+    _rs, _ps = [], []
+    for _col in _trig_cols:
+        _r, _p = _spearmanr(_merged[_col].astype(int), _severity)
+        _rs.append(float(_r))
+        _ps.append(float(_p))
+
+    # Indicator-value correlations (not just the binary trigger).
+    # Forecast: per-month margin = value − rolling threshold; per year the
+    # continuous analogue of the pair rule — max over consecutive pairs of the
+    # smaller margin (≥ 0 exactly when the forecast component triggers).
+    # ENACTS SPI is sign-flipped so higher = drier for both indicators.
+    _th = df_thresholds[df_thresholds["pct"] == _pct]
+    _margin = _th.assign(margin=_th["actual"] - _th["threshold"]).pivot(
+        index="year", columns="month", values="margin"
+    )
+    _pair_margin = pd.DataFrame(
+        {
+            f"{_m1}+{_m2}": np.minimum(_margin[_m1], _margin[_m2])
+            for _m1, _m2 in zip(COLS[:-1], COLS[1:])
+        }
+    )
+    _vals = pd.DataFrame(
+        {
+            "fcast_margin": _pair_margin.max(axis=1),
+            "neg_spi": -df_obs["actual_aug"],
+        }
+    ).join(_severity.rename("severity"), how="inner")
+
+    _val_labels = [f"{t('Fcast − thresh')} ({_pct}%)", t("− ENACTS SPI")]
+    _val_colors = ["steelblue", "darkorange"]
+    _val_rs, _val_ps = [], []
+    for _col in ("fcast_margin", "neg_spi"):
+        _x = _vals[_col]
+        if np.isfinite(_x).any() and _x.nunique() > 1:
+            _r, _p = _spearmanr(_x, _vals["severity"])
+        else:
+            _r, _p = float("nan"), float("nan")
+        _val_rs.append(float(_r))
+        _val_ps.append(float(_p))
+
+    _fig, (_ax1, _ax2, _ax3) = plt.subplots(1, 3, figsize=(14, 4))
+
+    _b1 = _ax1.bar(_labels, _counts, color=_colors, alpha=0.8)
+    _ax1.bar_label(_b1)
+    _ax1.set_ylabel(t("Trigger years"))
+    _ax1.set_title(t("Trigger counts"))
+    _ax1.spines[["top", "right"]].set_visible(False)
+
+    def _corr_panel(_ax, _lbls, _rvals, _pvals, _clrs, _title):
+        _bars = _ax.bar(
+            _lbls,
+            [0.0 if np.isnan(_r) else _r for _r in _rvals],
+            color=_clrs,
+            alpha=0.8,
+        )
+        for _bar, _r, _p in zip(_bars, _rvals, _pvals):
+            if np.isnan(_r):
+                _txt, _y, _va = "n/a", 0.03, "bottom"
+            else:
+                _stars = (
+                    "***"
+                    if _p < 0.001
+                    else "**" if _p < 0.01 else "*" if _p < 0.05 else ""
+                )
+                _txt = f"{_r:.2f}{_stars}"
+                _y = _r + (0.03 if _r >= 0 else -0.03)
+                _va = "bottom" if _r >= 0 else "top"
+            _ax.text(
+                _bar.get_x() + _bar.get_width() / 2,
+                _y,
+                _txt,
+                ha="center",
+                va=_va,
+                fontsize=9,
+            )
+        _ax.axhline(0, color="black", lw=0.8)
+        _ax.set_ylim(-1, 1)
+        _ax.set_ylabel("Spearman r")
+        _ax.set_title(_title, fontsize=10)
+        _ax.spines[["top", "right"]].set_visible(False)
+
+    _corr_panel(
+        _ax2,
+        _labels,
+        _rs,
+        _ps,
+        _colors,
+        t("Bad year correlation — binary trigger"),
+    )
+    _corr_panel(
+        _ax3,
+        _val_labels,
+        _val_rs,
+        _val_ps,
+        _val_colors,
+        t("Bad year correlation — indicator values (↑ = drier)"),
+    )
+
+    _rp_line = (
+        f"{t('Forecast RP:')} {_rp_fcast}  ·  "
+        f"{t('Observational RP:')} {_rp_obsv}  ·  "
+        f"{t('Combined RP:')} {_rp_either}"
+    )
+    plt.tight_layout()
+    plt.subplots_adjust(bottom=0.18)
+    _fig.text(
+        0.5,
+        0.03,
+        _rp_line,
+        ha="center",
+        va="bottom",
+        fontsize=9,
+        color="#555555",
+    )
+    _fig
+
+
+@app.cell
+def all_months_plot(
+    COLS,
+    LANG,
+    df_iri,
+    df_thresholds,
+    plt,
+    pct_sel,
+    ref_window,
+    start_eval_year,
+    t,
+):
+    _pct = pct_sel.value
+    _fig, _axes = plt.subplots(2, 3, figsize=(14, 7), sharey=False)
+    _pre = df_iri[df_iri["year"] < start_eval_year].sort_values("year")
+
+    for _col, _ax in zip(COLS, _axes.flat):
+        _df = df_thresholds[
+            (df_thresholds["month"] == _col) & (df_thresholds["pct"] == _pct)
+        ].sort_values("year")
+        # Pre-evaluation actuals (reference period)
+        _ax.scatter(
+            _pre["year"],
+            _pre[_col],
+            color="lightgray",
+            zorder=2,
+            s=28,
+            alpha=0.7,
+        )
+        # Threshold line from start_eval_year
+        _ax.plot(_df["year"], _df["threshold"], lw=1.5, color="steelblue")
+        _trig = _df[_df["triggered"]]
+        _no_trig = _df[~_df["triggered"]]
+        _ax.scatter(
+            _trig["year"], _trig["actual"], color="crimson", zorder=5, s=55
+        )
+        _ax.scatter(
+            _no_trig["year"],
+            _no_trig["actual"],
+            color="gray",
+            zorder=4,
+            s=35,
+            alpha=0.6,
+        )
+        _ax.set_title(t(_col))
+        _ax.spines[["top", "right"]].set_visible(False)
+        _ax.tick_params(labelsize=8)
+
+    _fig.suptitle(
+        (
+            (
+                f"Seuil glissant sur {ref_window} ans au top {_pct}% — "
+                f"{t('red = triggered')}"
+            )
+            if LANG == "fr"
+            else (
+                f"Rolling {ref_window}-yr threshold at top {_pct}% — "
+                f"red = triggered"
+            )
+        ),
+        fontsize=12,
+    )
+    plt.tight_layout()
+    _fig
+
+
+@app.cell
+def aug_obs_plot(
+    LANG, df_iri, df_obs, obs_pct_slider, plt, start_eval_year, t
+):
+    _obs_pct = obs_pct_slider.value
+    _obs_thresh = df_obs["obs_threshold"].iloc[0]
+    _all = df_iri.sort_values("year")
+    _pre = _all[_all["year"] < start_eval_year]
+    _eval = _all[_all["year"] >= start_eval_year]
+    _trig_eval = _eval[_eval["Aug"] <= _obs_thresh]
+    _no_trig_eval = _eval[_eval["Aug"] > _obs_thresh]
+
+    _fig, _ax = plt.subplots(figsize=(10, 3.5))
+    _ax.axhline(
+        _obs_thresh,
+        lw=1.8,
+        color="darkorange",
+        label=(
+            f"Seuil SPI ENACTS ({_obs_pct}% les plus bas de l’historique)"
+            if LANG == "fr"
+            else f"ENACTS SPI threshold (bottom {_obs_pct}% of full record)"
+        ),
+    )
+    _ax.scatter(
+        _pre["year"],
+        _pre["Aug"],
+        color="lightgray",
+        zorder=2,
+        s=40,
+        alpha=0.7,
+        label=f"{t('Pre-')}{start_eval_year} {t('(reference only)')}",
+    )
+    _ax.scatter(
+        _trig_eval["year"],
+        _trig_eval["Aug"],
+        color="crimson",
+        zorder=5,
+        s=70,
+        label=t("Observational component triggered"),
+    )
+    _ax.scatter(
+        _no_trig_eval["year"],
+        _no_trig_eval["Aug"],
+        color="gray",
+        zorder=4,
+        s=45,
+        alpha=0.7,
+        label=t("Not triggered"),
+    )
+    _ax.set_title(
+        (
+            f"SPI ENACTS (composante observationnelle) — "
+            f"seuil sur l’historique complet, {_obs_pct}% les plus bas"
+        )
+        if LANG == "fr"
+        else (
+            f"ENACTS SPI (observational component) — "
+            f"full historical threshold at bottom {_obs_pct}%"
+        )
+    )
+    _ax.set_xlabel(t("Year"))
+    _ax.set_ylabel(t("Aug value"))
+    _ax.legend()
+    _ax.spines[["top", "right"]].set_visible(False)
+    plt.tight_layout()
+    _fig
+
+
+@app.cell
+def note_activation(LANG, mo):
+    mo.md(
+        """
+## Historique des activations
+
+Le tableau ci-dessous montre le registre annuel complet du déclencheur aux seuils
+sélectionnés, avec les périodes de retour de chaque composante. Les cellules rouges
+marquent un déclenchement ; vide = pas de déclenchement. Survolez les lignes
+pour les surligner.
+
+Chaque paire de mois consécutifs appartient à une fenêtre de déclenchement selon son
+*mois de décision* (le second mois de la paire) : **Fenêtre 1** = janv+févr, févr+mars
+(décisions févr–mars) ; **Fenêtre 2** = mars+avr, avr+mai, mai+juin (décisions
+avr–juin) *ou* la composante observationnelle.
+
+**CERF RR** (bleu) montre les allocations de réponse rapide du CERF pour la sécheresse
+au Niger (total USD par saison), attribuées à l’année de la *saison des pluies* via la
+période de validité de chaque allocation — les allocations arrivent souvent l’année
+civile suivante (p. ex. les allocations de 2010 répondent à l’échec des pluies
+juin–sept 2009). Le montant 2022 est l’allocation anticipatoire du cadre lui-même. Une
+allocation de 2008 étiquetée sécheresse est exclue (crise des prix alimentaires, pas un
+échec de la saison). Source : base de données de l’équipe, `aa.cerf_allocation` +
+`aa.cerf_supplement`.
+"""
+        if LANG == "fr"
+        else """
+## Activation record
+
+The table below shows the full year-by-year trigger record at the selected thresholds,
+with return periods for each component. Red cells mark a trigger; blank = no trigger.
+Hover rows to highlight.
+
+Each consecutive-month pair belongs to a framework window by its *decision month* (the
+later month of the pair): **Window 1** = Jan+Feb, Feb+Mar (decisions Feb–Mar);
+**Window 2** = Mar+Apr, Apr+May, May+Jun (decisions Apr–Jun) *or* the observational
+component.
+
+**CERF RR** (blue) shows CERF Rapid Response allocations for drought in Niger (total
+USD per season), attributed to the *rainy-season* year via each allocation's validity
+period — allocations often land the following calendar year (e.g. the 2010 allocations
+respond to the failed Jun–Sep 2009 rains). The 2022 amount is the framework's own
+anticipatory allocation. A 2008 drought-labelled allocation is excluded (food-price
+crisis, not a failed season). Source: team DB `aa.cerf_allocation` +
+`aa.cerf_supplement`.
+"""
+    )
+
+
+@app.cell
+def trigger_detail_table(
+    COLS,
+    LANG,
+    aa_alloc_years,
+    calendar,
+    cerf_rr_yearly,
+    df_bad_years,
+    df_results,
+    mo,
+    mos,
+    np,
+    pd,
+    pct_sel,
+    t,
+):
+    _pct = pct_sel.value
+    _df = (
+        df_results[df_results["pct"] == _pct]
+        .copy()
+        .sort_values("year", ascending=False)
+    )
+    _df = _df.join(
+        df_bad_years.set_index("year")["bad_year_rank"], on="year", how="left"
+    )
+    _df = _df.join(cerf_rr_yearly, on="year", how="left")
+
+    _month_cols = [f"trig_{c}" for c in COLS]
+    _pair_cols = [
+        f"trig_{calendar.month_abbr[mos[i]]}_{calendar.month_abbr[mos[i+1]]}"
+        for i in range(len(mos) - 1)
+    ]
+    # Window by decision month (the later month of the pair):
+    # Feb–Mar decisions -> Window 1; Apr–Jun decisions (or obs component) -> Window 2
+    _w1_pairs = [
+        _pair_cols[i] for i in range(len(_pair_cols)) if mos[i + 1] <= 3
+    ]
+    _w2_pairs = [
+        _pair_cols[i] for i in range(len(_pair_cols)) if mos[i + 1] >= 4
+    ]
+    _df["wt1"] = _df[_w1_pairs].any(axis=1)
+    _df["wt2"] = _df[_w2_pairs].any(axis=1) | _df["trig_obsv"]
+
+    _rename = {
+        **{f"trig_{c}": t(c) for c in COLS},
+        **{
+            f"trig_{calendar.month_abbr[mos[i]]}_{calendar.month_abbr[mos[i+1]]}": (
+                f"{t(calendar.month_abbr[mos[i]])}+{t(calendar.month_abbr[mos[i+1]])}"
+            )
+            for i in range(len(mos) - 1)
+        },
+        "year": t("year"),
+        "trig_fcast": t("Forecast"),
+        "trig_obsv": t("ENACTS SPI"),
+        "wt1": t("Window 1"),
+        "wt2": t("Window 2"),
+        "trig_either": t("Either"),
+        "cerf_rr_usd": t("CERF RR"),
+        "bad_year_rank": t("Bad year"),
+    }
+    _display = (
+        _df[
+            ["year"]
+            + _month_cols
+            + _pair_cols
+            + [
+                "trig_fcast",
+                "trig_obsv",
+                "wt1",
+                "wt2",
+                "trig_either",
+                "cerf_rr_usd",
+                "bad_year_rank",
+            ]
+        ]
+        .rename(columns=_rename)
+        .reset_index(drop=True)
+    )
+
+    _rank_vals = df_bad_years["bad_year_rank"].values
+    _p20 = float(np.percentile(_rank_vals, 20))
+    _p33 = float(np.percentile(_rank_vals, 33))
+    _p66 = float(np.percentile(_rank_vals, 66))
+
+    def _rank_style(v):
+        if pd.isna(v):
+            return "background-color: #f4f4f4; color: #cccccc"
+        elif v <= _p20:
+            return "background-color: #ff9999"
+        elif v <= _p33:
+            return "background-color: #ffcc88"
+        elif v < _p66:
+            return ""
+        else:
+            return "background-color: #cceecc"
+
+    _highlight_cols = [
+        c
+        for c in _display.columns
+        if c not in (t("year"), t("CERF RR"), t("Bad year"))
+    ]
+    # Pre-format CERF amounts as strings so the framework's own anticipatory
+    # allocation can carry a * (footnoted below the table).
+    _cerf_name = t("CERF RR")
+    _display[_cerf_name] = [
+        (
+            ""
+            if pd.isna(_v)
+            else f"${_v / 1e6:.1f}M" + ("*" if _y in aa_alloc_years else "")
+        )
+        for _y, _v in zip(_display[t("year")], _display[_cerf_name])
+    ]
+    _styled = (
+        _display.style.map(
+            lambda v: (
+                "background-color: #ffaaaa; color: #7a0000; font-weight: bold"
+                if bool(v)
+                else ""
+            ),
+            subset=_highlight_cols,
+        )
+        .map(_rank_style, subset=[t("Bad year")])
+        .map(
+            lambda v: (
+                "background-color: #cfe2f3; font-weight: bold" if v else ""
+            ),
+            subset=[_cerf_name],
+        )
+        .format({t("Bad year"): lambda v: "" if pd.isna(v) else str(int(v))})
+        .format(lambda v: "", subset=_highlight_cols)
+        .set_uuid("trigger_detail")
+    )
+    # Fine vertical separators after each logical column group
+    _fine_line = "1px solid rgba(128, 128, 128, 0.45)"
+    _sep_after = [
+        t("year"),
+        t("Jun"),
+        f"{t('May')}+{t('Jun')}",
+        t("Forecast"),
+        t("ENACTS SPI"),
+        t("Window 2"),
+        t("Either"),
+    ]
+    _cols_list = list(_display.columns)
+    _vline_css = "\n".join(
+        f"#T_trigger_detail .col{_cols_list.index(_c)} "
+        f"{{ border-right: {_fine_line}; }}"
+        for _c in _sep_after
+    )
+    _css = f"""<style>
+#T_trigger_detail {{
+    border-collapse: collapse;
+    border-top: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+}}
+#T_trigger_detail thead th {{
+    border-bottom: 1px solid currentColor;
+    padding: 5px 9px;
+}}
+#T_trigger_detail tbody td {{
+    padding: 3px 9px;
+    border-bottom: {_fine_line};
+}}
+#T_trigger_detail tbody tr:last-child td {{
+    border-bottom: none;
+}}
+#T_trigger_detail th, #T_trigger_detail td {{
+    border-right: 1px solid rgba(128, 128, 128, 0.18);
+}}
+#T_trigger_detail th:last-child, #T_trigger_detail td:last-child {{
+    border-right: none;
+}}
+{_vline_css}
+#T_trigger_detail tbody tr:hover td {{
+    background-color: #dde8f8;
+    cursor: default;
+}}
+</style>"""
+    mo.vstack(
+        [
+            mo.md(
+                (
+                    f"### Détail annuel du déclencheur "
+                    f"(composante prévisionnelle : top {_pct}%)"
+                )
+                if LANG == "fr"
+                else (
+                    f"### Per-year trigger detail "
+                    f"(forecast component: top {_pct}%)"
+                )
+            ),
+            mo.Html(_css + _styled.hide(axis="index").to_html()),
+            mo.Html(
+                '<small style="color:#777;">'
+                + (
+                    "* Allocation anticipatoire au titre du cadre "
+                    "d’action anticipatoire lui-même."
+                    if LANG == "fr"
+                    else (
+                        "* Anticipatory allocation under the AA framework "
+                        "itself."
+                    )
+                )
+                + "</small>"
+            ),
+        ]
+    )
+
+
+@app.cell
+def note_analysis(LANG, mo):
+    mo.md(
+        "---\n\n## Optimisation" if LANG == "fr" else "---\n\n## Optimization"
+    )
+
+
+@app.cell
+def note_optimization_params(
+    LANG, end_eval_year, mo, ref_window, rp_target, start_eval_year
+):
+    mo.md(
+        (
+            f"Années d’évaluation : **{start_eval_year}–{end_eval_year}** "
+            f"({end_eval_year - start_eval_year + 1} ans, fenêtre complète de "
+            f"{ref_window} ans partout), PR cible : **{rp_target}**"
+        )
+        if LANG == "fr"
+        else (
+            f"Evaluation years: **{start_eval_year}–{end_eval_year}** "
+            f"({end_eval_year - start_eval_year + 1} years, full {ref_window}-yr window throughout), "
+            f"target RP: **{rp_target}**"
+        )
+    )
+
+
+@app.cell
+def note_obs(LANG, mo):
+    mo.md(
+        """
+## 1 · Régler le seuil du déclencheur observationnel
+
+La **composante observationnelle** utilise le SPI ENACTS MON juin–juil exporté du
+Maproom comme indicateur observationnel (pas une prévision). Réglez le curseur pour
+choisir quel centile inférieur de l’historique complet compte comme déclenchement.
+Ce seuil est fixe pour toutes les années d’évaluation (non glissant).
+"""
+        if LANG == "fr"
+        else """
+## 1 · Set the observational trigger threshold
+
+The **observational component** uses the ENACTS MON Jun–Jul SPI exported from the
+Maproom as an observational indicator (not a forecast). Set the slider to choose
+what bottom-percentile of the full historical record counts as a trigger.
+This threshold is fixed across all evaluation years (not rolling).
+"""
+    )
+
+
+@app.cell
+def note_sweep(LANG, mo):
+    mo.md(
+        """
+## 2 · Balayage du seuil prévisionnel → tableau des périodes de retour
+
+Pour chaque niveau de centile candidat, chaque année d’évaluation est évaluée : la
+**composante prévisionnelle** se déclenche si deux mois consécutifs (janv+févr,
+févr+mars, …, mai+juin) dépassent tous deux leur seuil historique glissant de 10 ans.
+Le tableau ci-dessous montre, pour chaque centile, combien d’années se déclenchent
+sous chaque composante et la période de retour impliquée en combinaison avec la
+composante observationnelle.
+"""
+        if LANG == "fr"
+        else """
+## 2 · Forecast threshold sweep → return period table
+
+For every candidate percentile level, each evaluation year is assessed: the
+**forecast component** triggers if any two consecutive months (Jan+Feb, Feb+Mar, …,
+May+Jun) both exceed their rolling 10-year historical threshold. The table
+below shows, for each percentile, how many years trigger under each component and
+the implied return period when combined with the observational component.
+"""
+    )
+
+
+@app.cell
+def trigger_summary(LANG, df_summary, mo, obs_pct_slider, rp_target):
+    _obs_pct = obs_pct_slider.value
+    _near_target = df_summary[
+        df_summary["rp_either"].apply(
+            lambda x: isinstance(x, float) and abs(x - rp_target) <= 0.6
+        )
+    ]
+    if LANG == "fr":
+        _note = (
+            f"Lignes les plus proches de la PR cible {rp_target} : "
+            f"pct = {_near_target['pct_triggering'].tolist()}"
+            if len(_near_target)
+            else f"Aucune ligne à moins de 0.6 de la PR cible {rp_target}"
+        )
+        _hdr = (
+            f"### Nombre de déclenchements par seuil de centile\n\n"
+            f"Composante observationnelle fixée aux **{_obs_pct}%** les plus "
+            f"bas de l’historique complet. {_note}"
+        )
+    else:
+        _note = (
+            f"Rows closest to target RP {rp_target}: pct = {_near_target['pct_triggering'].tolist()}"
+            if len(_near_target)
+            else f"No rows within 0.6 of target RP {rp_target}"
+        )
+        _hdr = (
+            f"### Trigger counts by percentile threshold\n\n"
+            f"Observational component fixed at bottom **{_obs_pct}%** of full record. {_note}"
+        )
+    mo.vstack([mo.md(_hdr), mo.ui.table(df_summary)])
+
+
+@app.cell
+def note_auto_select(LANG, mo, rp_target):
+    mo.md(
+        f"""
+## 3 · Sélection automatique du seuil
+
+Le centile prévisionnel dont la **période de retour globale est la plus proche de
+{rp_target} ans** est identifié automatiquement. Les années qui se seraient
+déclenchées sous chaque composante sont listées ici.
+"""
+        if LANG == "fr"
+        else f"""
+## 3 · Automatic threshold selection
+
+The forecast percentile whose **combined return period is closest to {rp_target} years**
+is identified automatically. The years that would have triggered under each component
+are listed here.
+"""
+    )
+
+
+@app.cell
+def triggered_years_detail(
+    LANG, closest_pct, df_results, mo, obs_pct_slider, rp_target
+):
+    _obs_pct = obs_pct_slider.value
+    _grp = df_results[df_results["pct"] == closest_pct]
+    _fcast_years = sorted(_grp[_grp["trig_fcast"]]["year"].tolist())
+    _obsv_years = sorted(_grp[_grp["trig_obsv"]]["year"].tolist())
+    _either_years = sorted(_grp[_grp["trig_either"]]["year"].tolist())
+    mo.md(
+        (
+            f"À **pct = {closest_pct}%** (le plus proche de la PR {rp_target}) :  \n"
+            f"Composante prévisionnelle : **{_fcast_years}**  \n"
+            f"Composante observationnelle (SPI ENACTS ≤{_obs_pct}%) : **{_obsv_years}**  \n"
+            f"Global : **{_either_years}**"
+        )
+        if LANG == "fr"
+        else (
+            f"At **pct = {closest_pct}%** (closest to RP {rp_target}):  \n"
+            f"Forecast component: **{_fcast_years}**  \n"
+            f"Observational component (ENACTS SPI ≤{_obs_pct}%): **{_obsv_years}**  \n"
+            f"Combined: **{_either_years}**"
+        )
+    )
+
+
+@app.cell
+def note_single_month(LANG, mo):
+    mo.md(
+        """
+### Détail par mois
+
+Le graphique interactif montre le seuil glissant de 10 ans (ligne bleue, à partir de
+2001) et les valeurs réelles des prévisions IRI pour le mois sélectionné. Survolez les
+marqueurs bleus du seuil pour voir les années de référence et les valeurs triées
+derrière chaque seuil.
+
+**Mois** sélectionne le mois de prévision affiché. Le **% déclenchant depuis le haut**
+est contrôlé par le curseur en haut de la page.
+"""
+        if LANG == "fr"
+        else """
+### Single-month detail
+
+The interactive chart shows the rolling 10-year threshold (blue line, from 2001)
+and actual IRI forecast values for the selected month. Hover the blue threshold
+markers to see the reference years and sorted values behind each threshold.
+
+**Month** selects which forecast month is shown. **% triggering from top** is
+controlled by the slider at the top of the page.
+"""
+    )
+
+
+@app.cell
+def month_ui(COLS, mo, t):
+    month_sel = mo.ui.dropdown(
+        options={t(c): c for c in COLS}, value=t("Jan"), label=t("Month")
+    )
+    month_sel
+    return (month_sel,)
+
+
+@app.cell
+def threshold_evolution_plot(
+    LANG,
+    df_iri,
+    df_thresholds,
+    mo,
+    month_sel,
+    pct_sel,
+    ref_window,
+    start_eval_year,
+    t,
+):
+    import altair as alt
+
+    _month = month_sel.value
+    _pct = pct_sel.value
+    _df = (
+        df_thresholds[
+            (df_thresholds["month"] == _month) & (df_thresholds["pct"] == _pct)
+        ]
+        .sort_values("year")
+        .copy()
+    )
+
+    # Pre-compute tooltip columns for the threshold line
+    _ref_strs, _ref_sorted = [], []
+    for _, _row in _df.iterrows():
+        _yr = int(_row["year"])
+        _ref = df_iri[
+            df_iri["year"].between(_yr - ref_window, _yr - 1)
+        ].sort_values("year")
+        _ref_strs.append(
+            f"{int(_ref['year'].min())}–{int(_ref['year'].max())}: "
+            + ", ".join(
+                f"{int(r['year'])}: {r[_month]:.0%}"
+                for _, r in _ref.iterrows()
+            )
+        )
+        _ref_sorted.append(
+            t("sorted ↑: ")
+            + ", ".join(f"{v:.0%}" for v in sorted(_ref[_month].values))
+        )
+    _df["ref_years"] = _ref_strs
+    _df["ref_sorted"] = _ref_sorted
+    _df["thresh_fmt"] = (_df["threshold"] * 100).round(1).astype(str) + "%"
+    _df["actual_fmt"] = (_df["actual"] * 100).round(1).astype(str) + "%"
+    _df["status"] = _df["triggered"].map(
+        {True: t("Triggered"), False: t("Not triggered")}
+    )
+
+    # Pre-eval data
+    _pre = (
+        df_iri[df_iri["year"] < start_eval_year][["year", _month]]
+        .rename(columns={_month: "actual"})
+        .copy()
+    )
+    _pre["actual_fmt"] = (_pre["actual"] * 100).round(1).astype(str) + "%"
+
+    _pre_chart = (
+        alt.Chart(_pre)
+        .mark_point(color="#cccccc", size=55, filled=True, opacity=0.8)
+        .encode(
+            x=alt.X("year:O", title=t("Year")),
+            y=alt.Y(
+                "actual:Q",
+                title=t("IRI forecast probability"),
+                axis=alt.Axis(format=".0%"),
+            ),
+            tooltip=[
+                alt.Tooltip("year:O", title=t("Year")),
+                alt.Tooltip("actual_fmt:N", title=t("Actual")),
+            ],
+        )
+    )
+    _line = (
+        alt.Chart(_df)
+        .mark_line(color="steelblue", strokeWidth=2)
+        .encode(x="year:O", y="threshold:Q")
+    )
+    _thresh_pts = (
+        alt.Chart(_df)
+        .mark_point(color="steelblue", size=65, filled=True)
+        .encode(
+            x="year:O",
+            y="threshold:Q",
+            tooltip=[
+                alt.Tooltip("year:O", title=t("Year")),
+                alt.Tooltip(
+                    "thresh_fmt:N", title=f"{t('Threshold')} (top {_pct}%)"
+                ),
+                alt.Tooltip("ref_years:N", title=t("Reference window")),
+                alt.Tooltip("ref_sorted:N", title=t("Sorted values")),
+            ],
+        )
+    )
+    _scatter = (
+        alt.Chart(_df)
+        .mark_point(size=90, filled=True, opacity=0.9)
+        .encode(
+            x="year:O",
+            y="actual:Q",
+            color=alt.Color(
+                "status:N",
+                scale=alt.Scale(
+                    domain=[t("Triggered"), t("Not triggered")],
+                    range=["crimson", "#888888"],
+                ),
+                title=None,
+            ),
+            tooltip=[
+                alt.Tooltip("year:O", title=t("Year")),
+                alt.Tooltip("actual_fmt:N", title=t("Actual")),
+                alt.Tooltip("thresh_fmt:N", title=t("Threshold")),
+                alt.Tooltip("status:N", title=t("Status")),
+            ],
+        )
+    )
+    _chart = (
+        (_pre_chart + _line + _thresh_pts + _scatter)
+        .properties(
+            title=(
+                f"{t(_month)} — seuil glissant sur {ref_window} ans au top {_pct}%"
+                if LANG == "fr"
+                else f"{_month} — rolling {ref_window}-yr threshold at top {_pct}%"
+            ),
+            width=720,
+            height=340,
+        )
+        .configure_axis(grid=False)
+        .configure_view(strokeWidth=0)
+    )
+    mo.ui.altair_chart(_chart)
+
+
+if __name__ == "__main__":
+    app.run()

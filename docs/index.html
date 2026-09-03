@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Niger Drought Anticipatory Action — OCHA Centre for Humanitarian Data</title>
+<meta name="description" content="Analysis products for the Niger drought anticipatory action framework: the interactive trigger explorer, the 2026 season monitoring pages, and the ENACTS observational-trigger investigation.">
+<link rel="icon" href="favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <canvas id="bg" aria-hidden="true"></canvas>
+    <div class="inner">
+      <p class="eyebrow">OCHA Centre for Humanitarian Data</p>
+      <h1>Niger Drought Anticipatory Action</h1>
+      <p>Analysis behind the Niger drought AA framework: a two-arm trigger combining the
+         IRI seasonal rainfall forecast with an observed Jun–Jul rainfall index. These
+         pages hold the interactive trigger explorer and the 2026-season monitoring and
+         investigation work.</p>
+    </div>
+  </header>
+
+  <main>
+    <!-- The explorer was at / until the Sep 2026 restructure, and that root URL is
+         linked from framework documents — so it gets the feature row, named plainly,
+         with "moved here from /" where the arriving reader will look. -->
+    <p class="label">The trigger explorer</p>
+    <div class="grid grid-one">
+
+      <a class="k k-feature" href="app/">
+        <span class="body">
+          <h2>Interactive trigger explorer</h2>
+          <p>The calibration app for the framework revision: adjust the forecast and
+             observational thresholds and see the historical activations, per-window
+             return periods, and the bad-year validation update live. This is the page
+             that used to be at this address — if a document linked you to the site
+             root, this is the tool it meant.</p>
+          <span class="views">Forecast arm · Observational arm · Windows &amp; return
+             periods · Bad-year validation</span>
+          <span class="foot"><em>/app/</em><span>Moved here from / (Sep 2026)</span></span>
+        </span>
+      </a>
+
+    </div>
+
+    <p class="label label-2">2026 season</p>
+    <div class="grid">
+
+      <a class="k" href="static/2026/">
+        <h2>2026 framework snapshot</h2>
+        <p>The locked stakeholder-facing snapshot of the 2026 trigger design at the
+           default thresholds (forecast 35% / observational 15%), with the CERF
+           allocation history. Also available <span lang="fr">en français</span> at
+           <code>/static/2026/fr/</code>.</p>
+        <span class="foot"><em>/static/2026/</em></span>
+      </a>
+
+      <a class="k" href="rainfall/">
+        <h2>Jun–Jul rainfall vs the observational trigger</h2>
+        <p>How close the 2026 season came to the observational arm, using ERA5 and
+           CHIRPS as proxies while the ENACTS value was pending: seasonal totals,
+           percentile ranks, and implied-SPI cross-checks against both candidate
+           thresholds.</p>
+        <span class="foot"><em>/rainfall/</em></span>
+      </a>
+
+      <a class="k" href="pockets/">
+        <h2>Pockets of drought — departmental view</h2>
+        <p>Per-department return periods for the 2026 season across CHIRPS, IMERG,
+           gauges, SEAS5 and vegetation indices, overlaid with HNRP severity — the
+           sub-national picture a single zone-wide trigger cannot see.</p>
+        <span class="foot"><em>/pockets/</em></span>
+      </a>
+
+      <a class="k" href="enacts/">
+        <h2>Why ENACTS didn’t trigger</h2>
+        <p>The investigation into the 2026 observational decision: what the live IRI
+           Maproom shows, why CHIRPS and ERA5 disagree with it, what Niger’s own rain
+           gauges reported, and what that means for how the trigger is designed.</p>
+        <span class="foot"><em>/enacts/</em></span>
+      </a>
+
+    </div>
+  </main>
+
+  <div class="note">
+    <p><strong>Looking for the trigger explorer?</strong> It moved from this address to
+       <a href="app/"><code>/app/</code></a> when this landing page was added — older
+       documents linking the site root mean that app.</p>
+    <p><strong>Access.</strong> Everything here is public — no sign-in. Source and
+       methods: <a href="https://github.com/OCHA-DAP/ds-aa-ner-drought">OCHA-DAP/ds-aa-ner-drought</a>.</p>
+  </div>
+
+</div>
+
+<script src="assets/hero.js" defer></script>
+</body>
+</html>

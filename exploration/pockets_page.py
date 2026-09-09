@@ -761,7 +761,7 @@ def main():
   "land cover, combining water-balance and biomass indicators. Its "
   "current classification corroborates — and sharpens — the picture: "
   "warnings on 26 of Niger's 35 assessed units, with the Dosso–Tahoua–"
-  "Tillabéri belt at level 1/1+ under 'exceptional conditions', and, "
+  "Tillabéri belt at level 1/1+ and, "
   "crucially, level-3 warnings (water balance AND biomass: poor growth "
   "with negative prospects) on Diffa, Maïné-Soroa and Tanout croplands "
   "and level 3+ on N'Guigmi rangelands. At ASAP's unit scale, the "
@@ -772,8 +772,8 @@ def main():
   "agricole par unité administrative et type de couvert, en combinant "
   "bilan hydrique et biomasse. Sa classification actuelle corrobore — "
   "et affine — le tableau&nbsp;: alertes sur 26 des 35 unités évaluées "
-  "du Niger, la bande Dosso–Tahoua–Tillabéri en niveau 1/1+ sous "
-  "«&nbsp;conditions exceptionnelles&nbsp;», et surtout des alertes de "
+  "du Niger, la bande Dosso–Tahoua–Tillabéri en niveau 1/1+, et "
+  "surtout des alertes de "
   "niveau 3 (bilan hydrique ET biomasse&nbsp;: croissance médiocre et "
   "perspectives négatives) sur les cultures de Diffa, Maïné-Soroa et "
   "Tanout, et de niveau 3+ sur les pâturages de N'Guigmi. À l'échelle "
@@ -784,13 +784,11 @@ def main():
 <figcaption>{T(
   "Reproduction of the current JRC ASAP warning classification for Niger "
   "(GAUL2 units × land cover, dekad of 21–31 August 2026; pulled from "
-  "ASAP's public WFS). Dots: units flagged 'with exceptional "
-  "conditions'. Grey: insufficient crop/rangeland area. Source: EC/JRC "
+  "ASAP's public WFS). Grey: insufficient crop/rangeland area. Source: EC/JRC "
   "ASAP, agricultural-production-hotspots.ec.europa.eu.",
   "Reproduction de la classification d'alerte ASAP (JRC) actuelle pour "
   "le Niger (unités GAUL2 × couvert, décade du 21–31 août 2026&nbsp;; "
-  "extraite du WFS public d'ASAP). Points&nbsp;: unités signalées "
-  "«&nbsp;conditions exceptionnelles&nbsp;». Gris&nbsp;: superficie "
+  "extraite du WFS public d'ASAP). Gris&nbsp;: superficie "
   "cultivée/pastorale insuffisante. Source&nbsp;: ASAP CE/JRC, "
   "agricultural-production-hotspots.ec.europa.eu.")}</figcaption>
 </figure>

@@ -545,7 +545,16 @@ def fig_cdi(summary):
     return _b64(fig)
 
 
-def fig_cdi_history(comp, years, cerf_years=(), aa_years=(), ncols=6):
+def fig_cdi_history(
+    comp,
+    years,
+    cerf_years=(),
+    aa_years=(),
+    ncols=6,
+    panel_w=2.75,
+    panel_h=1.85,
+    extent=None,
+):
     """Small-multiples wall: the CDI at 1 Sep of every year.
 
     CERF drought seasons get a solid red frame, AA seasons (excluded from
@@ -557,7 +566,7 @@ def fig_cdi_history(comp, years, cerf_years=(), aa_years=(), ncols=6):
     n = len(years)
     nrows = int(np.ceil(n / ncols))
     fig, axes = plt.subplots(
-        nrows, ncols, figsize=(2.75 * ncols, 1.85 * nrows)
+        nrows, ncols, figsize=(panel_w * ncols, panel_h * nrows)
     )
     axes = np.atleast_1d(axes).ravel()
     for ax in axes[n:]:
@@ -565,6 +574,9 @@ def fig_cdi_history(comp, years, cerf_years=(), aa_years=(), ncols=6):
     for ax, year in zip(axes, years):
         cls = comp[comp["year"] == year].set_index("pcode")["cdi"]
         cdi_map(ax, adm1, adm2, cls, labels=False)
+        if extent is not None:
+            ax.set_xlim(*extent[0])
+            ax.set_ylim(*extent[1])
         color, weight = "#1a1a1a", "normal"
         if year in cerf_years:
             color, weight = "#b3261e", "bold"
@@ -595,8 +607,10 @@ def fig_cdi_history(comp, years, cerf_years=(), aa_years=(), ncols=6):
         title="RP pluie/rain (ans/yrs)",
         title_fontsize=9,
     )
-    bottom = 0.16 if nrows == 1 else 0.045
+    bottom = 0.16 if nrows == 1 else (0.10 if nrows == 2 else 0.045)
     fig.tight_layout(rect=(0, bottom, 1, 1))
+    if nrows == 2:
+        fig.subplots_adjust(hspace=0.42)
     return _b64(fig)
 
 
@@ -641,28 +655,11 @@ def fig_asap():
                     linewidth=0.5,
                     zorder=2,
                 )
-        # ASAP flags some units "with exceptional conditions" (codes 10/12/14)
-        exc = g[g[key].isin([10, 12, 14])]
-        if len(exc):
-            pts = exc.geometry.representative_point()
-            ax.scatter(
-                pts.x, pts.y, s=14, color="#1a1a1a", zorder=6, marker="o"
-            )
         _basemap(ax, adm1, labels=False)
         ax.set_title(title, fontsize=10)
     handles = [
         Patch(facecolor=c, edgecolor="#cccccc", label=ASAP_GROUP_LABELS[k])
         for k, c in ASAP_GROUP_COLORS.items()
-    ] + [
-        Line2D(
-            [],
-            [],
-            marker="o",
-            linestyle="",
-            color="#1a1a1a",
-            markersize=5,
-            label="cond. exceptionnelles / exceptional cond.",
-        ),
     ]
     fig.legend(
         handles=handles,

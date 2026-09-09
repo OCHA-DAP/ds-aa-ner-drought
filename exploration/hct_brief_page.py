@@ -58,7 +58,10 @@ def main():
         comp,
         [2009, 2011, 2021, 2026],
         cerf_years={2009, 2011, 2021},
-        ncols=4,
+        ncols=2,
+        panel_w=5.6,
+        panel_h=2.45,
+        extent=((-0.3, 16.2), (11.3, 17.8)),
     )
     enso1_en = svg_uri(ENSO_DIR / "NER_slide1.svg")
     enso1_fr = svg_uri(ENSO_DIR / "NER_slide1_fr.svg")
@@ -268,8 +271,7 @@ SEAS5+ERA5 · FAO ASIS · OGIMET/DMN · HNRP 2026</span></div>
 
 <!-- Slide 4 — agricultural impact (JRC ASAP) -->
 <section class="slide">
-<h2>{T("Impact on crops and pasture — first signals",
-       "Impact sur cultures et pâturages — premiers signaux")}</h2>
+<h2>{T("ASAP warnings", "Alertes ASAP")}</h2>
 <div class="fullfig">
 <img src="data:image/png;base64,{img_asap}" alt="JRC ASAP warnings map">
 </div>
@@ -277,15 +279,14 @@ SEAS5+ERA5 · FAO ASIS · OGIMET/DMN · HNRP 2026</span></div>
 <li>{T(
   "The EC/JRC ASAP system issues automated agricultural-drought warnings "
   "per unit and land cover every 10 days. Current picture: warnings on "
-  "26 of 35 units — the Dosso–Tahoua–Tillabéri belt at level 1/1+ under "
-  "'exceptional conditions' (dots), and level-3 warnings — poor growth "
+  "26 of 35 units — the Dosso–Tahoua–Tillabéri belt at level 1/1+, "
+  "and level-3 warnings — poor growth "
   "with negative prospects, from water balance AND biomass — on Diffa, "
   "Maïné-Soroa and Tanout croplands, level 3+ on N'Guigmi rangelands.",
   "Le système ASAP de la CE/JRC émet tous les 10 jours des alertes "
   "automatiques de sécheresse agricole par unité et type de couvert. "
   "Tableau actuel&nbsp;: alertes sur 26 des 35 unités — la bande "
-  "Dosso–Tahoua–Tillabéri en niveau 1/1+ sous «&nbsp;conditions "
-  "exceptionnelles&nbsp;» (points), et des alertes de niveau 3 — "
+  "Dosso–Tahoua–Tillabéri en niveau 1/1+, et des alertes de niveau 3 — "
   "croissance médiocre et perspectives négatives, sur bilan hydrique ET "
   "biomasse — sur les cultures de Diffa, Maïné-Soroa et Tanout, niveau "
   "3+ sur les pâturages de N'Guigmi.")}</li>

@@ -1,4 +1,4 @@
-"""Render the 5-slide HCT briefing deck (El Niño & the 2026 season).
+"""Render the 6-slide HCT briefing deck (El Niño & the 2026 season).
 
 A static, bilingual (EN/FR toggle) HTML slide deck at
 ``docs/hct-brief/index.html``: arrow keys / buttons to navigate, print to
@@ -53,6 +53,7 @@ def main():
 
     print("rendering figures…", flush=True)
     img_cdi = figs.fig_cdi(summary)
+    img_asap = figs.fig_asap()
     img_strip = figs.fig_cdi_history(
         comp,
         [2009, 2011, 2021, 2026],
@@ -178,7 +179,7 @@ def main():
   "encore par la végétation.")}</li>
 </ul>
 </div>
-<div class="foot"><span>1 / 5</span>
+<div class="foot"><span>1 / 6</span>
 <span>ocha-dap.github.io/ds-aa-ner-drought/pockets/</span></div>
 </section>
 
@@ -210,7 +211,7 @@ def main():
   "saisonnières (qui intègrent déjà l'ENSO et tous les autres facteurs) "
   "et, surtout, sur les observations — les deux suivent.")}</li>
 </ul>
-<div class="foot"><span>2 / 5</span><span>ERA5 × Niño3.4 (NOAA PSL),
+<div class="foot"><span>2 / 6</span><span>ERA5 × Niño3.4 (NOAA PSL),
 partial correlation · OCHA CHD teleconnections</span></div>
 </section>
 
@@ -221,7 +222,7 @@ partial correlation · OCHA CHD teleconnections</span></div>
 <div class="fig"><img src="data:image/png;base64,{img_cdi}"
   alt="Combined drought indicator map"></div>
 <div class="txt">
-<ul>
+<ul style="font-size:0.98rem">
 <li>{T(
   "Four independent rainfall datasets (CHIRPS, IMERG, the DMN's ENACTS, "
   "SEAS5+ERA5) are combined per department; classes require majority "
@@ -245,18 +246,6 @@ partial correlation · OCHA CHD teleconnections</span></div>
   "l'est&nbsp;: cinq stations codent août dans leur quintile le plus "
   "sec&nbsp;; cinq enregistrent leur 2ᵉ juin–août le plus sec.")}</li>
 <li>{T(
-  "Vegetation impacts are emerging in the east: the JRC ASAP system "
-  "already has level-3 warnings (poor growth, negative prospects) on "
-  "Diffa, Maïné-Soroa and Tanout croplands and N'Guigmi rangelands; "
-  "region-scale vegetation indices are not yet exceptional elsewhere — "
-  "September imagery is the watchpoint.",
-  "Les impacts sur la végétation émergent à l'est&nbsp;: le système "
-  "ASAP (JRC) a déjà des alertes de niveau 3 (croissance médiocre, "
-  "perspectives négatives) sur les cultures de Diffa, Maïné-Soroa et "
-  "Tanout et les pâturages de N'Guigmi&nbsp;; ailleurs, les indices de "
-  "végétation à l'échelle régionale ne sont pas encore "
-  "exceptionnels — l'imagerie de septembre est le point de vigilance.")}</li>
-<li>{T(
   "Hatched: the four HNRP severity-4 departments. On the combined "
   "(majority) indicator only N'Guigmi reaches watch — but each of the "
   "four is in deficit in at least one dataset: IMERG has N'Guigmi at "
@@ -273,11 +262,49 @@ partial correlation · OCHA CHD teleconnections</span></div>
 </ul>
 </div>
 </div>
-<div class="foot"><span>3 / 5</span><span>CHIRPS · IMERG · ENACTS ·
+<div class="foot"><span>3 / 6</span><span>CHIRPS · IMERG · ENACTS ·
 SEAS5+ERA5 · FAO ASIS · OGIMET/DMN · HNRP 2026</span></div>
 </section>
 
-<!-- Slide 4 — forecast -->
+<!-- Slide 4 — agricultural impact (JRC ASAP) -->
+<section class="slide">
+<h2>{T("Impact on crops and pasture — first signals",
+       "Impact sur cultures et pâturages — premiers signaux")}</h2>
+<div class="fullfig">
+<img src="data:image/png;base64,{img_asap}" alt="JRC ASAP warnings map">
+</div>
+<ul style="font-size:1.0rem">
+<li>{T(
+  "The EC/JRC ASAP system issues automated agricultural-drought warnings "
+  "per unit and land cover every 10 days. Current picture: warnings on "
+  "26 of 35 units — the Dosso–Tahoua–Tillabéri belt at level 1/1+ under "
+  "'exceptional conditions' (dots), and level-3 warnings — poor growth "
+  "with negative prospects, from water balance AND biomass — on Diffa, "
+  "Maïné-Soroa and Tanout croplands, level 3+ on N'Guigmi rangelands.",
+  "Le système ASAP de la CE/JRC émet tous les 10 jours des alertes "
+  "automatiques de sécheresse agricole par unité et type de couvert. "
+  "Tableau actuel&nbsp;: alertes sur 26 des 35 unités — la bande "
+  "Dosso–Tahoua–Tillabéri en niveau 1/1+ sous «&nbsp;conditions "
+  "exceptionnelles&nbsp;» (points), et des alertes de niveau 3 — "
+  "croissance médiocre et perspectives négatives, sur bilan hydrique ET "
+  "biomasse — sur les cultures de Diffa, Maïné-Soroa et Tanout, niveau "
+  "3+ sur les pâturages de N'Guigmi.")}</li>
+<li>{T(
+  "Region-scale vegetation indices (FAO ASI/VHI) are not yet "
+  "exceptional — impacts typically lag the rainfall deficit, and the "
+  "east is where they are surfacing first. September dekads are the "
+  "watchpoint.",
+  "Les indices de végétation à l'échelle régionale (ASI/VHI de la FAO) "
+  "ne sont pas encore exceptionnels — les impacts suivent généralement "
+  "le déficit de pluie, et c'est à l'est qu'ils émergent en premier. "
+  "Les décades de septembre sont le point de vigilance.")}</li>
+</ul>
+<div class="foot"><span>4 / 6</span><span>EC/JRC ASAP,
+agricultural-production-hotspots.ec.europa.eu · {T("dekad", "décade")}
+21–31/08/2026</span></div>
+</section>
+
+<!-- Slide 5 — forecast -->
 <section class="slide">
 <h2>{T("The rest of the season, per the forecasts",
        "La fin de saison, selon les prévisions")}</h2>
@@ -303,11 +330,11 @@ SEAS5+ERA5 · FAO ASIS · OGIMET/DMN · HNRP 2026</span></div>
   "~1 an sur 4 au niveau national, jusqu'à 1 an sur 10 dans des poches "
   "de Dosso/Tillabéri.")}</li>
 </ul>
-<div class="foot"><span>4 / 5</span><span>ECMWF SEAS5, {T("issued",
+<div class="foot"><span>5 / 6</span><span>ECMWF SEAS5, {T("issued",
 "émission")} 09/2026 · OCHA CHD skill methodology</span></div>
 </section>
 
-<!-- Slide 5 — comparison & implications -->
+<!-- Slide 6 — comparison & implications -->
 <section class="slide">
 <h2>{T("How 2026 compares — and what it means",
        "2026 en comparaison — et ce que cela implique")}</h2>
@@ -345,7 +372,7 @@ SEAS5+ERA5 · FAO ASIS · OGIMET/DMN · HNRP 2026</span></div>
   "là où les déficits recoupent les zones en sévérité 4 du HNRP (est "
   "de Diffa, ouest de Tillabéri).")}</li>
 </ul>
-<div class="foot"><span>5 / 5</span>
+<div class="foot"><span>6 / 6</span>
 <span>ocha-dap.github.io/ds-aa-ner-drought/pockets/</span></div>
 </section>
 

@@ -242,12 +242,13 @@ partial correlation · OCHA CHD teleconnections</span></div>
   "autres départements en vigilance, dont l'est de Diffa et la bande de "
   "Tahoua.")}</li>
 <li>{T(
-  "The national met service's own gauges concur in the east: five "
-  "stations coded August in their driest quintile; five recorded their "
-  "2nd-driest June–August on record.",
+  "The national met service's own gauges concur in the east: four "
+  "stations coded August in their driest quintile against DMN's 30-year "
+  "normals; five recorded their 2nd-driest June–August on record.",
   "Les pluviomètres du service météorologique national concordent à "
-  "l'est&nbsp;: cinq stations codent août dans leur quintile le plus "
-  "sec&nbsp;; cinq enregistrent leur 2ᵉ juin–août le plus sec.")}</li>
+  "l'est&nbsp;: quatre stations codent août dans leur quintile le plus "
+  "sec par rapport aux normales trentenaires de la DMN&nbsp;; cinq "
+  "enregistrent leur 2ᵉ juin–août le plus sec.")}</li>
 <li>{T(
   "Hatched: the four HNRP severity-4 departments. On the combined "
   "(majority) indicator only N'Guigmi reaches watch — but each of the "

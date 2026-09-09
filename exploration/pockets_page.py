@@ -197,7 +197,13 @@ def main():
                 f"<td>{mm26}{dag}</td>"
                 f"<td>{rank}</td>"
                 + rp_cell(r["rp"])
-                + f"<td>{aug}</td><td>{jja}</td>"
+                + f"<td>{aug}</td>"
+                + (
+                    '<td class="na">–</td>'
+                    if pd.isna(r["q_aug"])
+                    else f"<td>{int(r['q_aug'])}</td>"
+                )
+                + f"<td>{jja}</td>"
                 + rp_cell(r["jja_rp"])
                 + "</tr>"
             )
@@ -632,11 +638,15 @@ def main():
   "the surrounding departments at severe deficits. Point gauges at towns "
   "and departmental averages can genuinely differ; this heterogeneity is "
   "exactly why localized pockets escape zone-wide indicators. August "
-  "reports, now in, deepen the picture: five stations — Diffa, Zinder, "
-  "Maïné-Soroa, Birni-N'Konni and Gouré — put August in their driest "
-  "quintile per DMN's own coding, and N'Guigmi, Gouré, Zinder, "
-  "Maïné-Soroa and Dosso each record their 2nd-driest full season "
-  "(Jun–Aug) of their short archives.",
+  "reports, now in, deepen the picture: four stations — Diffa, Zinder, "
+  "Maïné-Soroa and Birni-N'Konni — put August in their driest quintile "
+  "per DMN's own coding against its 30-year normals (Gouré and Dosso in "
+  "the second), and N'Guigmi, Gouré, Zinder, Maïné-Soroa and Dosso each "
+  "record their 2nd-driest full season (Jun–Aug) of their short "
+  "archives. Note the two yardsticks: the table's return periods are "
+  "ranks within the 6–13-year OGIMET archive, where a 2nd-driest season "
+  "can never show more than RP 3.5–5 — the DMN quintile codes, computed "
+  "against 30-year normals, are the longer-reference view.",
   "Les stations synoptiques du Niger (DMN) parviennent au domaine public "
   "via le SMT de l’OMM&nbsp;: messages mensuels CLIMAT archivés par OGIMET "
   "depuis 2008 (avec quelques mois manquants). Les cumuls juin + juillet "
@@ -652,12 +662,17 @@ def main():
   "différer&nbsp;; cette hétérogénéité est précisément la raison pour "
   "laquelle des poches localisées échappent aux indicateurs calculés sur "
   "l’ensemble de la zone. Les messages d’août, désormais reçus, "
-  "aggravent le tableau&nbsp;: cinq stations — Diffa, Zinder, "
-  "Maïné-Soroa, Birni-N'Konni et Gouré — placent août dans leur "
-  "quintile le plus sec selon le codage de la DMN elle-même, et "
+  "aggravent le tableau&nbsp;: quatre stations — Diffa, Zinder, "
+  "Maïné-Soroa et Birni-N'Konni — placent août dans leur quintile le "
+  "plus sec selon le codage de la DMN elle-même par rapport à ses "
+  "normales trentenaires (Gouré et Dosso dans le deuxième), et "
   "N'Guigmi, Gouré, Zinder, Maïné-Soroa et Dosso enregistrent chacune "
   "leur 2ᵉ saison complète (juin–août) la plus sèche de leurs courtes "
-  "archives.")}</p>
+  "archives. Noter les deux références&nbsp;: les périodes de retour du "
+  "tableau sont des rangs dans l’archive OGIMET de 6–13 ans, où une 2ᵉ "
+  "saison la plus sèche ne peut jamais dépasser PR 3,5–5 — les codes "
+  "quintiles de la DMN, calculés sur des normales de 30 ans, offrent la "
+  "vue à référence longue.")}</p>
 <figure>
 <img src="data:image/png;base64,{img_gauge}" alt="Gauge map">
 <figcaption>{T(
@@ -674,12 +689,19 @@ def main():
   <th>{T("Dry rank", "Rang sec")}</th>
   <th>{T("RP (yrs)", "PR (ans)")}</th>
   <th>{T("Aug 2026 (mm)", "Août 2026 (mm)")}</th>
+  <th>{T("Aug Q (DMN)", "Q août (DMN)")}</th>
   <th>{T("JJA dry rank", "Rang sec JJA")}</th>
   <th>{T("JJA RP (yrs)", "PR JJA (ans)")}</th>
 </tr>
 {gauge_rows()}
 </table>
 </div>
+<p class="note">{T(
+  "Q = DMN's own quintile code for the month against its 30-year normal "
+  "(1 = driest quintile, 5 = wettest; 0/6 = beyond the reference range).",
+  "Q = code quintile de la DMN pour le mois par rapport à sa normale "
+  "trentenaire (1 = quintile le plus sec, 5 = le plus humide&nbsp;; 0/6 "
+  "= hors de la plage de référence).")}</p>
 <div class="callout">{T(
   "Diffa's July 2026 CLIMAT report transmitted 447 mm in 4 rain days — "
   "inconsistent with the station's own synoptic reports (≈ 27 mm), with "

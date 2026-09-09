@@ -253,10 +253,19 @@ partial correlation · OCHA CHD teleconnections</span></div>
   "généralement le déficit de pluie&nbsp;; l'imagerie de septembre est "
   "le point de vigilance.")}</li>
 <li>{T(
-  "Hatched: the four HNRP severity-4 departments — all show at least "
-  "one rainfall signal at ≥ 1-in-5-year.",
-  "Hachures&nbsp;: les quatre départements en sévérité 4 du HNRP — tous "
-  "montrent au moins un signal pluviométrique ≥ 1 an sur 5.")}</li>
+  "Hatched: the four HNRP severity-4 departments. On the combined "
+  "(majority) indicator only N'Guigmi reaches watch — but each of the "
+  "four is in deficit in at least one dataset: IMERG has N'Guigmi at "
+  "its driest June–August on record, and Téra, Bankilaré and Torodi at "
+  "1-in-7 to 1-in-15, while the gauge-anchored datasets read them "
+  "closer to normal.",
+  "Hachures&nbsp;: les quatre départements en sévérité 4 du HNRP. Sur "
+  "l'indicateur combiné (majoritaire), seul N'Guigmi atteint la "
+  "vigilance — mais chacun des quatre est en déficit dans au moins un "
+  "jeu de données&nbsp;: IMERG place N'Guigmi à son juin–août le plus "
+  "sec de l'historique, et Téra, Bankilaré et Torodi entre 1 an sur 7 "
+  "et 1 an sur 15, tandis que les jeux ancrés sur les pluviomètres les "
+  "lisent plus proches de la normale.")}</li>
 </ul>
 </div>
 </div>

@@ -256,7 +256,7 @@ def fig_rain_rp_quad(summary):
         ("chirps_rp", "CHIRPS · jun–jul"),
         ("imerg_rp", "IMERG · jun–août/aug"),
         ("enacts_rp", "ENACTS · SPI jun–jul"),
-        ("era5_rp", "ERA5 · jun–jul"),
+        ("era5_rp", "ERA5 · jun–août/aug"),
     ]
     for ax, (col, title) in zip(axes, panels):
         rp_choropleth(ax, adm1, adm2, s[col], labels=False)
@@ -394,9 +394,9 @@ def fig_seas5_pair(summary):
     fig, axes = plt.subplots(1, 2, figsize=(13.5, 5.6))
     s = summary.set_index("pcode")
     rp_choropleth(axes[0], adm1, adm2, s["seas5_jas_rp"])
-    axes[0].set_title("JAS (jul obs + août/aug–sep SEAS5)", fontsize=10)
-    rp_choropleth(axes[1], adm1, adm2, s["seas5_aso_rp"])
-    axes[1].set_title("ASO (SEAS5)", fontsize=10)
+    axes[0].set_title("JAS · jul–août obs + sep SEAS5", fontsize=10)
+    rp_choropleth(axes[1], adm1, adm2, s["seas5_son_rp"])
+    axes[1].set_title("SON · SEAS5 (sep)", fontsize=10)
     fig.legend(
         handles=rp_legend_handles(),
         loc="lower center",

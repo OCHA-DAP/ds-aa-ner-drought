@@ -11,7 +11,7 @@ Why not read the app's published parquets? Their issued-August in-season
 rows (JJA/JAS) were computed before ERA5 July 2026 landed and silently fell
 back to the 2025 issuance (the documented vintage race), so the 2026
 in-season composites must be recomputed here. ERA5 valid through 2026-07
-and SEAS5 issued 2026-08 were verified in the DB before running.
+and SEAS5 issued 2026-09 were verified in the DB before running.
 
 Output: ``exploration/public/pockets/seas5_skill_ner.csv`` — one row per
 pcode x trimester (JJA/JAS/ASO/SON, issued August), with pearson_r,
@@ -43,8 +43,8 @@ from src.skill import (  # noqa: E402
     trimester_lead,
 )
 
-ISSUED_MONTH = 8
-TRIMS = ["JJA", "JAS", "ASO", "SON"]
+ISSUED_MONTH = 9
+TRIMS = ["JAS", "ASO", "SON"]
 SEASON_YEAR = 2026
 OUT = Path(__file__).parent / "public" / "pockets" / "seas5_skill_ner.csv"
 OUT_SERIES = (

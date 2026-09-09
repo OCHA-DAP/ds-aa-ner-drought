@@ -26,8 +26,8 @@ import pandas as pd
 
 D = Path(__file__).parent / "public" / "pockets"
 
-# latest complete ASIS dekad at analysis time (11-20 Aug 2026)
-ASIS_DEKAD = ("08", 2)
+# latest complete ASIS dekad at analysis time (21-31 Aug 2026)
+ASIS_DEKAD = ("08", 3)
 SEAS5_SKILL_MIN_R = 0.30  # below this, SEAS5 is not shown (no-skill mask)
 CONVERGENCE_RP = 5.0
 
@@ -160,8 +160,8 @@ def main():
     imerg["junaug_mm"] = imerg["junaug_mm"] * 91 / imerg["n_days"]
     t_imerg = rp_table(imerg, "junaug_mm").add_prefix("imerg_")
 
-    era5 = pd.read_csv(D / "era5_junjul_adm2.csv")
-    t_era5 = rp_table(era5, "junjul_mm").add_prefix("era5_")
+    era5 = pd.read_csv(D / "era5_junaug_adm2.csv")
+    t_era5 = rp_table(era5, "junaug_mm").add_prefix("era5_")
 
     # --- SEAS5 (issued Aug 2026), computed by pockets_fetch_seas5.py
     seas5 = pd.read_csv(D / "seas5_skill_ner.csv")
@@ -245,6 +245,7 @@ def main():
         )
     out = out.merge(seas5_cols("JAS", "seas5_jas"), on="pcode", how="left")
     out = out.merge(seas5_cols("ASO", "seas5_aso"), on="pcode", how="left")
+    out = out.merge(seas5_cols("SON", "seas5_son"), on="pcode", how="left")
     out = out.merge(
         veg[
             [
@@ -264,7 +265,7 @@ def main():
     )
 
     # skill mask: hide SEAS5 columns where the detrended r < threshold
-    for p in ("seas5_jas", "seas5_aso"):
+    for p in ("seas5_jas", "seas5_aso", "seas5_son"):
         low = out[f"{p}_r"] < SEAS5_SKILL_MIN_R
         out.loc[low, [f"{p}_pctile", f"{p}_rp"]] = np.nan
 
@@ -426,6 +427,13 @@ def main():
         .reset_index()
     )
     jj = jj[jj["n_months"] == 2]
+    jja = (
+        g[g["month"].isin([6, 7, 8])]
+        .groupby(["wmo_id", "year"])
+        .agg(jja_mm=("precip_mm", "sum"), n_months=("precip_mm", "size"))
+        .reset_index()
+    )
+    jja = jja[jja["n_months"] == 3]
     rows = []
     for (wmo_id, name), gg in jj.groupby(["wmo_id", "name"]):
         s = gg.set_index("year")["junjul_mm"]
@@ -436,6 +444,8 @@ def main():
         aug26 = g[
             (g["wmo_id"] == wmo_id) & (g["year"] == 2026) & (g["month"] == 8)
         ]["precip_mm"]
+        s_jja = jja[jja["wmo_id"] == wmo_id].set_index("year")["jja_mm"]
+        jja_v, jja_rank, jja_n, jja_rp = dry_rank_rp(s_jja)
         rows.append(
             {
                 "wmo_id": wmo_id,
@@ -450,6 +460,10 @@ def main():
                 "q_jul": q26.get(7, np.nan),
                 "q_aug": q26.get(8, np.nan),
                 "aug_2026_mm": aug26.iloc[0] if len(aug26) else np.nan,
+                "jja_2026_mm": jja_v,
+                "jja_rank": jja_rank,
+                "jja_n": jja_n,
+                "jja_rp": jja_rp,
                 "flag": GAUGE_FLAGS.get(wmo_id),
             }
         )

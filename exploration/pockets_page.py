@@ -23,8 +23,8 @@ import pockets_figures as figs
 D = Path(__file__).parent / "public" / "pockets"
 OUT = Path(__file__).parent.parent / "docs" / "pockets" / "index.html"
 
-ANALYSIS_DATE_EN = "1 September 2026"
-ANALYSIS_DATE_FR = "1ᵉʳ septembre 2026"
+ANALYSIS_DATE_EN = "9 September 2026"
+ANALYSIS_DATE_FR = "9 septembre 2026"
 
 
 def T(en, fr):
@@ -92,7 +92,7 @@ def main():
         df["Date"] = pd.to_datetime(df["Date"])
 
     def dekad_series(df):
-        sel = df[(df["Date"].dt.month == 8) & (df["Date"].dt.day == 11)]
+        sel = df[(df["Date"].dt.month == 8) & (df["Date"].dt.day == 21)]
         return sel.rename(columns={"Province": "region", "Data": "v"}).assign(
             year=sel["Date"].dt.year
         )[["region", "year", "v"]]
@@ -182,11 +182,23 @@ def main():
                 else f"{int(r['rank'])}/{int(r['n_years'])}"
             )
             dag = "†" if isinstance(r.get("flag"), str) else ""
+            aug = (
+                "–" if pd.isna(r["aug_2026_mm"]) else f"{r['aug_2026_mm']:.0f}"
+            )
+            jja = (
+                "–"
+                if pd.isna(r["jja_rank"])
+                else f"{int(r['jja_rank'])}/{int(r['jja_n'])}"
+            )
             out.append(
                 "<tr>"
                 f"<td>{html_mod.escape(r['name'])} ({r['wmo_id']}){dag}</td>"
                 f"<td>{mm26}{dag}</td>"
-                f"<td>{rank}</td>" + rp_cell(r["rp"]) + "</tr>"
+                f"<td>{rank}</td>"
+                + rp_cell(r["rp"])
+                + f"<td>{aug}</td><td>{jja}</td>"
+                + rp_cell(r["jja_rp"])
+                + "</tr>"
             )
         return "\n".join(out)
 
@@ -308,37 +320,44 @@ def main():
   "deficit (median rain RP ≥ 10): Keita, Dioundiou, Dosso, Gaya, Loga "
   "and Tanout, with 17 more on watch (Tahoua belt, rest of Dosso, "
   "eastern Diffa). No compound class yet: no region's vegetation "
-  "(ASI/VHI) has crossed RP 5 at the mid-August dekad — Diffa is "
-  "closest (ASI 16% of cropland stressed, 9th worst of 43 years).",
+  "(ASI/VHI) has crossed RP 5 at the late-August dekad — Diffa is "
+  "closest (ASI 15% of cropland stressed, 10th worst of 43 years).",
   "L’indicateur combiné place six départements en déficit "
   "pluviométrique sévère (PR pluie médiane ≥ 10)&nbsp;: Keita, "
   "Dioundiou, Dosso, Gaya, Loga et Tanout, et 17 autres en vigilance "
   "(bande de Tahoua, reste de Dosso, est de Diffa). Pas encore de "
   "classe composée&nbsp;: aucune région n’a franchi PR 5 en végétation "
-  "(ASI/VHI) à la décade mi-août — Diffa en est la plus proche "
-  "(ASI&nbsp;: 16&nbsp;% des cultures stressées, 9ᵉ pire valeur sur "
+  "(ASI/VHI) à la décade fin août — Diffa en est la plus proche "
+  "(ASI&nbsp;: 15&nbsp;% des cultures stressées, 10ᵉ pire valeur sur "
   "43&nbsp;ans).")}</li>
 <li>{T(
-  "The end-of-season outlook (detrended SEAS5+ERA5 JAS hybrid, issued "
-  "August, r 0.63–0.82) is severely dry across the agricultural south: "
-  "relative to trend, Dosso and Maradi regions have their driest JAS in "
-  "46 years.",
-  "La perspective de fin de saison (hybride SEAS5+ERA5 JAS détendancé, "
-  "émis en août, r de 0,63 à 0,82) est sévèrement sèche sur le sud "
-  "agricole&nbsp;: par rapport à la tendance, les régions de Dosso et "
-  "de Maradi connaissent leur JAS le plus sec en 46&nbsp;ans.")}</li>
+  "With July and August observed, the season-closing JAS estimate is "
+  "the driest of the 46-year record in every region — though this leans "
+  "on ERA5, which runs anomalously dry in 2026. The remaining pure "
+  "forecast, SON from the September SEAS5 issuance, adds a moderate dry "
+  "tilt for the harvest and pasture-regrowth window (18 departments at "
+  "RP ≥ 5, skill-filtered).",
+  "Juillet et août observés, l’estimation de clôture de saison JAS est "
+  "la plus sèche de l’historique de 46 ans dans toutes les régions — "
+  "mais elle repose sur ERA5, anormalement sec en 2026. La prévision "
+  "pure restante, SON de l’émission SEAS5 de septembre, ajoute une "
+  "tendance sèche modérée pour la fenêtre des récoltes et de la repousse "
+  "des pâturages (18 départements à PR ≥ 5, filtrée selon la "
+  "performance).")}</li>
 <li>{T(
-  "Backtest: at 1 September the same composite flagged the 2009 CERF "
-  "drought (27 departments, 13 compound) and the 2011 western pockets, "
-  "but missed 2021's late-season failure — a limitation of this "
-  "vantage. 2026's rainfall extent is comparable to 2009's at the same "
-  "date, without vegetation confirmation so far.",
-  "Contre-épreuve&nbsp;: au 1ᵉʳ septembre, le même composite signalait "
-  "la sécheresse CERF de 2009 (27 départements, dont 13 en composé) et "
-  "les poches de l’ouest en 2011, mais manquait l’échec tardif de "
-  "2021 — une limite de ce point d’observation. L’étendue "
-  "pluviométrique de 2026 est comparable à celle de 2009 à la même "
-  "date, sans confirmation par la végétation à ce jour.")}</li>
+  "Backtest: in early September the same composite flagged the 2009 "
+  "CERF drought (24 departments, 12 compound), the 2011 western pockets "
+  "and now — with August observed — partially the 2004 season, but "
+  "still misses 2021, whose rains only collapsed in September. 2026's "
+  "rainfall extent equals 2009's at the same date, without vegetation "
+  "confirmation so far.",
+  "Contre-épreuve&nbsp;: début septembre, le même composite signalait "
+  "la sécheresse CERF de 2009 (24 départements, dont 12 en composé), "
+  "les poches de l’ouest en 2011 et désormais — août observé — "
+  "partiellement la saison 2004, mais manque toujours 2021, dont les "
+  "pluies ne se sont effondrées qu’en septembre. L’étendue "
+  "pluviométrique de 2026 égale celle de 2009 à la même date, sans "
+  "confirmation par la végétation à ce jour.")}</li>
 <li>{T(
   f"The {len(sev4)} HNRP severity-4 departments ({sev4_names}) all show "
   "at least one rainfall signal at RP ≥ 5, but only N'Guigmi makes the "
@@ -386,13 +405,13 @@ def main():
 <figure>
 <img src="data:image/png;base64,{img_cdi}" alt="Combined drought indicator map">
 <figcaption>{T(
-  "Combined drought indicator, 1 September 2026. Yellow/orange: median "
+  "Combined drought indicator, 9 September 2026. Yellow/orange: median "
   "rainfall RP 5–10 / ≥ 10 years; reds: rainfall + vegetation compound; "
   "blue: vegetation stress without a majority rainfall deficit; pale "
   "grey n/a: Saharan departments outside ENACTS coverage (Arlit, Bilma, "
   "Iferouane), not assessed; hatched: HNRP 2026 intersectoral severity "
   "4.",
-  "Indicateur de sécheresse combiné, 1ᵉʳ septembre 2026. Jaune/orange : "
+  "Indicateur de sécheresse combiné, 9 septembre 2026. Jaune/orange : "
   "PR pluviométrique médiane 5–10 / ≥ 10 ans&nbsp;; rouges&nbsp;: composé "
   "pluie + végétation&nbsp;; bleu&nbsp;: stress de la végétation sans "
   "déficit pluviométrique majoritaire&nbsp;; gris pâle n/a&nbsp;: "
@@ -439,8 +458,9 @@ def main():
        "La même image, chaque saison depuis 1991")}</h2>
 <p>{T(
   "As a reality check, the identical composite is reconstructed for every "
-  "season since 1991, each panel using only what was observable by "
-  "1 September of that year. Red frames mark the growing seasons that "
+  "season since 1991, each panel using only what was observable in "
+  "early September of that year (after that September's SEAS5 "
+  "issuance). Red frames mark the growing seasons that "
   "later drew a CERF drought allocation — mapped to the season the "
   "drought actually occurred in, not the allocation date: "
   "the January–August 2010 allocations respond to the failed 2009 season, "
@@ -460,7 +480,8 @@ def main():
   "witnesses (no IMERG).",
   "Comme contre-épreuve, le même composite est reconstruit pour chaque "
   "saison depuis 1991, chaque panneau n’utilisant que ce qui était "
-  "observable au 1ᵉʳ septembre de l’année concernée. Les cadres rouges "
+  "observable début septembre de l’année concernée (après l’émission "
+  "SEAS5 de septembre). Les cadres rouges "
   "marquent les saisons agricoles ayant ensuite donné lieu à une "
   "allocation CERF pour sécheresse — rattachées à la saison où la "
   "sécheresse a réellement eu lieu, pas à la date de "
@@ -485,12 +506,12 @@ def main():
 <figure>
 <img src="data:image/png;base64,{img_cdi_hist}" alt="CDI in past CERF drought seasons">
 <figcaption>{T(
-  "The combined drought indicator as it would have stood on 1 September "
-  "of every season, 1991–2026. Solid red frames: seasons that drew a "
+  "The combined drought indicator as it would have stood in early "
+  "September of every season, 1991–2026. Solid red frames: seasons that drew a "
   "CERF drought allocation; dashed frame: the 2022 AA activation "
   "(excluded from the backtest set); bold: 2026.",
-  "L’indicateur de sécheresse combiné tel qu’il se serait présenté au "
-  "1ᵉʳ septembre de chaque saison, 1991–2026. Cadres rouges "
+  "L’indicateur de sécheresse combiné tel qu’il se serait présenté "
+  "début septembre de chaque saison, 1991–2026. Cadres rouges "
   "pleins&nbsp;: saisons ayant donné lieu à une allocation CERF pour "
   "sécheresse&nbsp;; cadre en tirets&nbsp;: l’activation AA de 2022 "
   "(exclue de la contre-épreuve)&nbsp;; en gras&nbsp;: 2026.")}</figcaption>
@@ -526,14 +547,16 @@ def main():
   "contient des poches de 1 an sur 5 à 1 an sur 9.")}</p>
 <p class="note">{T(
   "ERA5 (fourth panel) independently puts much of the same Tahoua–Dosso "
-  "belt at its driest June–July of the 1981–2026 record — though ERA5 is "
+  "belt — and now, with August observed, 59 of 67 departments — at their "
+  "driest or second-driest June–August of the 1981–2026 record. ERA5 is "
   "the weakest of the witnesses against station data historically and "
   "has run anomalously dry over Niger in 2026, which is why it is shown "
   "for corroboration but kept out of the combined indicator's rain "
   "pillar (its July already enters through the SEAS5+ERA5 hybrid).",
   "ERA5 (quatrième panneau) place indépendamment une grande partie de "
-  "la même bande Tahoua–Dosso à son juin–juillet le plus sec de "
-  "l’historique 1981–2026 — même si ERA5 est historiquement le moins "
+  "la même bande Tahoua–Dosso — et désormais, août observé, 59 des 67 "
+  "départements — à leur juin–août le plus sec ou deuxième plus sec de "
+  "l’historique 1981–2026. ERA5 est historiquement le moins "
   "fiable des témoins face aux données de stations et s’est montré "
   "anormalement sec sur le Niger en 2026, raison pour laquelle il est "
   "montré à titre de corroboration mais tenu à l’écart du pilier pluie "
@@ -601,7 +624,12 @@ def main():
   "totals at Tahoua and Dosso towns, where all three gridded products put "
   "the surrounding departments at severe deficits. Point gauges at towns "
   "and departmental averages can genuinely differ; this heterogeneity is "
-  "exactly why localized pockets escape zone-wide indicators.",
+  "exactly why localized pockets escape zone-wide indicators. August "
+  "reports, now in, deepen the picture: five stations — Diffa, Zinder, "
+  "Maïné-Soroa, Birni-N'Konni and Gouré — put August in their driest "
+  "quintile per DMN's own coding, and N'Guigmi, Gouré, Zinder, "
+  "Maïné-Soroa and Dosso each record their 2nd-driest full season "
+  "(Jun–Aug) of their short archives.",
   "Les stations synoptiques du Niger (DMN) parviennent au domaine public "
   "via le SMT de l’OMM&nbsp;: messages mensuels CLIMAT archivés par OGIMET "
   "depuis 2008 (avec quelques mois manquants). Les cumuls juin + juillet "
@@ -616,7 +644,13 @@ def main():
   "en ville et une moyenne départementale peuvent réellement "
   "différer&nbsp;; cette hétérogénéité est précisément la raison pour "
   "laquelle des poches localisées échappent aux indicateurs calculés sur "
-  "l’ensemble de la zone.")}</p>
+  "l’ensemble de la zone. Les messages d’août, désormais reçus, "
+  "aggravent le tableau&nbsp;: cinq stations — Diffa, Zinder, "
+  "Maïné-Soroa, Birni-N'Konni et Gouré — placent août dans leur "
+  "quintile le plus sec selon le codage de la DMN elle-même, et "
+  "N'Guigmi, Gouré, Zinder, Maïné-Soroa et Dosso enregistrent chacune "
+  "leur 2ᵉ saison complète (juin–août) la plus sèche de leurs courtes "
+  "archives.")}</p>
 <figure>
 <img src="data:image/png;base64,{img_gauge}" alt="Gauge map">
 <figcaption>{T(
@@ -632,6 +666,9 @@ def main():
   <th>{T("Jun–Jul 2026 (mm)", "Juin–juil. 2026 (mm)")}</th>
   <th>{T("Dry rank", "Rang sec")}</th>
   <th>{T("RP (yrs)", "PR (ans)")}</th>
+  <th>{T("Aug 2026 (mm)", "Août 2026 (mm)")}</th>
+  <th>{T("JJA dry rank", "Rang sec JJA")}</th>
+  <th>{T("JJA RP (yrs)", "PR JJA (ans)")}</th>
 </tr>
 {gauge_rows()}
 </table>
@@ -671,20 +708,20 @@ def main():
   "The FAO Agricultural Stress Index (ASI) is the share of cropland with a "
   "vegetation health index below 35 during the growing season; VHI combines "
   "NDVI-based vegetation condition with thermal stress. Both are shown for "
-  "the latest dekad (11–20 August 2026) against the same dekad in every "
+  "the latest dekad (21–31 August 2026) against the same dekad in every "
   "year since 1984.",
   "L’indice de stress agricole (ASI) de la FAO est la part des terres "
   "cultivées dont l’indice de santé de la végétation est inférieur à 35 "
   "pendant la campagne&nbsp;; le VHI combine l’état de la végétation dérivé "
   "du NDVI et le stress thermique. Les deux sont montrés pour la dernière "
-  "décade (11–20 août 2026) face à la même décade de chaque année depuis "
+  "décade (21–31 août 2026) face à la même décade de chaque année depuis "
   "1984.")}</p>
 <figure>
 <img src="data:image/png;base64,{img_veg}" alt="ASI and VHI strip plots">
 <figcaption>{T(
-  "Region values for the 11–20 August dekad: grey = 1984–2025, red = 2026. "
+  "Region values for the 21–31 August dekad: grey = 1984–2025, red = 2026. "
   "High ASI is bad (more stressed cropland); low VHI is bad.",
-  "Valeurs régionales pour la décade du 11–20 août&nbsp;: gris = "
+  "Valeurs régionales pour la décade du 21–31 août&nbsp;: gris = "
   "1984–2025, rouge = 2026. Un ASI élevé est défavorable (plus de cultures "
   "stressées)&nbsp;; un VHI bas est défavorable.")}</figcaption>
 </figure>
@@ -694,13 +731,13 @@ def main():
 <img src="data:image/png;base64,{fao_asi}" alt="FAO ASI map"
      style="max-width:49%; min-width:320px;">
 <figcaption>{T(
-  "FAO GIEWS/ASIS maps for the 11–20 August 2026 dekad. Left: NDVI anomaly "
+  "FAO GIEWS/ASIS maps for the 21–31 August 2026 dekad. Left: NDVI anomaly "
   "vs the long-term average (brown/red = below normal) — note the deficits "
   "along the southern agricultural belt of Zinder/Maradi and the far "
   "south-east (Diffa). Right: ASI per GAUL-2 area — south-eastern Diffa "
   "shows 25–40% of cropland stressed. Source: FAO GIEWS Earth Observation "
   "(open data).",
-  "Cartes FAO GIEWS/ASIS pour la décade du 11–20 août 2026. Gauche&nbsp;: "
+  "Cartes FAO GIEWS/ASIS pour la décade du 21–31 août 2026. Gauche&nbsp;: "
   "anomalie de NDVI par rapport à la moyenne de long terme (brun/rouge = "
   "sous la normale) — noter les déficits le long de la bande agricole sud "
   "de Zinder/Maradi et l’extrême sud-est (Diffa). Droite&nbsp;: ASI par "
@@ -713,23 +750,28 @@ def main():
        "Perspective de fin de saison — hybride SEAS5+ERA5, filtré selon la performance")}</h2>
 <p>{T(
   "Following the team's SEAS5 skill methodology, the outlook is the "
-  "combined SEAS5+ERA5 hybrid: for JAS, July comes from ERA5 observations "
-  "and August–September from the August-issued ECMWF SEAS5 forecast, each "
-  "forecast month bias-corrected against ERA5 before blending. The hybrid "
+  "combined SEAS5+ERA5 hybrid: for JAS, July and August now come from "
+  "ERA5 observations and September from the September-issued ECMWF SEAS5 "
+  "forecast, each forecast month bias-corrected against ERA5 before "
+  "blending. The hybrid "
   "is normalized to the ERA5 distribution and both forecast and "
   "observations are linearly detrended in log space (the skill explorer's "
   "usual Detrended variant), so the 2026 position is measured against the "
   "trend-adjusted climate rather than inflated by the Sahel's recent "
   "wetting trend. Values are only shown where the detrended historical "
   "performance is adequate (Pearson r ≥ 0.30 over 45 hindcast years; "
-  "blank otherwise). The JAS hybrid reads as confidence about how the "
-  "season ends — its performance is naturally high since July is already "
-  "observed. ASO is a pure forecast for the end of the season.",
+  "blank otherwise). With two of its three months observed, the JAS "
+  "hybrid now reads as a season-closing estimate rather than a forecast — "
+  "and it leans heavily on ERA5, so its uniformly extreme reading "
+  "(driest-on-record everywhere) carries ERA5's 2026 dry anomaly and "
+  "should be read alongside the gauge-anchored witnesses above. SON is "
+  "the remaining pure forecast: the September issuance's outlook for "
+  "September–November, the harvest and pasture-regrowth window.",
   "Suivant la méthodologie d’évaluation de SEAS5 de l’équipe, la "
   "perspective est l’hybride combiné SEAS5+ERA5&nbsp;: pour JAS, juillet "
-  "provient des observations ERA5 et août–septembre de la prévision SEAS5 "
-  "(CEPMMT) émise en août, chaque mois prévu étant corrigé de son biais "
-  "par rapport à ERA5 avant combinaison. L’hybride est normalisé sur la "
+  "et août proviennent désormais des observations ERA5 et septembre de "
+  "la prévision SEAS5 (CEPMMT) émise en septembre, chaque mois prévu "
+  "étant corrigé de son biais par rapport à ERA5 avant combinaison. L’hybride est normalisé sur la "
   "distribution d’ERA5 et prévision comme observations sont détendancées "
   "linéairement en espace log (la variante Détendancée habituelle de "
   "l’explorateur de performance), de sorte que la position de 2026 se "
@@ -737,20 +779,27 @@ def main():
   "par le récent verdissement du Sahel. Les valeurs ne sont montrées que "
   "là où la performance historique détendancée est suffisante (r de "
   "Pearson ≥ 0,30 sur 45 années de re-prévisions&nbsp;; vide sinon). "
-  "L’hybride JAS se lit comme un niveau de confiance sur la fin de "
-  "saison — sa performance est naturellement élevée puisque juillet est "
-  "déjà observé. ASO est une prévision pure pour la fin de saison.")}</p>
+  "Avec deux de ses trois mois observés, l’hybride JAS se "
+  "lit désormais comme une estimation de clôture de saison plutôt que "
+  "comme une prévision — et il repose lourdement sur ERA5, de sorte que "
+  "sa lecture uniformément extrême (le plus sec de l’historique partout) "
+  "porte l’anomalie sèche 2026 d’ERA5 et doit être lue à la lumière des "
+  "témoins ancrés sur les pluviomètres ci-dessus. SON est la prévision "
+  "pure restante&nbsp;: la perspective de l’émission de septembre pour "
+  "septembre–novembre, la fenêtre des récoltes et de la repousse des "
+  "pâturages.")}</p>
 <figure>
 <img src="data:image/png;base64,{img_seas5}" alt="SEAS5 return period maps">
 <figcaption>{T(
-  "Return period of the detrended 2026 hybrid within the detrended "
-  "1981–2025 hindcast distribution (dry tail), issued August 2026. Left: "
-  "JAS (ERA5 July + SEAS5 August–September). Right: ASO (pure SEAS5 "
-  "forecast).",
-  "Période de retour de l’hybride 2026 détendancé dans la distribution "
-  "des re-prévisions 1981–2025 détendancées (queue sèche), émission d’août "
-  "2026. Gauche&nbsp;: JAS (juillet ERA5 + août–septembre SEAS5). "
-  "Droite&nbsp;: ASO (prévision SEAS5 pure).")}</figcaption>
+  "Return period of the detrended 2026 value within the detrended "
+  "1981–2025 hindcast distribution (dry tail), issued September 2026. "
+  "Left: JAS season-closing hybrid (ERA5 July–August + SEAS5 September). "
+  "Right: SON, the pure September forecast.",
+  "Période de retour de la valeur 2026 détendancée dans la distribution "
+  "des re-prévisions 1981–2025 détendancées (queue sèche), émission de "
+  "septembre 2026. Gauche&nbsp;: hybride de clôture de saison JAS "
+  "(juillet–août ERA5 + septembre SEAS5). Droite&nbsp;: SON, la "
+  "prévision pure de septembre.")}</figcaption>
 </figure>
 
 <h2>{T("Humanitarian needs (2026 HNRP)",
@@ -798,10 +847,10 @@ def main():
   "API (DMN gauge + satellite analysis, 1991–2026; the MON series is "
   "revised as the record extends, so values can shift between pulls); "
   "CHIRPS v2.0 Africa monthly (CHC, final through July 2026); IMERG daily "
-  "zonal means from the team raster-stats pipeline (through 30 Aug 2026); "
-  "ERA5/SEAS5 monthly zonal means from the team database (SEAS5 issued "
-  "5 Aug 2026); FAO GIEWS/ASIS dekadal ASI & VHI per region (through "
-  "20 Aug 2026); OGIMET CLIMAT gauge archive (2008–2026); HNRP severity "
+  "zonal means from the team raster-stats pipeline (fixed 1 Jun–30 Aug "
+  "window); ERA5/SEAS5 monthly zonal means from the team database (ERA5 "
+  "through Aug 2026, SEAS5 issued 1 Sep 2026); FAO GIEWS/ASIS dekadal "
+  "ASI & VHI per region (through 31 Aug 2026); OGIMET CLIMAT gauge archive (2008–2026); HNRP severity "
   "and PiN from the OCHA HPC mirror (2026 plan).",
   "SPI juin–juillet ENACTS MON par département via l’API d’export du "
   "fbfmaproom de l’IRI (analyse pluviomètres + satellite de la DMN, "
@@ -810,9 +859,9 @@ def main():
   "l’autre)&nbsp;; CHIRPS v2.0 Afrique mensuel (CHC, final jusqu’à "
   "juillet 2026)&nbsp;; "
   "moyennes zonales journalières IMERG du pipeline raster-stats de "
-  "l’équipe (jusqu’au 30 août 2026)&nbsp;; moyennes zonales mensuelles "
-  "ERA5/SEAS5 de la base de l’équipe (SEAS5 émis le 5 août 2026)&nbsp;; "
-  "ASI et VHI décadaires FAO GIEWS/ASIS par région (jusqu’au 20 août "
+  "l’équipe (fenêtre fixe 1ᵉʳ juin–30 août)&nbsp;; moyennes zonales mensuelles "
+  "ERA5/SEAS5 de la base de l’équipe (ERA5 jusqu’à août 2026, SEAS5 émis le 1ᵉʳ septembre 2026)&nbsp;; "
+  "ASI et VHI décadaires FAO GIEWS/ASIS par région (jusqu’au 31 août "
   "2026)&nbsp;; archive CLIMAT d’OGIMET pour les pluviomètres "
   "(2008–2026)&nbsp;; sévérité et PiN du HNRP via le miroir HPC de l’OCHA "
   "(plan 2026).")}</li>
@@ -821,7 +870,7 @@ def main():
   "witnesses' exceedance probabilities (each the Weibull rank within its "
   "own record; the hybrid ranked against all other hindcast years), "
   "converted back to a return period; vegetation pillar = worst of the "
-  "regional ASI/VHI RPs at the mid-August dekad. CERF allocations from "
+  "regional ASI/VHI RPs at the late-August dekad. CERF allocations from "
   "the OCHA CERF records (aa.cerf_allocation mirror), drought-typed "
   "applications mapped to their valid growing season.",
   "Indicateur combiné&nbsp;: pilier pluie = médiane des probabilités de "
@@ -829,7 +878,7 @@ def main():
   "Weibull dans son propre historique&nbsp;; l’hybride classé face à "
   "toutes les autres années de re-prévision), reconvertie en période de "
   "retour&nbsp;; pilier végétation = pire des PR régionales ASI/VHI à la "
-  "décade mi-août. Allocations CERF issues des registres CERF de l’OCHA "
+  "décade fin août. Allocations CERF issues des registres CERF de l’OCHA "
   "(miroir aa.cerf_allocation), demandes de type sécheresse rattachées à "
   "leur saison agricole de validité.")}</li>
 <li>{T(

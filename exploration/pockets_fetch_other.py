@@ -30,10 +30,10 @@ ASIS_FILES = {
     "vhi_dekad.csv": "MAP_NDVI_ANOMALY/DATA/vhi_adm1_dekad_data.csv",
     "mvhi_dekad.csv": "MAP_ASI/DATA/MVHI_Dekad_Season1_data.csv",
 }
-# latest complete dekad at time of analysis: 2026 dekad 23 (11-20 Aug)
+# latest complete dekad at time of analysis: 2026 dekad 24 (21-31 Aug)
 ASIS_MAPS = {
-    "fao_asi_map.png": "MAP_ASI/HR/ot2623h_aC1_s1_g2.png",
-    "fao_ndvi_anom_map.png": "MAP_NDVI_ANOMALY/HR/ot2623n.png",
+    "fao_asi_map.png": "MAP_ASI/HR/ot2624h_aC1_s1_g2.png",
+    "fao_ndvi_anom_map.png": "MAP_NDVI_ANOMALY/HR/ot2624n.png",
 }
 
 
@@ -62,7 +62,7 @@ def fetch_db():
         era5 = pd.read_sql(
             "SELECT pcode, valid_date, mean FROM public.era5 "
             "WHERE iso3='NER' AND adm_level=2 "
-            "AND EXTRACT(month FROM valid_date) IN (6,7)",
+            "AND EXTRACT(month FROM valid_date) IN (6,7,8)",
             con,
         )
 
@@ -90,11 +90,11 @@ def fetch_db():
     )
     e = (
         era5.groupby(["pcode", "year"])
-        .agg(junjul_mm=("mm", "sum"), n_months=("mm", "size"))
+        .agg(junaug_mm=("mm", "sum"), n_months=("mm", "size"))
         .reset_index()
     )
-    e = e[e["n_months"] == 2]
-    e.to_csv(OUT_DIR / "era5_junjul_adm2.csv", index=False)
+    e = e[e["n_months"] == 3]
+    e.to_csv(OUT_DIR / "era5_junaug_adm2.csv", index=False)
     print(f"era5: {len(e)} pcode-years", flush=True)
 
     eng2 = stratus.get_engine(stage="dev")

@@ -595,5 +595,6 @@ def fig_cdi_history(comp, years, cerf_years=(), aa_years=(), ncols=6):
         title="RP pluie/rain (ans/yrs)",
         title_fontsize=9,
     )
-    fig.tight_layout(rect=(0, 0.045, 1, 1))
+    bottom = 0.16 if nrows == 1 else 0.045
+    fig.tight_layout(rect=(0, bottom, 1, 1))
     return _b64(fig)

@@ -1,0 +1,379 @@
+"""Render the 5-slide HCT briefing deck (El Niño & the 2026 season).
+
+A static, bilingual (EN/FR toggle) HTML slide deck at
+``docs/hct-brief/index.html``: arrow keys / buttons to navigate, print to
+PDF for distribution (one slide per landscape page). Figures are reused
+from the pockets analysis (``pockets_figures``) and from the team's
+published Niger ENSO slides in the sibling ``ds-seas5-skill`` clone
+(``pages/enso/slides/NER_slide{1,2}[_fr].svg``, refreshed with the
+September 2026 issuance).
+
+Usage: ``uv run python exploration/hct_brief_page.py``
+"""
+
+import base64
+from pathlib import Path
+
+import pandas as pd
+import pockets_figures as figs
+
+D = Path(__file__).parent / "public" / "pockets"
+OUT = Path(__file__).parent.parent / "docs" / "hct-brief" / "index.html"
+ENSO_DIR = (
+    Path(__file__).resolve().parents[2]
+    / "ds-seas5-skill"
+    / "pages"
+    / "enso"
+    / "slides"
+)
+
+
+def T(en, fr):
+    return (
+        f'<span class="lv lv-en">{en}</span>'
+        f'<span class="lv lv-fr">{fr}</span>'
+    )
+
+
+def svg_uri(path):
+    b = base64.b64encode(path.read_bytes()).decode()
+    return f"data:image/svg+xml;base64,{b}"
+
+
+def img_dual(en_src, fr_src, alt):
+    return (
+        f'<img class="lv lv-en" src="{en_src}" alt="{alt}">'
+        f'<img class="lv lv-fr" src="{fr_src}" alt="{alt}">'
+    )
+
+
+def main():
+    summary = pd.read_csv(D / "summary_adm2.csv")
+    comp = pd.read_csv(D / "composite_adm2.csv")
+
+    print("rendering figures…", flush=True)
+    img_cdi = figs.fig_cdi(summary)
+    img_strip = figs.fig_cdi_history(
+        comp,
+        [2009, 2011, 2021, 2026],
+        cerf_years={2009, 2011, 2021},
+        ncols=4,
+    )
+    enso1_en = svg_uri(ENSO_DIR / "NER_slide1.svg")
+    enso1_fr = svg_uri(ENSO_DIR / "NER_slide1_fr.svg")
+    enso2_en = svg_uri(ENSO_DIR / "NER_slide2.svg")
+    enso2_fr = svg_uri(ENSO_DIR / "NER_slide2_fr.svg")
+
+    html = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Niger 2026 — HCT briefing</title>
+<style>
+  * {{ box-sizing: border-box; }}
+  body {{
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+      "Helvetica Neue", Arial, sans-serif;
+    color: #1a1a1a; background: #444; margin: 0;
+  }}
+  .slide {{
+    background: #ffffff; width: 1280px; max-width: 96vw;
+    aspect-ratio: 16 / 9; margin: 1.2rem auto; padding: 2.2rem 2.8rem;
+    box-shadow: 0 2px 14px rgba(0,0,0,0.35);
+    display: flex; flex-direction: column; overflow: hidden;
+    position: relative;
+  }}
+  .slide h1 {{ font-size: 2.1rem; margin: 0 0 0.4rem; color: #0b3d6b; }}
+  .slide h2 {{ font-size: 1.55rem; margin: 0 0 0.8rem; color: #0b3d6b;
+              border-bottom: 3px solid #2a6fb0; padding-bottom: 0.35rem; }}
+  .slide ul {{ font-size: 1.08rem; line-height: 1.5; margin: 0.4rem 0;
+              padding-left: 1.3rem; }}
+  .slide li {{ margin-bottom: 0.55rem; }}
+  .cols {{ display: flex; gap: 1.6rem; flex: 1; min-height: 0;
+          align-items: stretch; }}
+  .cols .fig {{ flex: 1.35; display: flex; align-items: center;
+               justify-content: center; min-width: 0; }}
+  .cols .txt {{ flex: 1; min-width: 0; }}
+  .fig img {{ max-width: 100%; max-height: 100%; object-fit: contain; }}
+  .fullfig {{ flex: 1; display: flex; align-items: center;
+             justify-content: center; min-height: 0; }}
+  .fullfig img {{ max-width: 100%; max-height: 100%; object-fit: contain; }}
+  .keybox {{ background: #f2f7fb; border-left: 5px solid #2a6fb0;
+            padding: 0.7rem 1.1rem; margin-top: 1rem; font-size: 1.15rem; }}
+  .keybox li {{ margin-bottom: 0.7rem; }}
+  .foot {{ position: absolute; bottom: 0.7rem; left: 2.8rem; right: 2.8rem;
+          display: flex; justify-content: space-between;
+          color: #888; font-size: 0.78rem; }}
+  .note {{ color: #555; font-size: 0.9rem; font-style: italic; }}
+  .titlemeta {{ color: #555; font-size: 1.1rem; margin-bottom: 0.4rem; }}
+  .navbar {{ position: fixed; top: 0.6rem; right: 0.9rem; z-index: 10; }}
+  .navbar button, .navbar a {{
+    border: 1px solid #ccc; background: #fff; padding: 4px 12px;
+    cursor: pointer; font-size: 0.85rem; text-decoration: none;
+    color: #1a1a1a; }}
+  .navbar button.active {{ background: #2a6fb0; color: #fff;
+    border-color: #2a6fb0; }}
+  .lv {{ display: none; }}
+  html[data-lang="en"] .lv-en {{ display: inline; }}
+  html[data-lang="fr"] .lv-fr {{ display: inline; }}
+  html:not([data-lang]) .lv-en {{ display: inline; }}
+  html[data-lang="en"] img.lv-en, html:not([data-lang]) img.lv-en
+    {{ display: block; }}
+  html[data-lang="fr"] img.lv-fr {{ display: block; }}
+  @media print {{
+    body {{ background: #fff; }}
+    .navbar {{ display: none; }}
+    .slide {{ box-shadow: none; margin: 0; width: 100%; max-width: none;
+             page-break-after: always; }}
+    @page {{ size: 297mm 167mm; margin: 0; }}
+  }}
+</style>
+</head>
+<body>
+<div class="navbar">
+  <button id="btn-en" onclick="aaSetLang('en')">EN</button>
+  <button id="btn-fr" onclick="aaSetLang('fr')">FR</button>
+  <a href="../">{T("home", "accueil")}</a>
+  <a href="#" onclick="window.print();return false;">PDF</a>
+</div>
+
+<!-- Slide 1 — title & bottom line -->
+<section class="slide">
+<h1>{T("Niger's 2026 rainy season — and El Niño",
+       "La saison des pluies 2026 au Niger — et El Niño")}</h1>
+<p class="titlemeta">{T(
+  "Briefing for the Humanitarian Country Team · 9 September 2026 · "
+  "OCHA Centre for Humanitarian Data",
+  "Briefing pour l'Équipe humanitaire pays · 9 septembre 2026 · "
+  "Centre de données humanitaires de l'OCHA")}</p>
+<div class="keybox">
+<b>{T("Bottom line", "L'essentiel")}</b>
+<ul>
+<li>{T(
+  "A strong El Niño developed during the season (Niño3.4 ≈ +1.9 °C in "
+  "August) — but El Niño's direct fingerprint on Niger's rains is weak "
+  "and patchy, so it is not, by itself, a basis for alarm.",
+  "Un fort épisode El Niño s'est développé pendant la saison (Niño3.4 "
+  "≈ +1,9 °C en août) — mais l'empreinte directe d'El Niño sur les "
+  "pluies du Niger est faible et hétérogène&nbsp;: à lui seul, ce n'est "
+  "pas un motif d'alarme.")}</li>
+<li>{T(
+  "The concern rests on Niger's own data: observations already show one "
+  "of the poorest seasons in decades across parts of the southern "
+  "agricultural belt — six departments are at a ≥ 1-in-10-year rainfall "
+  "deficit on the agreement of four independent datasets.",
+  "La préoccupation repose sur les données du Niger lui-même&nbsp;: les "
+  "observations montrent déjà l'une des saisons les plus médiocres "
+  "depuis des décennies sur une partie de la bande agricole sud — six "
+  "départements sont en déficit pluviométrique ≥ 1 an sur 10, sur "
+  "l'accord de quatre jeux de données indépendants.")}</li>
+<li>{T(
+  "By the same yardstick, 2026's rainfall extent now equals early-"
+  "September 2009 — the season that led to Niger's largest CERF drought "
+  "response — with vegetation impacts not yet confirmed.",
+  "À la même aune, l'étendue pluviométrique de 2026 égale désormais "
+  "celle de début septembre 2009 — la saison à l'origine de la plus "
+  "grande réponse sécheresse du CERF au Niger — sans confirmation "
+  "encore par la végétation.")}</li>
+</ul>
+</div>
+<div class="foot"><span>1 / 5</span>
+<span>ocha-dap.github.io/ds-aa-ner-drought/pockets/</span></div>
+</section>
+
+<!-- Slide 2 — El Niño teleconnection -->
+<section class="slide">
+<h2>{T("What El Niño does — and doesn't — tell us about Niger",
+       "Ce qu'El Niño dit — et ne dit pas — du Niger")}</h2>
+<div class="fullfig">
+{img_dual(enso1_en, enso1_fr, "ENSO teleconnection map for Niger")}
+</div>
+<ul style="font-size:1.0rem">
+<li>{T(
+  "Isolating El Niño's unique signal (1981–2025, other ocean modes held "
+  "constant): weak and patchy over Niger — a moderate dry tendency in "
+  "parts of the south-centre and east late in the season, a slight wet "
+  "tendency in the west mid-season. Nothing that predicts a national "
+  "drought from the El Niño label alone.",
+  "En isolant le signal propre d'El Niño (1981–2025, autres modes "
+  "océaniques tenus constants)&nbsp;: faible et hétérogène sur le "
+  "Niger — tendance sèche modérée sur une partie du centre-sud et de "
+  "l'est en fin de saison, légère tendance humide à l'ouest en "
+  "mi-saison. Rien qui permette de prédire une sécheresse nationale à "
+  "partir du seul label El Niño.")}</li>
+<li>{T(
+  "The practical consequence: judge the season from seasonal forecasts "
+  "(which already account for ENSO and every other driver) and, above "
+  "all, from observations — both follow.",
+  "Conséquence pratique&nbsp;: juger la saison sur les prévisions "
+  "saisonnières (qui intègrent déjà l'ENSO et tous les autres facteurs) "
+  "et, surtout, sur les observations — les deux suivent.")}</li>
+</ul>
+<div class="foot"><span>2 / 5</span><span>ERA5 × Niño3.4 (NOAA PSL),
+partial correlation · OCHA CHD teleconnections</span></div>
+</section>
+
+<!-- Slide 3 — observations -->
+<section class="slide">
+<h2>{T("What has already been observed", "Ce qui est déjà observé")}</h2>
+<div class="cols">
+<div class="fig"><img src="data:image/png;base64,{img_cdi}"
+  alt="Combined drought indicator map"></div>
+<div class="txt">
+<ul>
+<li>{T(
+  "Four independent rainfall datasets (CHIRPS, IMERG, the DMN's ENACTS, "
+  "SEAS5+ERA5) are combined per department; classes require majority "
+  "agreement.",
+  "Quatre jeux de données pluviométriques indépendants (CHIRPS, IMERG, "
+  "l'ENACTS de la DMN, SEAS5+ERA5) sont combinés par département&nbsp;; "
+  "les classes exigent un accord majoritaire.")}</li>
+<li>{T(
+  "Severe rainfall deficit (≥ 1-in-10-year, orange): Keita (Tahoua), "
+  "Dioundiou, Dosso, Gaya, Loga (Dosso), Tanout (Zinder). 18 more "
+  "departments on watch, including eastern Diffa and the Tahoua belt.",
+  "Déficit pluviométrique sévère (≥ 1 an sur 10, orange)&nbsp;: Keita "
+  "(Tahoua), Dioundiou, Dosso, Gaya, Loga (Dosso), Tanout (Zinder). 18 "
+  "autres départements en vigilance, dont l'est de Diffa et la bande de "
+  "Tahoua.")}</li>
+<li>{T(
+  "The national met service's own gauges concur in the east: five "
+  "stations coded August in their driest quintile; five recorded their "
+  "2nd-driest June–August on record.",
+  "Les pluviomètres du service météorologique national concordent à "
+  "l'est&nbsp;: cinq stations codent août dans leur quintile le plus "
+  "sec&nbsp;; cinq enregistrent leur 2ᵉ juin–août le plus sec.")}</li>
+<li>{T(
+  "Vegetation stress is not yet exceptional (Diffa closest) — crop and "
+  "pasture impacts typically lag the rainfall deficit; September "
+  "imagery is the watchpoint.",
+  "Le stress de la végétation n'est pas encore exceptionnel (Diffa au "
+  "plus près) — les impacts sur cultures et pâturages suivent "
+  "généralement le déficit de pluie&nbsp;; l'imagerie de septembre est "
+  "le point de vigilance.")}</li>
+<li>{T(
+  "Hatched: the four HNRP severity-4 departments — all show at least "
+  "one rainfall signal at ≥ 1-in-5-year.",
+  "Hachures&nbsp;: les quatre départements en sévérité 4 du HNRP — tous "
+  "montrent au moins un signal pluviométrique ≥ 1 an sur 5.")}</li>
+</ul>
+</div>
+</div>
+<div class="foot"><span>3 / 5</span><span>CHIRPS · IMERG · ENACTS ·
+SEAS5+ERA5 · FAO ASIS · OGIMET/DMN · HNRP 2026</span></div>
+</section>
+
+<!-- Slide 4 — forecast -->
+<section class="slide">
+<h2>{T("The rest of the season, per the forecasts",
+       "La fin de saison, selon les prévisions")}</h2>
+<div class="fullfig">
+{img_dual(enso2_en, enso2_fr, "SEAS5 September issuance for Niger")}
+</div>
+<ul style="font-size:1.0rem">
+<li>{T(
+  "With July–August observed, the season-closing JAS estimate is the "
+  "driest of the 46-year record (per the ERA5-based system, which runs "
+  "anomalously dry this year — the direction is corroborated by the "
+  "other datasets, the extremity less so).",
+  "Juillet–août observés, l'estimation de clôture JAS est la plus sèche "
+  "de l'historique de 46 ans (selon le système fondé sur ERA5, "
+  "anormalement sec cette année — la direction est corroborée par les "
+  "autres jeux de données, l'extrémité moins).")}</li>
+<li>{T(
+  "The remaining true forecast — September–November, the harvest and "
+  "pasture-regrowth window — tilts dry: ~1-in-4 nationally, up to "
+  "1-in-10 in Dosso/Tillabéri pockets.",
+  "La véritable prévision restante — septembre–novembre, fenêtre des "
+  "récoltes et de la repousse des pâturages — penche au sec&nbsp;: "
+  "~1 an sur 4 au niveau national, jusqu'à 1 an sur 10 dans des poches "
+  "de Dosso/Tillabéri.")}</li>
+</ul>
+<div class="foot"><span>4 / 5</span><span>ECMWF SEAS5, {T("issued",
+"émission")} 09/2026 · OCHA CHD skill methodology</span></div>
+</section>
+
+<!-- Slide 5 — comparison & implications -->
+<section class="slide">
+<h2>{T("How 2026 compares — and what it means",
+       "2026 en comparaison — et ce que cela implique")}</h2>
+<div class="fullfig" style="flex:0.9">
+<img src="data:image/png;base64,{img_strip}"
+  alt="2009, 2011, 2021 and 2026 compared">
+</div>
+<ul style="font-size:1.02rem">
+<li>{T(
+  "The same indicator, reconstructed for early September of past CERF "
+  "drought seasons (red frames): it flagged 2009 and 2011. 2026 equals "
+  "2009's rainfall extent — without vegetation confirmation yet.",
+  "Le même indicateur, reconstruit pour début septembre des saisons de "
+  "sécheresse CERF passées (cadres rouges)&nbsp;: il signalait 2009 et "
+  "2011. 2026 égale l'étendue pluviométrique de 2009 — sans "
+  "confirmation encore par la végétation.")}</li>
+<li>{T(
+  "Caution: 2021 shows the blind spot — its rains collapsed in "
+  "September itself. A quiet map in early September is not an "
+  "all-clear; a loud one, as now, is meaningful.",
+  "Prudence&nbsp;: 2021 montre l'angle mort — ses pluies se sont "
+  "effondrées en septembre même. Une carte calme début septembre n'est "
+  "pas un feu vert&nbsp;; une carte chargée, comme aujourd'hui, est "
+  "significative.")}</li>
+<li>{T(
+  "Suggested next steps: follow the hotspot departments (live page "
+  "below); watch September rainfall and vegetation dekads; factor the "
+  "2009 analogue into lean-season planning and prepositioning, "
+  "especially where deficits overlap HNRP severity-4 areas (Diffa "
+  "east, Tillabéri west).",
+  "Suites proposées&nbsp;: suivre les départements sensibles (page en "
+  "direct ci-dessous)&nbsp;; surveiller les pluies et décades de "
+  "végétation de septembre&nbsp;; intégrer l'analogue 2009 dans la "
+  "planification de la soudure et le prépositionnement, en particulier "
+  "là où les déficits recoupent les zones en sévérité 4 du HNRP (est "
+  "de Diffa, ouest de Tillabéri).")}</li>
+</ul>
+<div class="foot"><span>5 / 5</span>
+<span>ocha-dap.github.io/ds-aa-ner-drought/pockets/</span></div>
+</section>
+
+<script>
+window.AA_TITLES = {{
+  en: "Niger 2026 — HCT briefing",
+  fr: "Niger 2026 — briefing EHP"
+}};
+function aaSetLang(l) {{
+  document.documentElement.setAttribute("data-lang", l);
+  document.documentElement.setAttribute("lang", l);
+  try {{ localStorage.setItem("aa-lang", l); }} catch (e) {{}}
+  document.title = window.AA_TITLES[l] || document.title;
+  document.getElementById("btn-en").classList.toggle("active", l === "en");
+  document.getElementById("btn-fr").classList.toggle("active", l === "fr");
+}}
+document.addEventListener("DOMContentLoaded", function () {{
+  var l = "en";
+  try {{ l = localStorage.getItem("aa-lang") || "en"; }} catch (e) {{}}
+  aaSetLang(l);
+}});
+document.addEventListener("keydown", function (e) {{
+  var slides = document.querySelectorAll(".slide");
+  var y = window.scrollY, idx = 0;
+  slides.forEach(function (s, i) {{
+    if (s.offsetTop - 80 <= y) idx = i;
+  }});
+  if (e.key === "ArrowRight" || e.key === "PageDown") {{
+    if (idx < slides.length - 1) slides[idx + 1].scrollIntoView();
+  }} else if (e.key === "ArrowLeft" || e.key === "PageUp") {{
+    if (idx > 0) slides[idx - 1].scrollIntoView();
+  }}
+}});
+</script>
+</body>
+</html>
+"""
+    OUT.parent.mkdir(parents=True, exist_ok=True)
+    OUT.write_text(html)
+    print(f"wrote {OUT} ({len(html)/1e6:.1f} MB)")
+
+
+if __name__ == "__main__":
+    main()

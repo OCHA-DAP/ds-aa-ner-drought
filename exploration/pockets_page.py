@@ -111,6 +111,7 @@ def main():
     img_rain = figs.fig_rain_rp_quad(summary)
     img_gauge = figs.fig_gauge_map(gauges)
     img_veg = figs.fig_veg_strips(asi_h, vhi_h)
+    img_asap = figs.fig_asap()
     img_seas5 = figs.fig_seas5_pair(summary)
     img_hnrp = figs.fig_hnrp(summary)
     fao_ndvi = base64.b64encode(
@@ -321,7 +322,10 @@ def main():
   "and Tanout, with 17 more on watch (Tahoua belt, rest of Dosso, "
   "eastern Diffa). No compound class yet: no region's vegetation "
   "(ASI/VHI) has crossed RP 5 at the late-August dekad — Diffa is "
-  "closest (ASI 15% of cropland stressed, 10th worst of 43 years).",
+  "closest (ASI 15% of cropland stressed, 10th worst of 43 years). The "
+  "JRC ASAP system's finer unit-level warnings do, however, already "
+  "flag biomass impact in the east: level 3 on Diffa, Maïné-Soroa and "
+  "Tanout croplands, 3+ on N'Guigmi rangelands.",
   "L’indicateur combiné place six départements en déficit "
   "pluviométrique sévère (PR pluie médiane ≥ 10)&nbsp;: Keita, "
   "Dioundiou, Dosso, Gaya, Loga et Tanout, et 17 autres en vigilance "
@@ -329,7 +333,10 @@ def main():
   "classe composée&nbsp;: aucune région n’a franchi PR 5 en végétation "
   "(ASI/VHI) à la décade fin août — Diffa en est la plus proche "
   "(ASI&nbsp;: 15&nbsp;% des cultures stressées, 10ᵉ pire valeur sur "
-  "43&nbsp;ans).")}</li>
+  "43&nbsp;ans). Les alertes ASAP (JRC), plus fines car par unité, "
+  "signalent toutefois déjà l'impact sur la biomasse à l'est&nbsp;: "
+  "niveau 3 sur les cultures de Diffa, Maïné-Soroa et Tanout, 3+ sur "
+  "les pâturages de N'Guigmi.")}</li>
 <li>{T(
   "With July and August observed, the season-closing JAS estimate is "
   "the driest of the 46-year record in every region — though this leans "
@@ -746,6 +753,48 @@ def main():
   "ouvertes).")}</figcaption>
 </figure>
 
+<h3>{T("Cross-check: JRC ASAP warnings",
+       "Contre-vérification&nbsp;: alertes ASAP du JRC")}</h3>
+<p>{T(
+  "The EC/JRC ASAP system (a separate product from FAO's ASIS) issues "
+  "automated agricultural-drought warnings every dekad per admin unit and "
+  "land cover, combining water-balance and biomass indicators. Its "
+  "current classification corroborates — and sharpens — the picture: "
+  "warnings on 26 of Niger's 35 assessed units, with the Dosso–Tahoua–"
+  "Tillabéri belt at level 1/1+ under 'exceptional conditions', and, "
+  "crucially, level-3 warnings (water balance AND biomass: poor growth "
+  "with negative prospects) on Diffa, Maïné-Soroa and Tanout croplands "
+  "and level 3+ on N'Guigmi rangelands. At ASAP's unit scale, the "
+  "biomass impact in the east that the region-level ASI aggregate "
+  "dilutes is already visible.",
+  "Le système ASAP de la CE/JRC (un produit distinct de l'ASIS de la "
+  "FAO) émet chaque décade des alertes automatiques de sécheresse "
+  "agricole par unité administrative et type de couvert, en combinant "
+  "bilan hydrique et biomasse. Sa classification actuelle corrobore — "
+  "et affine — le tableau&nbsp;: alertes sur 26 des 35 unités évaluées "
+  "du Niger, la bande Dosso–Tahoua–Tillabéri en niveau 1/1+ sous "
+  "«&nbsp;conditions exceptionnelles&nbsp;», et surtout des alertes de "
+  "niveau 3 (bilan hydrique ET biomasse&nbsp;: croissance médiocre et "
+  "perspectives négatives) sur les cultures de Diffa, Maïné-Soroa et "
+  "Tanout, et de niveau 3+ sur les pâturages de N'Guigmi. À l'échelle "
+  "des unités ASAP, l'impact sur la biomasse à l'est — que l'agrégat "
+  "régional de l'ASI dilue — est déjà visible.")}</p>
+<figure>
+<img src="data:image/png;base64,{img_asap}" alt="JRC ASAP warnings map">
+<figcaption>{T(
+  "Reproduction of the current JRC ASAP warning classification for Niger "
+  "(GAUL2 units × land cover, dekad of 21–31 August 2026; pulled from "
+  "ASAP's public WFS). Dots: units flagged 'with exceptional "
+  "conditions'. Grey: insufficient crop/rangeland area. Source: EC/JRC "
+  "ASAP, agricultural-production-hotspots.ec.europa.eu.",
+  "Reproduction de la classification d'alerte ASAP (JRC) actuelle pour "
+  "le Niger (unités GAUL2 × couvert, décade du 21–31 août 2026&nbsp;; "
+  "extraite du WFS public d'ASAP). Points&nbsp;: unités signalées "
+  "«&nbsp;conditions exceptionnelles&nbsp;». Gris&nbsp;: superficie "
+  "cultivée/pastorale insuffisante. Source&nbsp;: ASAP CE/JRC, "
+  "agricultural-production-hotspots.ec.europa.eu.")}</figcaption>
+</figure>
+
 <h2>{T("End-of-season outlook — SEAS5+ERA5 hybrid, skill-filtered",
        "Perspective de fin de saison — hybride SEAS5+ERA5, filtré selon la performance")}</h2>
 <p>{T(
@@ -850,7 +899,8 @@ def main():
   "zonal means from the team raster-stats pipeline (fixed 1 Jun–30 Aug "
   "window); ERA5/SEAS5 monthly zonal means from the team database (ERA5 "
   "through Aug 2026, SEAS5 issued 1 Sep 2026); FAO GIEWS/ASIS dekadal "
-  "ASI & VHI per region (through 31 Aug 2026); OGIMET CLIMAT gauge archive (2008–2026); HNRP severity "
+  "ASI & VHI per region (through 31 Aug 2026); JRC ASAP warnings via "
+  "the ASAP public WFS (dekad 21–31 Aug 2026); OGIMET CLIMAT gauge archive (2008–2026); HNRP severity "
   "and PiN from the OCHA HPC mirror (2026 plan).",
   "SPI juin–juillet ENACTS MON par département via l’API d’export du "
   "fbfmaproom de l’IRI (analyse pluviomètres + satellite de la DMN, "
@@ -861,7 +911,8 @@ def main():
   "moyennes zonales journalières IMERG du pipeline raster-stats de "
   "l’équipe (fenêtre fixe 1ᵉʳ juin–30 août)&nbsp;; moyennes zonales mensuelles "
   "ERA5/SEAS5 de la base de l’équipe (ERA5 jusqu’à août 2026, SEAS5 émis le 1ᵉʳ septembre 2026)&nbsp;; "
-  "ASI et VHI décadaires FAO GIEWS/ASIS par région (jusqu’au 31 août "
+  "alertes ASAP (JRC) via le WFS public d'ASAP (décade 21–31 août "
+  "2026)&nbsp;; ASI et VHI décadaires FAO GIEWS/ASIS par région (jusqu’au 31 août "
   "2026)&nbsp;; archive CLIMAT d’OGIMET pour les pluviomètres "
   "(2008–2026)&nbsp;; sévérité et PiN du HNRP via le miroir HPC de l’OCHA "
   "(plan 2026).")}</li>

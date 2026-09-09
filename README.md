@@ -124,8 +124,9 @@ department and overlaying 2026 HNRP severity:
   detrended + normalized, the app's Detrended variant).
 - **Fetch:** `exploration/pockets_fetch_chirps.py`,
   `pockets_fetch_gauges.py`, `pockets_fetch_seas5.py`,
-  `pockets_fetch_enacts.py`, `pockets_fetch_other.py` (ASIS, IMERG/ERA5
-  DB, HNRP, CODAB) — all into `exploration/public/pockets/`.
+  `pockets_fetch_enacts.py`, `pockets_fetch_asap.py` (JRC ASAP warnings
+  via public WFS), `pockets_fetch_other.py` (ASIS, IMERG/ERA5 DB, HNRP,
+  CODAB) — all into `exploration/public/pockets/`.
 - **Analysis:** `exploration/pockets_build_summary.py` — Weibull return
   periods per indicator, plus a combined drought indicator (rain pillar =
   median RP of the four rainfall witnesses; vegetation pillar = worst of
@@ -136,7 +137,7 @@ department and overlaying 2026 HNRP severity:
 - **Page:** `exploration/pockets_figures.py` +
   `exploration/pockets_page.py` (plain HTML, embedded matplotlib figures,
   D86-style EN/FR toggle; no marimo).
-- **Regenerate:** run the five fetch scripts, then
+- **Regenerate:** run the six fetch scripts, then
   `uv run python exploration/pockets_build_summary.py`, then
   `cd exploration && uv run python pockets_page.py`.
 

@@ -245,13 +245,17 @@ partial correlation · OCHA CHD teleconnections</span></div>
   "l'est&nbsp;: cinq stations codent août dans leur quintile le plus "
   "sec&nbsp;; cinq enregistrent leur 2ᵉ juin–août le plus sec.")}</li>
 <li>{T(
-  "Vegetation stress is not yet exceptional (Diffa closest) — crop and "
-  "pasture impacts typically lag the rainfall deficit; September "
-  "imagery is the watchpoint.",
-  "Le stress de la végétation n'est pas encore exceptionnel (Diffa au "
-  "plus près) — les impacts sur cultures et pâturages suivent "
-  "généralement le déficit de pluie&nbsp;; l'imagerie de septembre est "
-  "le point de vigilance.")}</li>
+  "Vegetation impacts are emerging in the east: the JRC ASAP system "
+  "already has level-3 warnings (poor growth, negative prospects) on "
+  "Diffa, Maïné-Soroa and Tanout croplands and N'Guigmi rangelands; "
+  "region-scale vegetation indices are not yet exceptional elsewhere — "
+  "September imagery is the watchpoint.",
+  "Les impacts sur la végétation émergent à l'est&nbsp;: le système "
+  "ASAP (JRC) a déjà des alertes de niveau 3 (croissance médiocre, "
+  "perspectives négatives) sur les cultures de Diffa, Maïné-Soroa et "
+  "Tanout et les pâturages de N'Guigmi&nbsp;; ailleurs, les indices de "
+  "végétation à l'échelle régionale ne sont pas encore "
+  "exceptionnels — l'imagerie de septembre est le point de vigilance.")}</li>
 <li>{T(
   "Hatched: the four HNRP severity-4 departments. On the combined "
   "(majority) indicator only N'Guigmi reaches watch — but each of the "

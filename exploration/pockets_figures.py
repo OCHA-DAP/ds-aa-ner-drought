@@ -598,3 +598,80 @@ def fig_cdi_history(comp, years, cerf_years=(), aa_years=(), ncols=6):
     bottom = 0.16 if nrows == 1 else 0.045
     fig.tight_layout(rect=(0, bottom, 1, 1))
     return _b64(fig)
+
+
+# --- JRC ASAP warnings (reproduction of the wexplorer view) -----------------
+ASAP_GROUP_COLORS = {
+    0: "#cde6b8",  # no warning
+    1: "#ffe08a",  # warning level 1 / 1+
+    2: "#fd9e4c",  # warning level 2
+    3: "#e31a1c",  # warning level 3 / 3+
+    4: "#800026",  # warning level 4 (end of season)
+    5: "#e8e6df",  # insufficient crop/rangeland area
+}
+ASAP_GROUP_LABELS = {
+    0: "–",
+    1: "N1/1+",
+    2: "N2",
+    3: "N3/3+",
+    4: "N4",
+    5: "n/a",
+}
+
+
+def fig_asap():
+    """Current ASAP warnings for Niger, crop + rangeland (GAUL2 units)."""
+    adm1, _ = _load_admins()
+    fig, axes = plt.subplots(1, 2, figsize=(13.5, 4.9))
+    date = ""
+    for ax, lc, key, title in (
+        (axes[0], "crop", "w_crop", "Cultures / Cropland"),
+        (axes[1], "rangeland", "w_range", "Pâturages / Rangeland"),
+    ):
+        g = gpd.read_file(D / f"asap_warnings_{lc}.geojson")
+        date = str(g["date"].iloc[0])[:10]
+        grp = g[f"{key}_gr"]
+        for k, color in ASAP_GROUP_COLORS.items():
+            sub = g[grp == k]
+            if len(sub):
+                sub.plot(
+                    ax=ax,
+                    color=color,
+                    edgecolor="#ffffff",
+                    linewidth=0.5,
+                    zorder=2,
+                )
+        # ASAP flags some units "with exceptional conditions" (codes 10/12/14)
+        exc = g[g[key].isin([10, 12, 14])]
+        if len(exc):
+            pts = exc.geometry.representative_point()
+            ax.scatter(
+                pts.x, pts.y, s=14, color="#1a1a1a", zorder=6, marker="o"
+            )
+        _basemap(ax, adm1, labels=False)
+        ax.set_title(title, fontsize=10)
+    handles = [
+        Patch(facecolor=c, edgecolor="#cccccc", label=ASAP_GROUP_LABELS[k])
+        for k, c in ASAP_GROUP_COLORS.items()
+    ] + [
+        Line2D(
+            [],
+            [],
+            marker="o",
+            linestyle="",
+            color="#1a1a1a",
+            markersize=5,
+            label="cond. exceptionnelles / exceptional cond.",
+        ),
+    ]
+    fig.legend(
+        handles=handles,
+        loc="lower center",
+        fontsize=8,
+        ncol=7,
+        frameon=False,
+        title=f"ASAP {date}",
+        title_fontsize=8,
+    )
+    fig.tight_layout(rect=(0, 0.09, 1, 1))
+    return _b64(fig)

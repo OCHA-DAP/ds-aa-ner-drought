@@ -269,7 +269,80 @@ def main():
 partial correlation · OCHA CHD teleconnections</span></div>
 </section>
 
-<!-- Slide 3 — observations -->
+<!-- Slide 3 — forecast -->
+<section class="slide">
+<h2>{T("The rest of the season, per the forecasts",
+       "La fin de saison, selon les prévisions")}</h2>
+<div class="fullfig">
+{img_dual(enso2_en, enso2_fr, "SEAS5 September issuance for Niger")}
+</div>
+<ul style="font-size:1.0rem">
+<li>{T(
+  "With July–August observed, the season-closing JAS estimate is the "
+  "driest of the 46-year record (per the ERA5-based system, which runs "
+  "anomalously dry this year — the direction is corroborated by the "
+  "observation datasets on the next slides, the extremity less so).",
+  "Juillet–août observés, l'estimation de clôture JAS est la plus sèche "
+  "de l'historique de 46 ans (selon le système fondé sur ERA5, "
+  "anormalement sec cette année — la direction est corroborée par les "
+  "jeux de données d'observation des diapositives suivantes, "
+  "l'extrémité moins).")}</li>
+<li>{T(
+  "The remaining true forecast — September–November, the harvest and "
+  "pasture-regrowth window — tilts dry: ~1-in-4 nationally, up to "
+  "1-in-10 in Dosso/Tillabéri pockets.",
+  "La véritable prévision restante — septembre–novembre, fenêtre des "
+  "récoltes et de la repousse des pâturages — penche au sec&nbsp;: "
+  "~1 an sur 4 au niveau national, jusqu'à 1 an sur 10 dans des poches "
+  "de Dosso/Tillabéri.")}</li>
+</ul>
+<div class="foot"><span>3 / 9</span><span>ECMWF SEAS5, {T("issued",
+"émission")} 09/2026 · OCHA CHD skill methodology</span></div>
+</section>
+
+<!-- Slide 4 — agricultural impact (JRC ASAP) -->
+<section class="slide">
+<h2>{T("ASAP warnings", "Alertes ASAP")}</h2>
+<div class="fullfig">
+<img src="data:image/png;base64,{img_asap}" alt="JRC ASAP warnings map">
+</div>
+<ul style="font-size:1.0rem">
+<li>{T(
+  "The EC/JRC ASAP system issues automated agricultural-drought warnings "
+  "per unit and land cover every 10 days. Current picture: warnings on "
+  "29 of 35 units (cropland and/or rangeland) — the Dosso–Tahoua–"
+  "Tillabéri belt at level 1/1+, "
+  "and level-3 warnings — poor growth "
+  "with negative prospects, from water balance AND biomass — on Diffa, "
+  "Maïné-Soroa and Tanout croplands, level 3+ on N'Guigmi rangelands.",
+  "Le système ASAP de la CE/JRC émet tous les 10 jours des alertes "
+  "automatiques de sécheresse agricole par unité et type de couvert. "
+  "Tableau actuel&nbsp;: alertes sur 29 des 35 unités (cultures et/ou "
+  "pâturages) — la bande Dosso–Tahoua–Tillabéri en niveau 1/1+, et des "
+  "alertes de niveau 3 — "
+  "croissance médiocre et perspectives négatives, sur bilan hydrique ET "
+  "biomasse — sur les cultures de Diffa, Maïné-Soroa et Tanout, niveau "
+  "3+ sur les pâturages de N'Guigmi.")}</li>
+<li>{T(
+  "The region-scale vegetation indices agree once their long-term "
+  "trend is removed: on the detrended VHI, Diffa is at its worst "
+  "late-August of the 44-year record and Zinder and Tahoua are near "
+  "the 1-in-5 level — the same eastern geography as ASAP's level-3 "
+  "warnings. Impacts lag rainfall; the September dekads are the "
+  "watchpoint.",
+  "Les indices de végétation à l'échelle régionale concordent une fois "
+  "leur tendance de long terme retirée&nbsp;: sur le VHI détendancé, "
+  "Diffa est à sa pire fin août des 44 ans d'historique et Zinder et "
+  "Tahoua près du niveau 1 an sur 5 — la même géographie orientale que "
+  "les alertes de niveau 3 d'ASAP. Les impacts suivent la pluie&nbsp;; "
+  "les décades de septembre sont le point de vigilance.")}</li>
+</ul>
+<div class="foot"><span>4 / 9</span><span>EC/JRC ASAP,
+agricultural-production-hotspots.ec.europa.eu · {T("dekad", "décade")}
+21–31/08/2026</span></div>
+</section>
+
+<!-- Slide 5 — observations -->
 <section class="slide">
 <h2>{T("What has already been observed", "Ce qui est déjà observé")}</h2>
 <div class="cols">
@@ -319,80 +392,8 @@ partial correlation · OCHA CHD teleconnections</span></div>
 </ul>
 </div>
 </div>
-<div class="foot"><span>3 / 9</span><span>CHIRPS · IMERG · ENACTS ·
+<div class="foot"><span>5 / 9</span><span>CHIRPS · IMERG · ENACTS ·
 SEAS5+ERA5 · FAO ASIS · OGIMET/DMN · HNRP 2026</span></div>
-</section>
-
-<!-- Slide 4 — agricultural impact (JRC ASAP) -->
-<section class="slide">
-<h2>{T("ASAP warnings", "Alertes ASAP")}</h2>
-<div class="fullfig">
-<img src="data:image/png;base64,{img_asap}" alt="JRC ASAP warnings map">
-</div>
-<ul style="font-size:1.0rem">
-<li>{T(
-  "The EC/JRC ASAP system issues automated agricultural-drought warnings "
-  "per unit and land cover every 10 days. Current picture: warnings on "
-  "29 of 35 units (cropland and/or rangeland) — the Dosso–Tahoua–"
-  "Tillabéri belt at level 1/1+, "
-  "and level-3 warnings — poor growth "
-  "with negative prospects, from water balance AND biomass — on Diffa, "
-  "Maïné-Soroa and Tanout croplands, level 3+ on N'Guigmi rangelands.",
-  "Le système ASAP de la CE/JRC émet tous les 10 jours des alertes "
-  "automatiques de sécheresse agricole par unité et type de couvert. "
-  "Tableau actuel&nbsp;: alertes sur 29 des 35 unités (cultures et/ou "
-  "pâturages) — la bande Dosso–Tahoua–Tillabéri en niveau 1/1+, et des "
-  "alertes de niveau 3 — "
-  "croissance médiocre et perspectives négatives, sur bilan hydrique ET "
-  "biomasse — sur les cultures de Diffa, Maïné-Soroa et Tanout, niveau "
-  "3+ sur les pâturages de N'Guigmi.")}</li>
-<li>{T(
-  "The region-scale vegetation indices agree once their long-term "
-  "trend is removed: on the detrended VHI, Diffa is at its worst "
-  "late-August of the 44-year record and Zinder and Tahoua are near "
-  "the 1-in-5 level — the same eastern geography as ASAP's level-3 "
-  "warnings. Impacts lag rainfall; the September dekads are the "
-  "watchpoint.",
-  "Les indices de végétation à l'échelle régionale concordent une fois "
-  "leur tendance de long terme retirée&nbsp;: sur le VHI détendancé, "
-  "Diffa est à sa pire fin août des 44 ans d'historique et Zinder et "
-  "Tahoua près du niveau 1 an sur 5 — la même géographie orientale que "
-  "les alertes de niveau 3 d'ASAP. Les impacts suivent la pluie&nbsp;; "
-  "les décades de septembre sont le point de vigilance.")}</li>
-</ul>
-<div class="foot"><span>4 / 9</span><span>EC/JRC ASAP,
-agricultural-production-hotspots.ec.europa.eu · {T("dekad", "décade")}
-21–31/08/2026</span></div>
-</section>
-
-<!-- Slide 5 — forecast -->
-<section class="slide">
-<h2>{T("The rest of the season, per the forecasts",
-       "La fin de saison, selon les prévisions")}</h2>
-<div class="fullfig">
-{img_dual(enso2_en, enso2_fr, "SEAS5 September issuance for Niger")}
-</div>
-<ul style="font-size:1.0rem">
-<li>{T(
-  "With July–August observed, the season-closing JAS estimate is the "
-  "driest of the 46-year record (per the ERA5-based system, which runs "
-  "anomalously dry this year — the direction is corroborated by the "
-  "other datasets, the extremity less so).",
-  "Juillet–août observés, l'estimation de clôture JAS est la plus sèche "
-  "de l'historique de 46 ans (selon le système fondé sur ERA5, "
-  "anormalement sec cette année — la direction est corroborée par les "
-  "autres jeux de données, l'extrémité moins).")}</li>
-<li>{T(
-  "The remaining true forecast — September–November, the harvest and "
-  "pasture-regrowth window — tilts dry: ~1-in-4 nationally, up to "
-  "1-in-10 in Dosso/Tillabéri pockets.",
-  "La véritable prévision restante — septembre–novembre, fenêtre des "
-  "récoltes et de la repousse des pâturages — penche au sec&nbsp;: "
-  "~1 an sur 4 au niveau national, jusqu'à 1 an sur 10 dans des poches "
-  "de Dosso/Tillabéri.")}</li>
-</ul>
-<div class="foot"><span>5 / 9</span><span>ECMWF SEAS5, {T("issued",
-"émission")} 09/2026 · OCHA CHD skill methodology</span></div>
 </section>
 
 <!-- Slide 6 — every season since 2000 -->
@@ -438,7 +439,7 @@ agricultural-production-hotspots.ec.europa.eu · {T("dekad", "décade")}
 "même chaîne de traitement, 2000–2026 · EM-DAT (CRED)")}</span></div>
 </section>
 
-<!-- Slide 6 — comparison & implications -->
+<!-- Slide 7 — comparison & implications -->
 <section class="slide">
 <h2>{T("How 2026 compares — and what it means",
        "2026 en comparaison — et ce que cela implique")}</h2>
@@ -484,7 +485,7 @@ agricultural-production-hotspots.ec.europa.eu · {T("dekad", "décade")}
 "registre des mauvaises années du cadre · aa.cerf_allocation")}</span></div>
 </section>
 
-<!-- Slide 7 — 35 seasons in one chart & next steps -->
+<!-- Slide 8 — 35 seasons in one chart & next steps -->
 <section class="slide">
 <h2>{T("35 seasons in one chart — and what to do now",
        "35 saisons en un graphique — et la suite")}</h2>
@@ -533,7 +534,7 @@ agricultural-production-hotspots.ec.europa.eu · {T("dekad", "décade")}
 </section>
 
 
-<!-- Slide 8 — scenarios for the end-of-September check-in -->
+<!-- Slide 9 — scenarios for the end-of-September check-in -->
 <section class="slide">
 <h2>{T("Three scenarios to reassess at the end of September",
        "Trois scénarios à réévaluer fin septembre")}</h2>
@@ -605,6 +606,8 @@ l'ouest&nbsp;; 2004 → la crise alimentaire de 2005 (sécheresse plus
 criquets), concentrée à l'est</td>
 <td>2009 → la crise alimentaire nationale de 2010</td></tr>
 </table>
+</div>
+</div>
 <p class="note" style="margin-top:0.45rem;font-size:0.82rem">{T(
   "The chart counts departments where BOTH the rainfall and the "
   "vegetation indicators signal drought (RP ≥ 5 each) — today 7, all "
@@ -632,8 +635,6 @@ criquets), concentrée à l'est</td>
   "(<span style='color:#7a0a10;font-weight:600'>CERF 10 M$ · 4,4 M "
   "affectés, EM-DAT</span>). D'où le suivi des pluies de septembre et "
   "des décades de végétation à part entière.")}</p>
-</div>
-</div>
 <div class="foot"><span>9 / 9</span>
 <span>ocha-dap.github.io/ds-aa-ner-drought/pockets/</span></div>
 </section>

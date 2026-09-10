@@ -732,3 +732,84 @@ def fig_ch_lean():
     ax.tick_params(labelsize=9)
     fig.tight_layout()
     return _b64(fig)
+
+
+def fig_indicator_bars(comp, cerf_years=(), aa_years=()):
+    """Yearly summary: departments in rainfall deficit / vegetation stress.
+
+    Two aligned panels (rain pillar, vegetation pillar): per season, the
+    number of assessed departments (of 64) at RP >= 5, CERF drought
+    seasons shaded red, the 2022 AA season grey.
+    """
+    c = comp[~comp["pcode"].isin(["NE001002", "NE001003", "NE001004"])]
+    g = c.groupby("year")
+    years = sorted(c["year"].unique())
+    n_sev = g.apply(
+        lambda d: int((d["rain_rp"] >= 10).sum()), include_groups=False
+    )
+    n_mod = g.apply(
+        lambda d: int(((d["rain_rp"] >= 5) & (d["rain_rp"] < 10)).sum()),
+        include_groups=False,
+    )
+    n_veg = g.apply(
+        lambda d: int((d["veg_rp"] >= 5).sum()), include_groups=False
+    )
+
+    fig, axes = plt.subplots(
+        2,
+        1,
+        figsize=(11.8, 5.6),
+        sharex=True,
+        gridspec_kw={"hspace": 0.14},
+    )
+    for ax in axes:
+        for y in cerf_years:
+            ax.axvspan(y - 0.5, y + 0.5, color="#b3261e", alpha=0.10, zorder=0)
+        for y in aa_years:
+            ax.axvspan(y - 0.5, y + 0.5, color="#888888", alpha=0.14, zorder=0)
+        ax.grid(axis="y", color="#eeeeee", linewidth=0.7, zorder=0)
+        ax.spines[["top", "right"]].set_visible(False)
+        ax.tick_params(labelsize=9)
+
+    ax = axes[0]
+    ax.bar(
+        years,
+        [n_sev[y] for y in years],
+        color="#d95f0e",
+        label="RP ≥ 10",
+        zorder=2,
+    )
+    ax.bar(
+        years,
+        [n_mod[y] for y in years],
+        bottom=[n_sev[y] for y in years],
+        color="#fdbb84",
+        label="RP 5–10",
+        zorder=2,
+    )
+    handles, _ = ax.get_legend_handles_labels()
+    handles.append(
+        Patch(
+            facecolor="#b3261e", alpha=0.18, label="saison CERF / CERF season"
+        )
+    )
+    ax.legend(
+        handles=handles, fontsize=8.5, frameon=False, loc="upper right", ncol=3
+    )
+    ax.set_ylabel("pluie / rain", fontsize=9.5)
+
+    ax = axes[1]
+    ax.bar(years, [n_veg[y] for y in years], color="#74a9cf", zorder=2)
+    ax.set_ylabel("végétation / vegetation", fontsize=9.5)
+
+    ticks = [y for y in years if y % 5 == 0 and y != 2025] + [2026]
+    axes[1].set_xticks(ticks)
+    for t in axes[1].get_xticklabels():
+        if t.get_text() == "2026":
+            t.set_fontweight("bold")
+    axes[1].set_xlim(years[0] - 0.8, years[-1] + 0.8)
+    fig.supylabel(
+        "départements (sur 64) / departments (of 64)", fontsize=9, x=0.01
+    )
+    fig.tight_layout()
+    return _b64(fig)

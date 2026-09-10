@@ -107,6 +107,9 @@ def main():
     img_cdi_hist = figs.fig_cdi_history(
         comp, cdi_years, cerf_years={2008, 2009, 2011, 2021}, aa_years={2022}
     )
+    img_bars = figs.fig_indicator_bars(
+        comp, cerf_years={2008, 2009, 2011, 2021}, aa_years={2022}
+    )
     img_pixel = figs.fig_pixel_percentile()
     img_rain = figs.fig_rain_rp_quad(summary)
     img_gauge = figs.fig_gauge_map(gauges)
@@ -528,6 +531,30 @@ def main():
   "pleins&nbsp;: saisons ayant donné lieu à une allocation CERF pour "
   "sécheresse&nbsp;; cadre en tirets&nbsp;: l’activation AA de 2022 "
   "(exclue de la contre-épreuve)&nbsp;; en gras&nbsp;: 2026.")}</figcaption>
+</figure>
+
+<figure>
+<img src="data:image/png;base64,{img_bars}"
+  alt="Departments in rainfall deficit and vegetation stress per year">
+<figcaption>{T(
+  "The same record as a summary series: per season, the number of "
+  "assessed departments (of 64) whose rain pillar sits at RP ≥ 5 "
+  "(dark: ≥ 10) and, below, whose regional vegetation pillar (ASI/VHI, "
+  "late-August dekad) sits at RP ≥ 5. Red bands: CERF drought seasons; "
+  "grey: the 2022 AA activation. 2026's rainfall count is the largest "
+  "since 2009–2011 while its vegetation count remains low — pre-2000 "
+  "vegetation values come from the early-AVHRR record and deserve extra "
+  "caution.",
+  "Le même historique en série résumée&nbsp;: par saison, le nombre de "
+  "départements évalués (sur 64) dont le pilier pluie est à PR ≥ 5 "
+  "(foncé&nbsp;: ≥ 10) et, en dessous, dont le pilier végétation "
+  "régional (ASI/VHI, décade fin août) est à PR ≥ 5. Bandes "
+  "rouges&nbsp;: saisons de sécheresse CERF&nbsp;; gris&nbsp;: "
+  "l'activation AA de 2022. Le décompte pluviométrique de 2026 est le "
+  "plus élevé depuis 2009–2011 alors que celui de la végétation reste "
+  "bas — les valeurs de végétation antérieures à 2000 proviennent du "
+  "début de l'archive AVHRR et appellent une prudence "
+  "supplémentaire.")}</figcaption>
 </figure>
 
 <h2>{T("Observed rainfall — CHIRPS, IMERG and ENACTS",

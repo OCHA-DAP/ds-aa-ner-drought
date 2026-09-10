@@ -72,6 +72,9 @@ def main():
         },
     )
     img_ch = figs.fig_ch_lean()
+    img_bars = figs.fig_indicator_bars(
+        comp, cerf_years={2008, 2009, 2011, 2021}, aa_years={2022}
+    )
     enso1_en = svg_uri(ENSO_DIR / "NER_slide1.svg")
     enso1_fr = svg_uri(ENSO_DIR / "NER_slide1_fr.svg")
     enso2_en = svg_uri(ENSO_DIR / "NER_slide2.svg")
@@ -164,31 +167,36 @@ def main():
 <b>{T("Bottom line", "L'essentiel")}</b>
 <ul>
 <li>{T(
-  "A strong El Niño developed during the season (Niño3.4 ≈ +1.9 °C in "
-  "August) — but El Niño's direct fingerprint on Niger's rains is weak "
-  "and patchy, so it is not, by itself, a basis for alarm.",
-  "Un fort épisode El Niño s'est développé pendant la saison (Niño3.4 "
-  "≈ +1,9 °C en août) — mais l'empreinte directe d'El Niño sur les "
-  "pluies du Niger est faible et hétérogène&nbsp;: à lui seul, ce n'est "
-  "pas un motif d'alarme.")}</li>
+  "A strong El Niño is underway (Niño3.4 ≈ +1.9 °C in August) — but its "
+  "direct fingerprint on Niger's rains is weak and patchy: on its own, "
+  "El Niño is not much of a driver here, and not a basis for alarm.",
+  "Un fort épisode El Niño est en cours (Niño3.4 ≈ +1,9 °C en août) — "
+  "mais son empreinte directe sur les pluies du Niger est faible et "
+  "hétérogène&nbsp;: à lui seul, El Niño n'est pas un grand facteur "
+  "ici, ni un motif d'alarme.")}</li>
 <li>{T(
-  "The concern rests on Niger's own data: observations already show one "
-  "of the poorest seasons in decades across parts of the southern "
-  "agricultural belt — six departments are at a ≥ 1-in-10-year rainfall "
-  "deficit on the agreement of four independent datasets.",
-  "La préoccupation repose sur les données du Niger lui-même&nbsp;: les "
-  "observations montrent déjà l'une des saisons les plus médiocres "
-  "depuis des décennies sur une partie de la bande agricole sud — six "
-  "départements sont en déficit pluviométrique ≥ 1 an sur 10, sur "
-  "l'accord de quatre jeux de données indépendants.")}</li>
+  "What is concerning is specific and current: this season's "
+  "observations for Niger — four independent rainfall datasets and the "
+  "DMN's own gauges put six departments at a ≥ 1-in-10-year deficit — "
+  "and the current seasonal forecasts, which account for El Niño "
+  "together with every other driver, point the same way for the rest of "
+  "the season.",
+  "Ce qui préoccupe est spécifique et actuel&nbsp;: les observations de "
+  "cette saison pour le Niger — quatre jeux de données pluviométriques "
+  "indépendants et les propres pluviomètres de la DMN placent six "
+  "départements en déficit ≥ 1 an sur 10 — et les prévisions "
+  "saisonnières actuelles, qui intègrent El Niño avec tous les autres "
+  "facteurs, pointent dans le même sens pour la fin de saison.")}</li>
 <li>{T(
-  "By the same yardstick, 2026's rainfall extent now equals early-"
-  "September 2009 — the season that led to Niger's largest CERF drought "
-  "response — with vegetation impacts not yet confirmed.",
-  "À la même aune, l'étendue pluviométrique de 2026 égale désormais "
-  "celle de début septembre 2009 — la saison à l'origine de la plus "
-  "grande réponse sécheresse du CERF au Niger — sans confirmation "
-  "encore par la végétation.")}</li>
+  "By the same yardstick, 2026's rainfall extent equals early-September "
+  "2009 — the season behind Niger's largest CERF drought response. "
+  "Unlike 2009, vegetation has not (yet) followed: impacts are only "
+  "starting to surface, in the east.",
+  "À la même aune, l'étendue pluviométrique de 2026 égale celle de "
+  "début septembre 2009 — la saison à l'origine de la plus grande "
+  "réponse sécheresse du CERF au Niger. Contrairement à 2009, la "
+  "végétation n'a pas (encore) suivi&nbsp;: les impacts ne font "
+  "qu'émerger, à l'est.")}</li>
 </ul>
 </div>
 <div class="foot"><span>1 / 7</span>
@@ -388,10 +396,49 @@ agricultural-production-hotspots.ec.europa.eu · {T("dekad", "décade")}
 "registre des mauvaises années du cadre · aa.cerf_allocation")}</span></div>
 </section>
 
-<!-- Slide 7 — Cadre Harmonisé aftermath & next steps -->
+<!-- Slide 7 — 35 seasons in one chart & next steps -->
 <section class="slide">
-<h2>{T("What a failed season does to food security (Cadre Harmonisé)",
-       "Ce qu'une saison ratée fait à la sécurité alimentaire (Cadre harmonisé)")}</h2>
+<h2>{T("35 seasons in one chart — and what to do now",
+       "35 saisons en un graphique — et la suite")}</h2>
+<div class="fullfig" style="flex:1.05">
+<img src="data:image/png;base64,{img_bars}"
+  alt="Departments in rainfall deficit and vegetation stress per year">
+</div>
+<ul style="font-size:0.98rem">
+<li>{T(
+  "Top: departments in rainfall deficit (RP ≥ 5; dark: ≥ 10). Bottom: "
+  "departments whose region shows vegetation stress. Red bands: CERF "
+  "drought seasons. 2026's rainfall count is the largest since "
+  "2009–2011 — its vegetation count is still low, which is the key "
+  "September uncertainty.",
+  "Haut&nbsp;: départements en déficit pluviométrique (PR ≥ 5&nbsp;; "
+  "foncé&nbsp;: ≥ 10). Bas&nbsp;: départements dont la région montre un "
+  "stress de la végétation. Bandes rouges&nbsp;: saisons de sécheresse "
+  "CERF. Le décompte pluviométrique de 2026 est le plus élevé depuis "
+  "2009–2011 — celui de la végétation reste bas, la grande incertitude "
+  "de septembre.")}</li>
+<li>{T(
+  "Next steps: follow the hotspot departments (live page below); watch "
+  "September rainfall and vegetation dekads and the November Cadre "
+  "Harmonisé analysis; factor a 2009-type lean season into planning and "
+  "prepositioning, especially where deficits overlap HNRP severity-4 "
+  "areas (eastern Diffa, western Tillabéri).",
+  "Suites proposées&nbsp;: suivre les départements sensibles (page en "
+  "direct ci-dessous)&nbsp;; surveiller les pluies et décades de "
+  "végétation de septembre et l'analyse du Cadre harmonisé de "
+  "novembre&nbsp;; intégrer une soudure de type 2009 dans la "
+  "planification et le prépositionnement, en particulier là où les "
+  "déficits recoupent les zones en sévérité 4 du HNRP (est de Diffa, "
+  "ouest de Tillabéri).")}</li>
+</ul>
+<div class="foot"><span>7 / 7</span>
+<span>ocha-dap.github.io/ds-aa-ner-drought/pockets/</span></div>
+</section>
+
+<!-- Backup slide — Cadre Harmonisé -->
+<section class="slide">
+<h2>{T("Backup — food security after past seasons (Cadre Harmonisé)",
+       "Annexe — la sécurité alimentaire après les saisons passées (Cadre harmonisé)")}</h2>
 <div class="fullfig" style="flex:1.05">
 <img src="data:image/png;base64,{img_ch}"
   alt="Cadre Harmonise June-August phase 3+ by year">
@@ -408,24 +455,24 @@ agricultural-production-hotspots.ec.europa.eu · {T("dekad", "décade")}
   "deux records de l'ère CH et environ le double de l'année "
   "précédente.")}</li>
 <li>{T(
-  "The 2026 bar (hatched) was projected before this season. The "
-  "November 2026 CH analysis is the first number that will price in "
-  "this season's outcome — with 2022 as the reference scenario, the "
-  "practical steps now are September monitoring (rainfall dekads, "
-  "vegetation, the live hotspots page) and factoring a 2009/2022-type "
-  "lean season into planning and prepositioning, especially where "
-  "deficits overlap HNRP severity-4 areas.",
-  "La barre 2026 (hachurée) a été projetée avant cette saison. "
-  "L'analyse CH de novembre 2026 sera le premier chiffre à intégrer "
-  "l'issue de cette saison — avec 2022 comme scénario de référence, "
-  "les étapes pratiques sont le suivi de septembre (décades de pluie, "
-  "végétation, page des points chauds en direct) et la prise en compte "
-  "d'une soudure de type 2009/2022 dans la planification et le "
-  "prépositionnement, en particulier là où les déficits recoupent les "
-  "zones en sévérité 4 du HNRP.")}</li>
+  "Read with care: CH outcomes reflect conflict, prices, access and "
+  "assistance as much as rainfall — they map imperfectly onto drought "
+  "indicators (2022 followed the 2021 drought, but 2023–24 stayed high "
+  "amid the regional political and economic crisis). The 2026 bar "
+  "(hatched) was projected before this season; the November 2026 CH "
+  "analysis is the first number that will price in this season's "
+  "outcome.",
+  "À lire avec prudence&nbsp;: les résultats du CH reflètent le "
+  "conflit, les prix, l'accès et l'assistance autant que la pluie — ils "
+  "se superposent imparfaitement aux indicateurs de sécheresse (2022 "
+  "suit la sécheresse 2021, mais 2023–24 restent élevés dans le "
+  "contexte de la crise politique et économique régionale). La barre "
+  "2026 (hachurée) a été projetée avant cette saison&nbsp;; l'analyse "
+  "CH de novembre 2026 sera le premier chiffre à intégrer l'issue de "
+  "cette saison.")}</li>
 </ul>
-<div class="foot"><span>7 / 7</span>
-<span>Cadre harmonisé (CILSS/HDX) · ocha-dap.github.io/ds-aa-ner-drought/pockets/</span></div>
+<div class="foot"><span>{T("backup", "annexe")}</span>
+<span>Cadre harmonisé (CILSS/HDX)</span></div>
 </section>
 
 <script>

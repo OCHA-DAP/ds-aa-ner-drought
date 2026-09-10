@@ -289,14 +289,14 @@ partial correlation · OCHA CHD teleconnections</span></div>
   "sec par rapport aux normales trentenaires de la DMN&nbsp;; cinq "
   "enregistrent leur 2ᵉ juin–août le plus sec.")}</li>
 <li>{T(
-  "Thick red outline: the four HNRP severity-4 departments (thin "
+  "Thick purple outline: the four HNRP severity-4 departments (thin "
   "dashed: severity 3). On the combined "
   "(majority) indicator only N'Guigmi reaches watch — but each of the "
   "four is in deficit in at least one dataset: IMERG has N'Guigmi at "
   "its driest June–August on record, and Téra, Bankilaré and Torodi at "
   "1-in-7 to 1-in-15, while the gauge-anchored datasets read them "
   "closer to normal.",
-  "Contour rouge épais&nbsp;: les quatre départements en sévérité 4 "
+  "Contour violet épais&nbsp;: les quatre départements en sévérité 4 "
   "du HNRP (tirets fins&nbsp;: sévérité 3). Sur "
   "l'indicateur combiné (majoritaire), seul N'Guigmi atteint la "
   "vigilance — mais chacun des quatre est en déficit dans au moins un "
@@ -458,16 +458,18 @@ agricultural-production-hotspots.ec.europa.eu · {T("dekad", "décade")}
   "orientale — son extension en septembre est la grande "
   "incertitude.")}</li>
 <li>{T(
-  "Next steps: follow the hotspot departments (live page below); "
-  "reassess at the end of September against the three scenarios on the "
-  "next slide; factor a 2009-type lean season into planning and "
-  "prepositioning, especially where deficits overlap HNRP severity-4 "
-  "areas (eastern Diffa, western Tillabéri).",
-  "Suites proposées&nbsp;: suivre les départements sensibles (page en "
-  "direct ci-dessous)&nbsp;; réévaluer fin septembre à l'aune des "
-  "trois scénarios de la diapositive suivante&nbsp;; intégrer une "
-  "soudure de type 2009 dans la planification et le prépositionnement, "
-  "en particulier là où les déficits recoupent les zones en sévérité 4 "
+  "What we will monitor: the hotspot departments (live page below); "
+  "the September rainfall and vegetation dekads and the ASAP "
+  "end-of-season classification; then a re-run of this same analysis "
+  "at the end of September, read against the three scenarios on the "
+  "next slide — with particular attention to where deficits overlap "
+  "HNRP severity-4 areas (eastern Diffa, western Tillabéri).",
+  "Ce que nous suivrons&nbsp;: les départements sensibles (page en "
+  "direct ci-dessous)&nbsp;; les pluies et décades de végétation de "
+  "septembre et la classification ASAP de fin de saison&nbsp;; puis "
+  "une réexécution de cette même analyse fin septembre, lue à l'aune "
+  "des trois scénarios de la diapositive suivante — avec une attention "
+  "particulière aux recoupements entre déficits et zones en sévérité 4 "
   "du HNRP (est de Diffa, ouest de Tillabéri).")}</li>
 </ul>
 <div class="foot"><span>7 / 8</span>
@@ -491,21 +493,23 @@ agricultural-production-hotspots.ec.europa.eu · {T("dekad", "décade")}
 <th class="sB">B — Confirmed drought, localized east</th>
 <th class="sC">C — Widespread 2009-type failure</th></tr>
 <tr><td class="h">By end Sept we'd see</td>
-<td>September rains recover; vegetation stress recedes (compound
-&lt; 5 departments); no new ASAP level 3</td>
-<td>Deficits persist; vegetation stress stays eastern (compound
-5–15); ASAP level 3 confined to the east</td>
-<td>September fails too, or vegetation spreads west (compound ≥ 15);
-ASAP level 3/4 beyond the east</td></tr>
+<td>September rains recover; vegetation stress recedes — fewer than
+5 departments dry in both rain and vegetation; no new ASAP
+level 3</td>
+<td>Deficits persist; the rain-and-vegetation overlap stays eastern
+(5–15 departments); ASAP level 3 confined to the east</td>
+<td>September fails too, or vegetation spreads west (overlap ≥ 15
+departments); ASAP level 3/4 beyond the east</td></tr>
 <tr><td class="h">Analogues</td>
 <td>2006, 1996</td><td>2011, 2004</td><td>2009, 2021</td></tr>
-<tr><td class="h">Posture</td>
-<td>Stand down; log as a false alarm; routine monitoring through
-harvest</td>
-<td>Targeted eastern scale-up; prepare a CERF-type submission at
-2011 scale</td>
-<td>National-scale planning before the November Cadre Harmonisé;
-early CERF engagement; preposition</td></tr>
+<tr><td class="h">What followed in those years</td>
+<td>Nothing unusual — normal harvests and lean seasons; 2006 is
+logged as a false alarm of the rainfall signal</td>
+<td>2011 → the hard 2012 lean season, concentrated in the west;
+2004 → the 2005 food crisis (drought plus locusts), concentrated
+in the east</td>
+<td>2009 → the 2010 nationwide food crisis; 2021 → the record 2022
+lean season (4.4M people in CH phase 3+)</td></tr>
 </table>
 <table class="scen lv lv-fr">
 <tr><th style="width:16%"></th>
@@ -514,33 +518,41 @@ early CERF engagement; preposition</td></tr>
 <th class="sC">C — Défaillance généralisée type 2009</th></tr>
 <tr><td class="h">Ce qu'on verrait fin sept.</td>
 <td>Les pluies de septembre se redressent&nbsp;; le stress de la
-végétation recule (composé &lt; 5 départements)&nbsp;; pas de
-nouveau niveau 3 ASAP</td>
-<td>Les déficits persistent&nbsp;; le stress végétation reste à
-l'est (composé 5–15)&nbsp;; niveau 3 ASAP confiné à l'est</td>
+végétation recule — moins de 5 départements secs à la fois en pluie
+et en végétation&nbsp;; pas de nouveau niveau 3 ASAP</td>
+<td>Les déficits persistent&nbsp;; le recoupement pluie-végétation
+reste à l'est (5–15 départements)&nbsp;; niveau 3 ASAP confiné à
+l'est</td>
 <td>Septembre échoue aussi, ou la végétation s'étend vers l'ouest
-(composé ≥ 15)&nbsp;; niveau 3/4 ASAP au-delà de l'est</td></tr>
+(recoupement ≥ 15 départements)&nbsp;; niveau 3/4 ASAP au-delà de
+l'est</td></tr>
 <tr><td class="h">Analogues</td>
 <td>2006, 1996</td><td>2011, 2004</td><td>2009, 2021</td></tr>
-<tr><td class="h">Posture</td>
-<td>Lever la posture renforcée&nbsp;; consigner comme fausse
-alerte&nbsp;; suivi de routine jusqu'aux récoltes</td>
-<td>Renforcement ciblé à l'est&nbsp;; préparer une soumission de
-type CERF à l'échelle de 2011</td>
-<td>Planification d'échelle nationale avant le Cadre harmonisé de
-novembre&nbsp;; engagement précoce du CERF&nbsp;;
-prépositionnement</td></tr>
+<tr><td class="h">Ce qui a suivi ces années-là</td>
+<td>Rien d'inhabituel — récoltes et soudures normales&nbsp;; 2006
+est consigné comme fausse alerte du signal pluviométrique</td>
+<td>2011 → la soudure difficile de 2012, concentrée à
+l'ouest&nbsp;; 2004 → la crise alimentaire de 2005 (sécheresse plus
+criquets), concentrée à l'est</td>
+<td>2009 → la crise alimentaire nationale de 2010&nbsp;; 2021 → la
+soudure record de 2022 (4,4 M de personnes en phase 3+ du
+CH)</td></tr>
 </table>
 <p class="note" style="margin-top:0.5rem">{T(
-  "End of September ≈ end of the growing season; the check-in simply "
-  "re-runs this brief's pipeline on the last September dekad. B is "
-  "the central case, given the advanced season and the dry "
-  "September–November forecast tilt.",
-  "Fin septembre ≈ fin de la saison de croissance&nbsp;; le bilan "
-  "consiste à réexécuter la chaîne de ce briefing sur la dernière "
-  "décade de septembre. B est le scénario central, vu l'avancement de "
-  "la saison et la tendance sèche de la prévision "
-  "septembre–novembre.")}</p>
+  "The chart counts departments where BOTH the rainfall and the "
+  "vegetation indicators signal drought (each at a 1-in-5-year level "
+  "or rarer) — today that is 7, all in the east. End of September ≈ "
+  "end of the growing season; the check-in simply re-runs this "
+  "brief's analysis on the last September dekad. B is the central "
+  "case, given the advanced season and the dry September–November "
+  "forecast tilt.",
+  "Le graphique compte les départements où la pluie ET la végétation "
+  "signalent la sécheresse (chacune à un niveau de 1 an sur 5 ou plus "
+  "rare) — aujourd'hui 7, tous à l'est. Fin septembre ≈ fin de la "
+  "saison de croissance&nbsp;; le bilan consiste à réexécuter cette "
+  "même analyse sur la dernière décade de septembre. B est le "
+  "scénario central, vu l'avancement de la saison et la tendance "
+  "sèche de la prévision septembre–novembre.")}</p>
 </div>
 </div>
 <div class="foot"><span>8 / 8</span>

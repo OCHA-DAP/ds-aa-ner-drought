@@ -460,9 +460,9 @@ CDI_COLORS = {
     6: "#e4e2da",  # not assessed (Saharan, outside ENACTS coverage)
 }
 CDI_LABELS = {0: "–", 1: "5–10", 2: "≥ 10", 6: "n/a"}
-VEG_H1 = "#b2182b"  # vegetation RP 5-10 hatch
-VEG_H2 = "#4a0505"  # vegetation RP >= 10 hatch
-HNRP_RED = "#e31a1c"
+VEG_H1 = "#b2182b"  # vegetation hatch (maps) & RP 5-10 bars
+VEG_H2 = "#4a0505"  # vegetation RP >= 10 bars (time series only)
+HNRP_COL = "#6a3d9a"  # HNRP severity outlines (purple, off the red ramp)
 # table-chip colours for the full class set (data classes unchanged)
 CDI_CHIP_COLORS = {
     0: "#f2f2ed",
@@ -516,7 +516,7 @@ def cdi_map(
         )
     for lo, hi, color, hatch in (
         (5, 10, VEG_H1, "///"),
-        (10, None, VEG_H2, "xxx"),
+        (10, None, VEG_H1, "xxx"),
     ):
         m = (g["veg_rp"] >= lo) & (g["cls"] != 6)
         if hi is not None:
@@ -537,7 +537,7 @@ def cdi_map(
             sel.plot(
                 ax=ax,
                 facecolor="none",
-                edgecolor=HNRP_RED,
+                edgecolor=HNRP_COL,
                 linewidth=1.0,
                 linestyle=(0, (3, 2)),
                 zorder=5,
@@ -548,7 +548,7 @@ def cdi_map(
             sel.plot(
                 ax=ax,
                 facecolor="none",
-                edgecolor=HNRP_RED,
+                edgecolor=HNRP_COL,
                 linewidth=2.2,
                 zorder=6,
             )
@@ -573,7 +573,7 @@ def cdi_legend_handles(with_hnrp=False):
     hs.append(
         Patch(
             facecolor="none",
-            edgecolor=VEG_H2,
+            edgecolor=VEG_H1,
             hatch="xxx",
             label="vég/veg ≥ 10",
         )
@@ -582,7 +582,7 @@ def cdi_legend_handles(with_hnrp=False):
         hs.append(
             Patch(
                 facecolor="none",
-                edgecolor=HNRP_RED,
+                edgecolor=HNRP_COL,
                 linewidth=2.0,
                 label="HNRP 4",
             )
@@ -590,7 +590,7 @@ def cdi_legend_handles(with_hnrp=False):
         hs.append(
             Patch(
                 facecolor="none",
-                edgecolor=HNRP_RED,
+                edgecolor=HNRP_COL,
                 linewidth=1.0,
                 linestyle=(0, (3, 2)),
                 label="HNRP 3",
@@ -1036,8 +1036,8 @@ def fig_scenarios():
         fontsize=9,
     )
     ax.set_ylabel(
-        "départements en classe composée (sur 64)\n"
-        "compound departments (of 64)",
+        "départements en déficit pluie ET végétation (sur 64)\n"
+        "departments dry in BOTH rain and vegetation (of 64)",
         fontsize=9,
     )
     ax.spines[["top", "right"]].set_visible(False)

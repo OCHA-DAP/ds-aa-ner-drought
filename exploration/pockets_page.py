@@ -421,7 +421,7 @@ def main():
   "rainfall pillar and vegetation stress is overlaid as dark-red "
   "hatching (diagonal: vegetation RP 5–10; cross-hatch: RP ≥ 10), so "
   "it reads as an aggravating signal wherever it appears. HNRP "
-  "severity is drawn as red outlines: thick solid for the four "
+  "severity is drawn as purple outlines: thick solid for the four "
   "severity-4 departments, thin dashed for severity 3.",
   "Les indicateurs sont combinés en une classe unique par département, "
   "suivant la logique des indicateurs de sécheresse combinés comme celui "
@@ -447,7 +447,7 @@ def main():
   "est superposé en hachures rouge foncé (diagonales&nbsp;: végétation "
   "PR 5–10&nbsp;; croisées&nbsp;: PR ≥ 10), pour qu’il se lise comme "
   "un signal aggravant partout où il apparaît. La sévérité du HNRP est "
-  "tracée en contours rouges&nbsp;: trait plein épais pour les quatre "
+  "tracée en contours violets&nbsp;: trait plein épais pour les quatre "
   "départements en sévérité 4, tirets fins pour la sévérité 3.")}</p>
 <figure>
 <img src="data:image/png;base64,{img_cdi}" alt="Combined drought indicator map">
@@ -457,7 +457,7 @@ def main():
   "pillar (detrended VHI) at RP 5–10 (diagonal) or ≥ 10 (cross-hatch) "
   "— hatching on a coloured fill is a compound department; pale grey "
   "n/a: Saharan departments outside ENACTS coverage (Arlit, Bilma, "
-  "Iferouane), not assessed; red outlines: HNRP 2026 intersectoral "
+  "Iferouane), not assessed; purple outlines: HNRP 2026 intersectoral "
   "severity 4 (thick solid) and 3 (thin dashed).",
   "Indicateur de sécheresse combiné, 9 septembre 2026. Aplats "
   "jaunes/orange&nbsp;: PR pluviométrique médiane 5–10 / ≥ 10 "
@@ -466,7 +466,7 @@ def main():
   "hachures sur un aplat coloré signalent un département en classe "
   "composée&nbsp;; gris pâle n/a&nbsp;: départements sahariens hors "
   "couverture ENACTS (Arlit, Bilma, Iferouane), non évalués&nbsp;; "
-  "contours rouges&nbsp;: sévérité intersectorielle 4 du HNRP 2026 "
+  "contours violets&nbsp;: sévérité intersectorielle 4 du HNRP 2026 "
   "(plein épais) et 3 (tirets fins).")}</figcaption>
 </figure>
 

@@ -54,16 +54,17 @@ def main():
     print("rendering figures…", flush=True)
     img_cdi = figs.fig_cdi(summary)
     img_asap = figs.fig_asap()
+    EMDAT_YEARS = (2001, 2004, 2009, 2011, 2015, 2017, 2020, 2021)
     img_strip = figs.fig_cdi_history(
         comp,
-        [1997, 2006, 2009, 2011, 2021, 2026],
+        [2004, 2006, 2009, 2011, 2021, 2026],
         cerf_years={2009, 2011, 2021},
         ncols=3,
         panel_w=4.4,
         panel_h=2.15,
         extent=((-0.3, 16.2), (11.3, 17.8)),
         subtitles={
-            1997: "mauvaise année / bad year (pré-CERF)",
+            2004: "EM-DAT · crise / crisis 2005",
             2006: "fausse alerte / false alarm",
             2009: "CERF ~$35M (2010)",
             2011: "CERF ~$22M (2011–12)",
@@ -71,13 +72,24 @@ def main():
             2026: "aujourd'hui / today",
         },
     )
+    img_wall = figs.fig_cdi_history(
+        comp,
+        list(range(2000, 2027)),
+        cerf_years={2009, 2011, 2021},
+        aa_years={2022},
+        emdat_years=EMDAT_YEARS,
+        ncols=6,
+        panel_w=3.0,
+        panel_h=1.42,
+        extent=((-0.3, 16.2), (11.3, 17.8)),
+    )
     img_ch = figs.fig_ch_lean()
     img_scen = figs.fig_scenarios()
     img_bars = figs.fig_indicator_bars(
         comp,
         cerf_years={2009, 2011, 2021},
         aa_years={2022},
-        emdat_years=(2001, 2004, 2009, 2011, 2015, 2017, 2020, 2021),
+        emdat_years=EMDAT_YEARS,
     )
     enso1_en = svg_uri(ENSO_DIR / "NER_slide1.svg")
     enso1_fr = svg_uri(ENSO_DIR / "NER_slide1_fr.svg")
@@ -221,7 +233,7 @@ def main():
   "date.")}</li>
 </ul>
 </div>
-<div class="foot"><span>1 / 8</span>
+<div class="foot"><span>1 / 9</span>
 <span>ocha-dap.github.io/ds-aa-ner-drought/pockets/</span></div>
 </section>
 
@@ -253,7 +265,7 @@ def main():
   "saisonnières (qui intègrent déjà l'ENSO et tous les autres facteurs) "
   "et, surtout, sur les observations — les deux suivent.")}</li>
 </ul>
-<div class="foot"><span>2 / 8</span><span>ERA5 × Niño3.4 (NOAA PSL),
+<div class="foot"><span>2 / 9</span><span>ERA5 × Niño3.4 (NOAA PSL),
 partial correlation · OCHA CHD teleconnections</span></div>
 </section>
 
@@ -307,7 +319,7 @@ partial correlation · OCHA CHD teleconnections</span></div>
 </ul>
 </div>
 </div>
-<div class="foot"><span>3 / 8</span><span>CHIRPS · IMERG · ENACTS ·
+<div class="foot"><span>3 / 9</span><span>CHIRPS · IMERG · ENACTS ·
 SEAS5+ERA5 · FAO ASIS · OGIMET/DMN · HNRP 2026</span></div>
 </section>
 
@@ -348,7 +360,7 @@ SEAS5+ERA5 · FAO ASIS · OGIMET/DMN · HNRP 2026</span></div>
   "les alertes de niveau 3 d'ASAP. Les impacts suivent la pluie&nbsp;; "
   "les décades de septembre sont le point de vigilance.")}</li>
 </ul>
-<div class="foot"><span>4 / 8</span><span>EC/JRC ASAP,
+<div class="foot"><span>4 / 9</span><span>EC/JRC ASAP,
 agricultural-production-hotspots.ec.europa.eu · {T("dekad", "décade")}
 21–31/08/2026</span></div>
 </section>
@@ -379,8 +391,51 @@ agricultural-production-hotspots.ec.europa.eu · {T("dekad", "décade")}
   "~1 an sur 4 au niveau national, jusqu'à 1 an sur 10 dans des poches "
   "de Dosso/Tillabéri.")}</li>
 </ul>
-<div class="foot"><span>5 / 8</span><span>ECMWF SEAS5, {T("issued",
+<div class="foot"><span>5 / 9</span><span>ECMWF SEAS5, {T("issued",
 "émission")} 09/2026 · OCHA CHD skill methodology</span></div>
+</section>
+
+<!-- Slide 6 — every season since 2000 -->
+<section class="slide">
+<h2>{T("Every season since 2000, at this same point of the year",
+       "Chaque saison depuis 2000, au même moment de l'année")}</h2>
+<div class="fullfig" style="flex:1.15">
+<img src="data:image/png;base64,{img_wall}"
+  alt="Combined indicator for every season 2000-2026">
+</div>
+<ul style="font-size:0.95rem">
+<li>{T(
+  "Each panel: the combined indicator as it stood in early September "
+  "of that season, zoomed to the agricultural belt (fills: rainfall; "
+  "red hatching: vegetation). Red frames: seasons that later drew a "
+  "CERF drought response; dashed: the 2022 AA activation; ◆: a "
+  "drought event in EM-DAT's disaster registry.",
+  "Chaque panneau&nbsp;: l'indicateur combiné tel qu'il se présentait "
+  "début septembre de la saison, zoomé sur la bande agricole "
+  "(aplats&nbsp;: pluie&nbsp;; hachures rouges&nbsp;: végétation). "
+  "Cadres rouges&nbsp;: saisons ayant ensuite donné lieu à une réponse "
+  "sécheresse du CERF&nbsp;; tirets&nbsp;: l'activation AA de "
+  "2022&nbsp;; ◆&nbsp;: événement de sécheresse du registre "
+  "EM-DAT.")}</li>
+<li>{T(
+  "Read honestly, the record shows both skill and limits: 2009, 2011 "
+  "and (partially) 2004 stand out at this date, but 2001, 2015, 2017, "
+  "2020 and 2021 were quiet in early September — late-collapse or "
+  "patchy droughts this June–August lens misses — while 2006 and 2023 "
+  "were loud with no drought event following. Early September is a "
+  "checkpoint, not a verdict; hence the end-of-September re-run.",
+  "Lu honnêtement, l'historique montre à la fois la capacité et les "
+  "limites&nbsp;: 2009, 2011 et (partiellement) 2004 ressortent à "
+  "cette date, mais 2001, 2015, 2017, 2020 et 2021 étaient calmes "
+  "début septembre — sécheresses tardives ou localisées que cette "
+  "lecture juin–août manque — tandis que 2006 et 2023 étaient chargés "
+  "sans événement de sécheresse à la clé. Début septembre est un point "
+  "de contrôle, pas un verdict&nbsp;; d'où la réexécution fin "
+  "septembre.")}</li>
+</ul>
+<div class="foot"><span>6 / 9</span>
+<span>{T("same pipeline, 2000–2026 · EM-DAT (CRED)",
+"même chaîne de traitement, 2000–2026 · EM-DAT (CRED)")}</span></div>
 </section>
 
 <!-- Slide 6 — comparison & implications -->
@@ -389,20 +444,21 @@ agricultural-production-hotspots.ec.europa.eu · {T("dekad", "décade")}
        "2026 en comparaison — et ce que cela implique")}</h2>
 <div class="fullfig" style="flex:0.9">
 <img src="data:image/png;base64,{img_strip}"
-  alt="1997, 2006, 2009, 2011, 2021 and 2026 compared">
+  alt="2004, 2006, 2009, 2011, 2021 and 2026 compared">
 </div>
 <ul style="font-size:0.98rem">
 <li>{T(
   "The indicator flagged the CERF drought seasons at this same point of "
   "the year — 2009 (24 units, ≈US$35M of CERF responses) and 2011 (20 "
-  "units, ≈$22M) — and it also catches 1997, the 8th-worst season in "
-  "the framework's own impact record, before CERF existed. 2026 "
-  "matches 2009's extent.",
+  "units, ≈$22M) — and, with August observed, it partially catches "
+  "2004, the eastern season behind the 2005 food crisis (3.0M people "
+  "affected per EM-DAT). 2026 matches 2009's extent.",
   "L'indicateur signalait les saisons de sécheresse CERF au même "
   "moment de l'année — 2009 (24 unités, ≈35 M$ de réponses CERF) et "
-  "2011 (20 unités, ≈22 M$) — et il capte aussi 1997, 8ᵉ pire saison "
-  "du propre registre d'impact du cadre, avant l'existence du CERF. "
-  "2026 égale l'étendue de 2009.")}</li>
+  "2011 (20 unités, ≈22 M$) — et, août observé, il capte partiellement "
+  "2004, la saison orientale à l'origine de la crise alimentaire de "
+  "2005 (3,0 M de personnes affectées selon EM-DAT). 2026 égale "
+  "l'étendue de 2009.")}</li>
 <li>{T(
   "It can also over-call: 2006 was loud (23 units in rainfall "
   "deficit, with vegetation stress alongside) yet no bad year "
@@ -423,7 +479,7 @@ agricultural-production-hotspots.ec.europa.eu · {T("dekad", "décade")}
   "chargée, comme aujourd'hui, est significative mais pas encore un "
   "verdict.")}</li>
 </ul>
-<div class="foot"><span>6 / 8</span>
+<div class="foot"><span>7 / 9</span>
 <span>{T("framework bad-year record · aa.cerf_allocation",
 "registre des mauvaises années du cadre · aa.cerf_allocation")}</span></div>
 </section>
@@ -472,7 +528,7 @@ agricultural-production-hotspots.ec.europa.eu · {T("dekad", "décade")}
   "particulière aux recoupements entre déficits et zones en sévérité 4 "
   "du HNRP (est de Diffa, ouest de Tillabéri).")}</li>
 </ul>
-<div class="foot"><span>7 / 8</span>
+<div class="foot"><span>8 / 9</span>
 <span>ocha-dap.github.io/ds-aa-ner-drought/pockets/</span></div>
 </section>
 
@@ -501,15 +557,24 @@ level 3</td>
 <td>September fails too, or vegetation spreads west (overlap ≥ 15
 departments); ASAP level 3/4 beyond the east</td></tr>
 <tr><td class="h">Analogues</td>
-<td>2006, 1996</td><td>2011, 2004</td><td>2009, 2021</td></tr>
+<td>2006 — <span style="color:#1d6b34;font-weight:600">no EM-DAT
+drought event, no CERF drought response</span></td>
+<td>2011 — <span style="color:#a34e00;font-weight:600">CERF ≈US$22M ·
+3.0M affected (EM-DAT)</span><br>
+2004 — <span style="color:#a34e00;font-weight:600">3.0M affected
+(EM-DAT)</span></td>
+<td>2009 — <span style="color:#7a0a10;font-weight:600">CERF ≈US$35M ·
+7.9M affected (EM-DAT)</span><br>
+2021 — <span style="color:#7a0a10;font-weight:600">CERF US$10M ·
+4.4M affected (EM-DAT)</span></td></tr>
 <tr><td class="h">What followed in those years</td>
-<td>Nothing unusual — normal harvests and lean seasons; 2006 is
+<td>Nothing unusual — a normal harvest and lean season; 2006 is
 logged as a false alarm of the rainfall signal</td>
 <td>2011 → the hard 2012 lean season, concentrated in the west;
 2004 → the 2005 food crisis (drought plus locusts), concentrated
 in the east</td>
 <td>2009 → the 2010 nationwide food crisis; 2021 → the record 2022
-lean season (4.4M people in CH phase 3+)</td></tr>
+lean season</td></tr>
 </table>
 <table class="scen lv lv-fr">
 <tr><th style="width:16%"></th>
@@ -527,16 +592,25 @@ l'est</td>
 (recoupement ≥ 15 départements)&nbsp;; niveau 3/4 ASAP au-delà de
 l'est</td></tr>
 <tr><td class="h">Analogues</td>
-<td>2006, 1996</td><td>2011, 2004</td><td>2009, 2021</td></tr>
+<td>2006 — <span style="color:#1d6b34;font-weight:600">aucun
+événement sécheresse EM-DAT, aucune réponse sécheresse du
+CERF</span></td>
+<td>2011 — <span style="color:#a34e00;font-weight:600">CERF ≈22 M$ ·
+3,0 M affectés (EM-DAT)</span><br>
+2004 — <span style="color:#a34e00;font-weight:600">3,0 M affectés
+(EM-DAT)</span></td>
+<td>2009 — <span style="color:#7a0a10;font-weight:600">CERF ≈35 M$ ·
+7,9 M affectés (EM-DAT)</span><br>
+2021 — <span style="color:#7a0a10;font-weight:600">CERF 10 M$ ·
+4,4 M affectés (EM-DAT)</span></td></tr>
 <tr><td class="h">Ce qui a suivi ces années-là</td>
-<td>Rien d'inhabituel — récoltes et soudures normales&nbsp;; 2006
+<td>Rien d'inhabituel — récolte et soudure normales&nbsp;; 2006
 est consigné comme fausse alerte du signal pluviométrique</td>
 <td>2011 → la soudure difficile de 2012, concentrée à
 l'ouest&nbsp;; 2004 → la crise alimentaire de 2005 (sécheresse plus
 criquets), concentrée à l'est</td>
 <td>2009 → la crise alimentaire nationale de 2010&nbsp;; 2021 → la
-soudure record de 2022 (4,4 M de personnes en phase 3+ du
-CH)</td></tr>
+soudure record de 2022</td></tr>
 </table>
 <p class="note" style="margin-top:0.5rem">{T(
   "The chart counts departments where BOTH the rainfall and the "
@@ -555,7 +629,7 @@ CH)</td></tr>
   "sèche de la prévision septembre–novembre.")}</p>
 </div>
 </div>
-<div class="foot"><span>8 / 8</span>
+<div class="foot"><span>9 / 9</span>
 <span>ocha-dap.github.io/ds-aa-ner-drought/pockets/</span></div>
 </section>
 

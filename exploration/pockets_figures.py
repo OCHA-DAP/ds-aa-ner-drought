@@ -627,6 +627,7 @@ def fig_cdi_history(
     years,
     cerf_years=(),
     aa_years=(),
+    emdat_years=(),
     ncols=6,
     panel_w=2.75,
     panel_h=1.85,
@@ -636,7 +637,8 @@ def fig_cdi_history(
     """Small-multiples wall: the CDI at 1 Sep of every year.
 
     CERF drought seasons get a solid red frame, AA seasons (excluded from
-    the CERF backtest set) a dashed frame; the current year a bold title.
+    the CERF backtest set) a dashed frame; EM-DAT drought seasons a
+    black diamond after the year; the current year a bold title.
     """
     from matplotlib.patches import Rectangle
 
@@ -663,8 +665,9 @@ def fig_cdi_history(
         if year == 2026:
             weight = "bold"
         pad = 15 if (subtitles and year in subtitles) else 6
+        title = f"{year} ◆" if year in emdat_years else str(year)
         ax.set_title(
-            str(year), fontsize=10, color=color, fontweight=weight, pad=pad
+            title, fontsize=10, color=color, fontweight=weight, pad=pad
         )
         if subtitles and year in subtitles:
             ax.text(
@@ -692,11 +695,24 @@ def fig_cdi_history(
                     zorder=10,
                 )
             )
+    handles = cdi_legend_handles()
+    if emdat_years:
+        handles.append(
+            Line2D(
+                [],
+                [],
+                marker="D",
+                linestyle="",
+                color="#1a1a1a",
+                markersize=5,
+                label="◆ EM-DAT",
+            )
+        )
     fig.legend(
-        handles=cdi_legend_handles(),
+        handles=handles,
         loc="lower center",
         fontsize=9,
-        ncol=6,
+        ncol=7,
         frameon=False,
         title="RP (ans/yrs)",
         title_fontsize=9,
@@ -951,7 +967,7 @@ def fig_scenarios():
     fig, ax = plt.subplots(figsize=(8.2, 4.6))
     cur = 7
     bands = [
-        ("A", 0, 5, "#74c476", "#1d6b34", "2006 · 1996", 2),
+        ("A", 0, 5, "#74c476", "#1d6b34", "2006", 2),
         ("B", 5, 15, "#fd8d3c", "#a34e00", "2011 · 2004", 10),
         ("C", 15, 30, "#a50f15", "#7a0a10", "2009 · 2021", 21),
     ]

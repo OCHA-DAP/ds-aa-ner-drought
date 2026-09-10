@@ -554,6 +554,7 @@ def fig_cdi_history(
     panel_w=2.75,
     panel_h=1.85,
     extent=None,
+    subtitles=None,
 ):
     """Small-multiples wall: the CDI at 1 Sep of every year.
 
@@ -582,7 +583,21 @@ def fig_cdi_history(
             color, weight = "#b3261e", "bold"
         if year == 2026:
             weight = "bold"
-        ax.set_title(str(year), fontsize=10, color=color, fontweight=weight)
+        pad = 15 if (subtitles and year in subtitles) else 6
+        ax.set_title(
+            str(year), fontsize=10, color=color, fontweight=weight, pad=pad
+        )
+        if subtitles and year in subtitles:
+            ax.text(
+                0.5,
+                1.005,
+                subtitles[year],
+                transform=ax.transAxes,
+                ha="center",
+                va="bottom",
+                fontsize=7.5,
+                color="#666666",
+            )
         if year in cerf_years or year in aa_years:
             ax.add_patch(
                 Rectangle(
@@ -671,4 +686,49 @@ def fig_asap():
         title_fontsize=8,
     )
     fig.tight_layout(rect=(0, 0.09, 1, 1))
+    return _b64(fig)
+
+
+def fig_ch_lean():
+    """Cadre Harmonisé June–August lean-season phase populations, Niger."""
+    t = pd.read_csv(D / "ch_lean_national.csv")
+    fig, ax = plt.subplots(figsize=(10.5, 4.4))
+    x = t["year"].values
+    ax.bar(x, t["p3"], color="#e67800", label="Phase 3", zorder=2)
+    ax.bar(
+        x, t["p4"], bottom=t["p3"], color="#c80000", label="Phase 4", zorder=2
+    )
+    for _, r in t.iterrows():
+        ax.text(
+            r["year"],
+            r["p35"] + 0.12,
+            f"{r['p35']:.1f}",
+            ha="center",
+            fontsize=8.5,
+            color="#1a1a1a",
+        )
+    y22 = float(t.loc[t.year == 2022, "p35"].iloc[0])
+    ax.annotate(
+        "après la saison 2021\nafter the 2021 season",
+        xy=(2022, y22),
+        xytext=(2023.3, y22 + 0.9),
+        fontsize=9,
+        color="#b3261e",
+        ha="left",
+        arrowprops=dict(arrowstyle="->", color="#b3261e"),
+    )
+    # outline the 2026 bars (pre-season projection)
+    for p_ in ax.patches:
+        if abs(p_.get_x() + p_.get_width() / 2 - 2026) < 0.01:
+            p_.set_hatch("//")
+            p_.set_edgecolor("#888888")
+    ax.set_xticks(x)
+    ax.set_xticklabels([str(int(v)) for v in x], fontsize=9)
+    ax.set_ylabel("millions", fontsize=9)
+    ax.set_ylim(0, 5.4)
+    ax.grid(axis="y", color="#eeeeee", linewidth=0.7, zorder=0)
+    ax.spines[["top", "right"]].set_visible(False)
+    ax.legend(fontsize=9, frameon=False, loc="upper left")
+    ax.tick_params(labelsize=9)
+    fig.tight_layout()
     return _b64(fig)

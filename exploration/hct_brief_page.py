@@ -56,13 +56,22 @@ def main():
     img_asap = figs.fig_asap()
     img_strip = figs.fig_cdi_history(
         comp,
-        [2009, 2011, 2021, 2026],
+        [1997, 2006, 2009, 2011, 2021, 2026],
         cerf_years={2009, 2011, 2021},
-        ncols=2,
-        panel_w=5.6,
-        panel_h=2.45,
+        ncols=3,
+        panel_w=4.4,
+        panel_h=2.15,
         extent=((-0.3, 16.2), (11.3, 17.8)),
+        subtitles={
+            1997: "mauvaise année / bad year (pré-CERF)",
+            2006: "fausse alerte / false alarm",
+            2009: "CERF ~$35M (2010)",
+            2011: "CERF ~$22M (2011–12)",
+            2021: "CERF $10M · manqué / missed",
+            2026: "aujourd'hui / today",
+        },
     )
+    img_ch = figs.fig_ch_lean()
     enso1_en = svg_uri(ENSO_DIR / "NER_slide1.svg")
     enso1_fr = svg_uri(ENSO_DIR / "NER_slide1_fr.svg")
     enso2_en = svg_uri(ENSO_DIR / "NER_slide2.svg")
@@ -182,7 +191,7 @@ def main():
   "encore par la végétation.")}</li>
 </ul>
 </div>
-<div class="foot"><span>1 / 6</span>
+<div class="foot"><span>1 / 7</span>
 <span>ocha-dap.github.io/ds-aa-ner-drought/pockets/</span></div>
 </section>
 
@@ -214,7 +223,7 @@ def main():
   "saisonnières (qui intègrent déjà l'ENSO et tous les autres facteurs) "
   "et, surtout, sur les observations — les deux suivent.")}</li>
 </ul>
-<div class="foot"><span>2 / 6</span><span>ERA5 × Niño3.4 (NOAA PSL),
+<div class="foot"><span>2 / 7</span><span>ERA5 × Niño3.4 (NOAA PSL),
 partial correlation · OCHA CHD teleconnections</span></div>
 </section>
 
@@ -266,7 +275,7 @@ partial correlation · OCHA CHD teleconnections</span></div>
 </ul>
 </div>
 </div>
-<div class="foot"><span>3 / 6</span><span>CHIRPS · IMERG · ENACTS ·
+<div class="foot"><span>3 / 7</span><span>CHIRPS · IMERG · ENACTS ·
 SEAS5+ERA5 · FAO ASIS · OGIMET/DMN · HNRP 2026</span></div>
 </section>
 
@@ -280,14 +289,16 @@ SEAS5+ERA5 · FAO ASIS · OGIMET/DMN · HNRP 2026</span></div>
 <li>{T(
   "The EC/JRC ASAP system issues automated agricultural-drought warnings "
   "per unit and land cover every 10 days. Current picture: warnings on "
-  "26 of 35 units — the Dosso–Tahoua–Tillabéri belt at level 1/1+, "
+  "29 of 35 units (cropland and/or rangeland) — the Dosso–Tahoua–"
+  "Tillabéri belt at level 1/1+, "
   "and level-3 warnings — poor growth "
   "with negative prospects, from water balance AND biomass — on Diffa, "
   "Maïné-Soroa and Tanout croplands, level 3+ on N'Guigmi rangelands.",
   "Le système ASAP de la CE/JRC émet tous les 10 jours des alertes "
   "automatiques de sécheresse agricole par unité et type de couvert. "
-  "Tableau actuel&nbsp;: alertes sur 26 des 35 unités — la bande "
-  "Dosso–Tahoua–Tillabéri en niveau 1/1+, et des alertes de niveau 3 — "
+  "Tableau actuel&nbsp;: alertes sur 29 des 35 unités (cultures et/ou "
+  "pâturages) — la bande Dosso–Tahoua–Tillabéri en niveau 1/1+, et des "
+  "alertes de niveau 3 — "
   "croissance médiocre et perspectives négatives, sur bilan hydrique ET "
   "biomasse — sur les cultures de Diffa, Maïné-Soroa et Tanout, niveau "
   "3+ sur les pâturages de N'Guigmi.")}</li>
@@ -301,7 +312,7 @@ SEAS5+ERA5 · FAO ASIS · OGIMET/DMN · HNRP 2026</span></div>
   "le déficit de pluie, et c'est à l'est qu'ils émergent en premier. "
   "Les décades de septembre sont le point de vigilance.")}</li>
 </ul>
-<div class="foot"><span>4 / 6</span><span>EC/JRC ASAP,
+<div class="foot"><span>4 / 7</span><span>EC/JRC ASAP,
 agricultural-production-hotspots.ec.europa.eu · {T("dekad", "décade")}
 21–31/08/2026</span></div>
 </section>
@@ -332,7 +343,7 @@ agricultural-production-hotspots.ec.europa.eu · {T("dekad", "décade")}
   "~1 an sur 4 au niveau national, jusqu'à 1 an sur 10 dans des poches "
   "de Dosso/Tillabéri.")}</li>
 </ul>
-<div class="foot"><span>5 / 6</span><span>ECMWF SEAS5, {T("issued",
+<div class="foot"><span>5 / 7</span><span>ECMWF SEAS5, {T("issued",
 "émission")} 09/2026 · OCHA CHD skill methodology</span></div>
 </section>
 
@@ -342,40 +353,79 @@ agricultural-production-hotspots.ec.europa.eu · {T("dekad", "décade")}
        "2026 en comparaison — et ce que cela implique")}</h2>
 <div class="fullfig" style="flex:0.9">
 <img src="data:image/png;base64,{img_strip}"
-  alt="2009, 2011, 2021 and 2026 compared">
+  alt="1997, 2006, 2009, 2011, 2021 and 2026 compared">
 </div>
-<ul style="font-size:1.02rem">
+<ul style="font-size:0.98rem">
 <li>{T(
-  "The same indicator, reconstructed for early September of past CERF "
-  "drought seasons (red frames): it flagged 2009 and 2011. 2026 equals "
-  "2009's rainfall extent — without vegetation confirmation yet.",
-  "Le même indicateur, reconstruit pour début septembre des saisons de "
-  "sécheresse CERF passées (cadres rouges)&nbsp;: il signalait 2009 et "
-  "2011. 2026 égale l'étendue pluviométrique de 2009 — sans "
-  "confirmation encore par la végétation.")}</li>
+  "The indicator flagged the CERF drought seasons at this same point of "
+  "the year — 2009 (24 units, ≈US$35M of CERF responses) and 2011 (20 "
+  "units, ≈$22M) — and it also catches 1997, the 8th-worst season in "
+  "the framework's own impact record, before CERF existed. 2026 "
+  "matches 2009's extent.",
+  "L'indicateur signalait les saisons de sécheresse CERF au même "
+  "moment de l'année — 2009 (24 unités, ≈35 M$ de réponses CERF) et "
+  "2011 (20 unités, ≈22 M$) — et il capte aussi 1997, 8ᵉ pire saison "
+  "du propre registre d'impact du cadre, avant l'existence du CERF. "
+  "2026 égale l'étendue de 2009.")}</li>
 <li>{T(
-  "Caution: 2021 shows the blind spot — its rains collapsed in "
-  "September itself. A quiet map in early September is not an "
-  "all-clear; a loud one, as now, is meaningful.",
-  "Prudence&nbsp;: 2021 montre l'angle mort — ses pluies se sont "
-  "effondrées en septembre même. Une carte calme début septembre n'est "
-  "pas un feu vert&nbsp;; une carte chargée, comme aujourd'hui, est "
-  "significative.")}</li>
-<li>{T(
-  "Suggested next steps: follow the hotspot departments (live page "
-  "below); watch September rainfall and vegetation dekads; factor the "
-  "2009 analogue into lean-season planning and prepositioning, "
-  "especially where deficits overlap HNRP severity-4 areas (Diffa "
-  "east, Tillabéri west).",
-  "Suites proposées&nbsp;: suivre les départements sensibles (page en "
-  "direct ci-dessous)&nbsp;; surveiller les pluies et décades de "
-  "végétation de septembre&nbsp;; intégrer l'analogue 2009 dans la "
-  "planification de la soudure et le prépositionnement, en particulier "
-  "là où les déficits recoupent les zones en sévérité 4 du HNRP (est "
-  "de Diffa, ouest de Tillabéri).")}</li>
+  "It can also over-call: 2006 was loud (23 units) yet no bad year "
+  "followed — rainfall alone can false-alarm, which is why vegetation "
+  "(ASAP) and food-security confirmation matter. And 2021 shows the "
+  "blind spot — its rains collapsed in September itself. A quiet "
+  "early-September map is not an all-clear; a loud one, as now, is "
+  "meaningful but not yet a verdict.",
+  "Il peut aussi trop alerter&nbsp;: 2006 était chargé (23 unités) "
+  "sans mauvaise année à la clé — la pluie seule peut produire une "
+  "fausse alerte, d'où l'importance de la confirmation par la "
+  "végétation (ASAP) et la sécurité alimentaire. Et 2021 montre "
+  "l'angle mort — ses pluies se sont effondrées en septembre même. Une "
+  "carte calme début septembre n'est pas un feu vert&nbsp;; une carte "
+  "chargée, comme aujourd'hui, est significative mais pas encore un "
+  "verdict.")}</li>
 </ul>
-<div class="foot"><span>6 / 6</span>
-<span>ocha-dap.github.io/ds-aa-ner-drought/pockets/</span></div>
+<div class="foot"><span>6 / 7</span>
+<span>{T("framework bad-year record · aa.cerf_allocation",
+"registre des mauvaises années du cadre · aa.cerf_allocation")}</span></div>
+</section>
+
+<!-- Slide 7 — Cadre Harmonisé aftermath & next steps -->
+<section class="slide">
+<h2>{T("What a failed season does to food security (Cadre Harmonisé)",
+       "Ce qu'une saison ratée fait à la sécurité alimentaire (Cadre harmonisé)")}</h2>
+<div class="fullfig" style="flex:1.05">
+<img src="data:image/png;base64,{img_ch}"
+  alt="Cadre Harmonise June-August phase 3+ by year">
+</div>
+<ul style="font-size:0.98rem">
+<li>{T(
+  "June–August lean-season population in CH phase 3+ (projected each "
+  "spring). After the 2021 drought season, the 2022 lean season reached "
+  "4.4 million in phase 3+ — including 426,000 in phase 4, both records "
+  "of the CH era and roughly double the pre-drought year.",
+  "Population en phase 3+ du CH pendant la soudure juin–août (projetée "
+  "chaque printemps). Après la saison de sécheresse 2021, la soudure "
+  "2022 a atteint 4,4 millions en phase 3+ — dont 426 000 en phase 4, "
+  "deux records de l'ère CH et environ le double de l'année "
+  "précédente.")}</li>
+<li>{T(
+  "The 2026 bar (hatched) was projected before this season. The "
+  "November 2026 CH analysis is the first number that will price in "
+  "this season's outcome — with 2022 as the reference scenario, the "
+  "practical steps now are September monitoring (rainfall dekads, "
+  "vegetation, the live hotspots page) and factoring a 2009/2022-type "
+  "lean season into planning and prepositioning, especially where "
+  "deficits overlap HNRP severity-4 areas.",
+  "La barre 2026 (hachurée) a été projetée avant cette saison. "
+  "L'analyse CH de novembre 2026 sera le premier chiffre à intégrer "
+  "l'issue de cette saison — avec 2022 comme scénario de référence, "
+  "les étapes pratiques sont le suivi de septembre (décades de pluie, "
+  "végétation, page des points chauds en direct) et la prise en compte "
+  "d'une soudure de type 2009/2022 dans la planification et le "
+  "prépositionnement, en particulier là où les déficits recoupent les "
+  "zones en sévérité 4 du HNRP.")}</li>
+</ul>
+<div class="foot"><span>7 / 7</span>
+<span>Cadre harmonisé (CILSS/HDX) · ocha-dap.github.io/ds-aa-ner-drought/pockets/</span></div>
 </section>
 
 <script>

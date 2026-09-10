@@ -449,8 +449,10 @@ def fig_hnrp(summary):
 
 # --- combined drought indicator (CDI-style) ---------------------------------
 # map rendering: fills show the RAIN pillar; vegetation stress (detrended
-# VHI at RP >= 5) is overlaid as dark-red dots so it reads as an
-# aggravating signal, not a separate cool-coloured category
+# VHI) is overlaid as dark-red hatching (/// for RP 5-10, xxx cross-hatch
+# for RP >= 10) so it reads as an aggravating signal; HNRP severity is a
+# red outline (severity 4 solid, severity 3 dashed)
+matplotlib.rcParams["hatch.linewidth"] = 0.9
 CDI_COLORS = {
     0: "#f2f2ed",  # rain < 5
     1: "#fec44f",  # rain RP 5-10
@@ -458,7 +460,9 @@ CDI_COLORS = {
     6: "#e4e2da",  # not assessed (Saharan, outside ENACTS coverage)
 }
 CDI_LABELS = {0: "–", 1: "5–10", 2: "≥ 10", 6: "n/a"}
-VEG_DOT = "#67000d"
+VEG_H1 = "#b2182b"  # vegetation RP 5-10 hatch
+VEG_H2 = "#4a0505"  # vegetation RP >= 10 hatch
+HNRP_RED = "#e31a1c"
 # table-chip colours for the full class set (data classes unchanged)
 CDI_CHIP_COLORS = {
     0: "#f2f2ed",
@@ -485,7 +489,9 @@ def _rain_cls(rain_rp, cdi):
     return 0
 
 
-def cdi_map(ax, adm1, adm2, df_unit, hatch_pcodes=None, labels=True):
+def cdi_map(
+    ax, adm1, adm2, df_unit, sev4_pcodes=None, sev3_pcodes=None, labels=True
+):
     """df_unit: index pcode, columns rain_rp, veg_rp, cdi."""
     g = adm2.merge(df_unit, left_on="ADM2_PCODE", right_index=True, how="left")
     g["cls"] = [_rain_cls(r, c) for r, c in zip(g["rain_rp"], g["cdi"])]
@@ -508,34 +514,48 @@ def cdi_map(ax, adm1, adm2, df_unit, hatch_pcodes=None, labels=True):
             linewidth=0.4,
             zorder=2,
         )
-    veg = g[(g["veg_rp"] >= 5) & (g["cls"] != 6)]
-    if len(veg):
-        pts = veg.geometry.representative_point()
-        ax.scatter(
-            pts.x,
-            pts.y,
-            s=16,
-            color=VEG_DOT,
-            zorder=6,
-            marker="o",
-            edgecolor="white",
-            linewidth=0.4,
-        )
-    if hatch_pcodes:
-        sel = g[g["ADM2_PCODE"].isin(hatch_pcodes)]
+    for lo, hi, color, hatch in (
+        (5, 10, VEG_H1, "///"),
+        (10, None, VEG_H2, "xxx"),
+    ):
+        m = (g["veg_rp"] >= lo) & (g["cls"] != 6)
+        if hi is not None:
+            m &= g["veg_rp"] < hi
+        sub = g[m]
+        if len(sub):
+            sub.plot(
+                ax=ax,
+                facecolor="none",
+                edgecolor=color,
+                hatch=hatch,
+                linewidth=0.0,
+                zorder=3,
+            )
+    if sev3_pcodes:
+        sel = g[g["ADM2_PCODE"].isin(sev3_pcodes)]
         if len(sel):
             sel.plot(
                 ax=ax,
                 facecolor="none",
-                edgecolor="#1a1a1a",
-                hatch="///",
-                linewidth=1.2,
+                edgecolor=HNRP_RED,
+                linewidth=1.0,
+                linestyle=(0, (3, 2)),
                 zorder=5,
+            )
+    if sev4_pcodes:
+        sel = g[g["ADM2_PCODE"].isin(sev4_pcodes)]
+        if len(sel):
+            sel.plot(
+                ax=ax,
+                facecolor="none",
+                edgecolor=HNRP_RED,
+                linewidth=2.2,
+                zorder=6,
             )
     _basemap(ax, adm1, labels=labels)
 
 
-def cdi_legend_handles(with_hatch=False):
+def cdi_legend_handles(with_hnrp=False):
     hs = [
         Patch(
             facecolor=CDI_COLORS[k], edgecolor="#cccccc", label=CDI_LABELS[k]
@@ -543,23 +563,37 @@ def cdi_legend_handles(with_hatch=False):
         for k in (0, 1, 2, 6)
     ]
     hs.append(
-        Line2D(
-            [],
-            [],
-            marker="o",
-            linestyle="",
-            color=VEG_DOT,
-            markersize=6,
-            label="végétation / vegetation",
+        Patch(
+            facecolor="none",
+            edgecolor=VEG_H1,
+            hatch="///",
+            label="vég/veg 5–10",
         )
     )
-    if with_hatch:
+    hs.append(
+        Patch(
+            facecolor="none",
+            edgecolor=VEG_H2,
+            hatch="xxx",
+            label="vég/veg ≥ 10",
+        )
+    )
+    if with_hnrp:
         hs.append(
             Patch(
                 facecolor="none",
-                edgecolor="#1a1a1a",
-                hatch="///",
+                edgecolor=HNRP_RED,
+                linewidth=2.0,
                 label="HNRP 4",
+            )
+        )
+        hs.append(
+            Patch(
+                facecolor="none",
+                edgecolor=HNRP_RED,
+                linewidth=1.0,
+                linestyle=(0, (3, 2)),
+                label="HNRP 3",
             )
         )
     return hs
@@ -572,15 +606,17 @@ def fig_cdi(summary):
         columns={"cdi_class": "cdi"}
     )
     df_unit["rain_rp"] = summary.set_index("pcode")["rain_rp_med"]
-    hatch = summary.loc[summary["final_severity"] >= 4, "pcode"].tolist()
-    cdi_map(ax, adm1, adm2, df_unit, hatch_pcodes=hatch)
+    sev4 = summary.loc[summary["final_severity"] >= 4, "pcode"].tolist()
+    sev3 = summary.loc[summary["final_severity"] == 3, "pcode"].tolist()
+    cdi_map(ax, adm1, adm2, df_unit, sev4_pcodes=sev4, sev3_pcodes=sev3)
     ax.legend(
-        handles=cdi_legend_handles(with_hatch=True),
-        loc="lower left",
+        handles=cdi_legend_handles(with_hnrp=True),
+        loc="upper center",
+        bbox_to_anchor=(0.5, 0.02),
         fontsize=8,
-        ncol=6,
+        ncol=8,
         frameon=False,
-        title="RP pluie/rain (ans/yrs)",
+        title="RP (ans/yrs)",
         title_fontsize=8,
     )
     return _b64(fig)
@@ -660,9 +696,9 @@ def fig_cdi_history(
         handles=cdi_legend_handles(),
         loc="lower center",
         fontsize=9,
-        ncol=7,
+        ncol=6,
         frameon=False,
-        title="RP pluie/rain (ans/yrs)",
+        title="RP (ans/yrs)",
         title_fontsize=9,
     )
     bottom = 0.16 if nrows == 1 else (0.10 if nrows == 2 else 0.045)
@@ -780,112 +816,232 @@ def fig_ch_lean():
 def fig_indicator_bars(comp, cerf_years=(), aa_years=(), emdat_years=()):
     """Yearly summary: departments in rainfall deficit / vegetation stress.
 
-    Two aligned panels (rain pillar, vegetation pillar): per season, the
-    number of assessed departments (of 64) at RP >= 5, CERF drought
-    seasons shaded red, the 2022 AA season grey.
+    Two aligned bar panels (rain pillar, vegetation pillar, each split at
+    RP 10) plus a marker strip below flagging CERF drought seasons (red
+    squares; the 2022 AA activation grey) and EM-DAT drought events
+    (black diamonds). The legend sits above the axes.
     """
     c = comp[~comp["pcode"].isin(["NE001002", "NE001003", "NE001004"])]
     g = c.groupby("year")
     years = sorted(c["year"].unique())
-    n_sev = g.apply(
-        lambda d: int((d["rain_rp"] >= 10).sum()), include_groups=False
-    )
-    n_mod = g.apply(
-        lambda d: int(((d["rain_rp"] >= 5) & (d["rain_rp"] < 10)).sum()),
-        include_groups=False,
-    )
-    n_veg = g.apply(
-        lambda d: int((d["veg_rp"] >= 5).sum()), include_groups=False
-    )
 
-    fig, axes = plt.subplots(
-        2,
+    def _count(cond):
+        return g.apply(lambda d: int(cond(d).sum()), include_groups=False)
+
+    n_sev = _count(lambda d: d["rain_rp"] >= 10)
+    n_mod = _count(lambda d: (d["rain_rp"] >= 5) & (d["rain_rp"] < 10))
+    n_veg10 = _count(lambda d: d["veg_rp"] >= 10)
+    n_veg5 = _count(lambda d: (d["veg_rp"] >= 5) & (d["veg_rp"] < 10))
+
+    fig, (ax0, ax1, axm) = plt.subplots(
+        3,
         1,
-        figsize=(11.8, 5.6),
+        figsize=(11.8, 6.0),
         sharex=True,
-        gridspec_kw={"hspace": 0.14},
+        gridspec_kw={"hspace": 0.16, "height_ratios": [1, 1, 0.24]},
     )
-    for ax in axes:
-        for y in cerf_years:
-            ax.axvspan(y - 0.5, y + 0.5, color="#b3261e", alpha=0.10, zorder=0)
-        for y in aa_years:
-            ax.axvspan(y - 0.5, y + 0.5, color="#888888", alpha=0.14, zorder=0)
+    for ax in (ax0, ax1):
         ax.grid(axis="y", color="#eeeeee", linewidth=0.7, zorder=0)
         ax.spines[["top", "right"]].set_visible(False)
         ax.tick_params(labelsize=9)
 
-    ax = axes[0]
-    ax.bar(
-        years,
-        [n_sev[y] for y in years],
-        color="#d95f0e",
-        label="RP ≥ 10",
-        zorder=2,
-    )
-    ax.bar(
+    ax0.bar(years, [n_sev[y] for y in years], color="#d95f0e", zorder=2)
+    ax0.bar(
         years,
         [n_mod[y] for y in years],
         bottom=[n_sev[y] for y in years],
         color="#fdbb84",
-        label="RP 5–10",
         zorder=2,
     )
-    handles, _ = ax.get_legend_handles_labels()
-    handles.append(
-        Patch(
-            facecolor="#b3261e", alpha=0.18, label="saison CERF / CERF season"
-        )
+    ax0.set_ylabel("pluie / rain", fontsize=9.5)
+
+    ax1.bar(years, [n_veg10[y] for y in years], color=VEG_H2, zorder=2)
+    ax1.bar(
+        years,
+        [n_veg5[y] for y in years],
+        bottom=[n_veg10[y] for y in years],
+        color=VEG_H1,
+        zorder=2,
     )
-    ax.set_ylabel("pluie / rain", fontsize=9.5)
+    ax1.set_ylabel("végétation / vegetation", fontsize=9.5)
 
-    ax = axes[1]
-    ax.bar(years, [n_veg[y] for y in years], color="#8c1a1a", zorder=2)
-    ax.set_ylabel("végétation / vegetation", fontsize=9.5)
-    if emdat_years:
-        import matplotlib.transforms as mtransforms
-
-        marked = [y for y in emdat_years if y in years]
-        for a in axes:
-            tr = mtransforms.blended_transform_factory(
-                a.transData, a.transAxes
-            )
-            a.scatter(
-                marked,
-                [0.97] * len(marked),
-                transform=tr,
-                marker="v",
-                s=34,
-                color="#1a1a1a",
-                zorder=5,
-                clip_on=False,
-            )
-        handles.append(
-            Line2D(
-                [],
-                [],
-                marker="v",
-                linestyle="",
-                color="#1a1a1a",
-                markersize=6,
-                label="sécheresse EM-DAT / EM-DAT drought",
-            )
+    # marker strip: CERF drought seasons / 2022 AA (top row), EM-DAT
+    # drought events (bottom row)
+    axm.set_ylim(-0.7, 1.7)
+    axm.set_yticks([1, 0])
+    axm.set_yticklabels(["CERF", "EM-DAT"], fontsize=8)
+    for side in ("top", "right", "left", "bottom"):
+        axm.spines[side].set_visible(False)
+    axm.tick_params(axis="y", length=0)
+    cerf = sorted(y for y in cerf_years if y in years)
+    if cerf:
+        axm.scatter(
+            cerf, [1] * len(cerf), marker="s", s=48, color="#b3261e", zorder=3
         )
-    axes[0].legend(
+    aa = sorted(y for y in aa_years if y in years)
+    if aa:
+        axm.scatter(
+            aa,
+            [1] * len(aa),
+            marker="s",
+            s=48,
+            facecolor="#cccccc",
+            edgecolor="#888888",
+            zorder=3,
+        )
+        for y in aa:
+            axm.annotate(
+                "AA",
+                (y, 1),
+                xytext=(0, 7),
+                textcoords="offset points",
+                ha="center",
+                fontsize=7,
+                color="#777777",
+            )
+    emdat = sorted(y for y in emdat_years if y in years)
+    if emdat:
+        axm.scatter(
+            emdat,
+            [0] * len(emdat),
+            marker="D",
+            s=26,
+            color="#1a1a1a",
+            zorder=3,
+        )
+
+    handles = [
+        Patch(facecolor="#d95f0e", label="pluie/rain ≥ 10"),
+        Patch(facecolor="#fdbb84", label="pluie/rain 5–10"),
+        Patch(facecolor=VEG_H2, label="vég/veg ≥ 10"),
+        Patch(facecolor=VEG_H1, label="vég/veg 5–10"),
+    ]
+    fig.legend(
         handles=handles,
-        fontsize=8.5,
+        loc="upper center",
+        bbox_to_anchor=(0.5, 1.0),
+        ncol=4,
         frameon=False,
-        loc="upper right",
-        ncol=len(handles),
+        fontsize=9,
+        title="RP (ans/yrs)",
+        title_fontsize=9,
     )
 
     ticks = [y for y in years if y % 5 == 0 and y != 2025] + [2026]
-    axes[1].set_xticks(ticks)
-    for t in axes[1].get_xticklabels():
+    axm.set_xticks(ticks)
+    for t in axm.get_xticklabels():
         if t.get_text() == "2026":
             t.set_fontweight("bold")
-    axes[1].set_xlim(years[0] - 0.8, years[-1] + 0.8)
+    axm.set_xlim(years[0] - 0.8, years[-1] + 0.8)
     fig.supylabel(
         "départements (sur 64) / departments (of 64)", fontsize=9, x=0.01
     )
+    fig.tight_layout(rect=(0.0, 0.0, 1.0, 0.92))
+    return _b64(fig)
+
+
+def fig_scenarios():
+    """Schematic for the HCT deck: where the compound-department count
+    stands in early September and the three end-of-September scenario
+    ranges (A recovery / B localized east / C 2009-type), with analogue
+    years in each band. Values are the same pipeline's compound count.
+    """
+    from matplotlib.patches import FancyArrowPatch, Rectangle
+
+    fig, ax = plt.subplots(figsize=(8.2, 4.6))
+    cur = 7
+    bands = [
+        ("A", 0, 5, "#74c476", "#1d6b34", "2006 · 1996", 2),
+        ("B", 5, 15, "#fd8d3c", "#a34e00", "2011 · 2004", 10),
+        ("C", 15, 30, "#a50f15", "#7a0a10", "2009 · 2021", 21),
+    ]
+    for lab, lo, hi, fill, dark, ana, tgt in bands:
+        ax.add_patch(
+            Rectangle(
+                (1.0, lo),
+                0.34,
+                hi - lo,
+                facecolor=fill,
+                alpha=0.22,
+                edgecolor="none",
+                zorder=1,
+            )
+        )
+        ax.text(
+            1.17,
+            (lo + hi) / 2 + 1.2,
+            lab,
+            ha="center",
+            va="center",
+            fontsize=15,
+            fontweight="bold",
+            color=dark,
+        )
+        ax.text(
+            1.17,
+            (lo + hi) / 2 - 1.8,
+            ana,
+            ha="center",
+            va="center",
+            fontsize=8,
+            color=dark,
+        )
+        ax.add_patch(
+            FancyArrowPatch(
+                (0.03, cur),
+                (0.97, tgt),
+                arrowstyle="-|>",
+                mutation_scale=16,
+                linewidth=2.4,
+                color=dark,
+                zorder=4,
+                shrinkA=0,
+                shrinkB=0,
+            )
+        )
+    ax.axhline(
+        20,
+        xmin=0.02,
+        xmax=0.72,
+        color="#7a0a10",
+        linewidth=0.9,
+        linestyle=(0, (4, 3)),
+        zorder=2,
+    )
+    ax.text(
+        0.02,
+        20.7,
+        "2009 à cette date / at this date",
+        fontsize=8,
+        color="#7a0a10",
+    )
+    ax.scatter([0], [cur], s=70, color="#1a1a1a", zorder=5)
+    ax.annotate(
+        "aujourd'hui / today",
+        (0, cur),
+        xytext=(0, -22),
+        textcoords="offset points",
+        ha="center",
+        fontsize=9,
+        color="#1a1a1a",
+    )
+    ax.set_xlim(-0.12, 1.4)
+    ax.set_ylim(0, 30)
+    ax.set_xticks([0, 1.17])
+    ax.set_xticklabels(
+        [
+            "début sept. 2026 (mesuré)\nearly Sept 2026 (measured)",
+            "fin sept. (prochain bilan)\nend Sept (next check-in)",
+        ],
+        fontsize=9,
+    )
+    ax.set_ylabel(
+        "départements en classe composée (sur 64)\n"
+        "compound departments (of 64)",
+        fontsize=9,
+    )
+    ax.spines[["top", "right"]].set_visible(False)
+    ax.grid(axis="y", color="#f0f0f0", linewidth=0.7, zorder=0)
+    ax.tick_params(labelsize=9)
     fig.tight_layout()
     return _b64(fig)

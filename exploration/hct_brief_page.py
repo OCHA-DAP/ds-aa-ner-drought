@@ -72,6 +72,7 @@ def main():
         },
     )
     img_ch = figs.fig_ch_lean()
+    img_scen = figs.fig_scenarios()
     img_bars = figs.fig_indicator_bars(
         comp,
         cerf_years={2009, 2011, 2021},
@@ -288,13 +289,15 @@ partial correlation · OCHA CHD teleconnections</span></div>
   "sec par rapport aux normales trentenaires de la DMN&nbsp;; cinq "
   "enregistrent leur 2ᵉ juin–août le plus sec.")}</li>
 <li>{T(
-  "Hatched: the four HNRP severity-4 departments. On the combined "
+  "Thick red outline: the four HNRP severity-4 departments (thin "
+  "dashed: severity 3). On the combined "
   "(majority) indicator only N'Guigmi reaches watch — but each of the "
   "four is in deficit in at least one dataset: IMERG has N'Guigmi at "
   "its driest June–August on record, and Téra, Bankilaré and Torodi at "
   "1-in-7 to 1-in-15, while the gauge-anchored datasets read them "
   "closer to normal.",
-  "Hachures&nbsp;: les quatre départements en sévérité 4 du HNRP. Sur "
+  "Contour rouge épais&nbsp;: les quatre départements en sévérité 4 "
+  "du HNRP (tirets fins&nbsp;: sévérité 3). Sur "
   "l'indicateur combiné (majoritaire), seul N'Guigmi atteint la "
   "vigilance — mais chacun des quatre est en déficit dans au moins un "
   "jeu de données&nbsp;: IMERG place N'Guigmi à son juin–août le plus "
@@ -436,19 +439,20 @@ agricultural-production-hotspots.ec.europa.eu · {T("dekad", "décade")}
 <ul style="font-size:0.98rem">
 <li>{T(
   "Top: departments in rainfall deficit (RP ≥ 5; dark: ≥ 10). Bottom: "
-  "departments whose region shows vegetation stress (trend-corrected). "
-  "Red bands: CERF drought seasons; black triangles: drought events in "
-  "EM-DAT's disaster registry since 2000. 2026's rainfall count is the "
+  "departments whose region shows vegetation stress (trend-corrected; "
+  "dark: ≥ 10). The strip below flags CERF drought seasons (red "
+  "squares) and drought events in EM-DAT's disaster registry since "
+  "2000 (black diamonds). 2026's rainfall count is the "
   "largest since 2009–2011; its vegetation count is still well below "
   "2009's, but it coincides with the rainfall deficit in a single "
   "eastern belt — how far it spreads in September is the key "
   "uncertainty.",
   "Haut&nbsp;: départements en déficit pluviométrique (PR ≥ 5&nbsp;; "
   "foncé&nbsp;: ≥ 10). Bas&nbsp;: départements dont la région montre un "
-  "stress de la végétation (corrigé de la tendance). Bandes "
-  "rouges&nbsp;: saisons de sécheresse CERF&nbsp;; triangles "
-  "noirs&nbsp;: événements de sécheresse du registre EM-DAT depuis "
-  "2000. Le décompte pluviométrique de 2026 est le plus élevé depuis "
+  "stress de la végétation (corrigé de la tendance&nbsp;; foncé&nbsp;: "
+  "≥ 10). Le bandeau signale les saisons de sécheresse CERF (carrés "
+  "rouges) et les événements de sécheresse du registre EM-DAT depuis "
+  "2000 (losanges noirs). Le décompte pluviométrique de 2026 est le plus élevé depuis "
   "2009–2011&nbsp;; celui de la végétation reste bien sous celui de "
   "2009, mais il coïncide avec le déficit de pluie dans une même bande "
   "orientale — son extension en septembre est la grande "
@@ -475,94 +479,70 @@ agricultural-production-hotspots.ec.europa.eu · {T("dekad", "décade")}
 <section class="slide">
 <h2>{T("Three scenarios to reassess at the end of September",
        "Trois scénarios à réévaluer fin septembre")}</h2>
-<p class="note" style="margin:0 0 0.2rem">{T(
-  "End of September ≈ end of the growing season. All indicator levels "
-  "below are measured with the same pipeline as this brief, so the "
-  "check-in is a re-run, not a new study. The scenarios are not "
-  "equally likely — with the season this far advanced and the SON "
-  "forecast tilting dry, B is the central case.",
-  "Fin septembre ≈ fin de la saison de croissance. Tous les niveaux "
-  "d'indicateurs ci-dessous se mesurent avec la même chaîne de "
-  "traitement que ce briefing&nbsp;: le point d'étape est une "
-  "réexécution, pas une nouvelle étude. Les scénarios ne sont pas "
-  "équiprobables — la saison étant si avancée et la prévision SON "
-  "penchant au sec, B est le scénario central.")}</p>
+<div class="cols">
+<div class="fig" style="flex:1.1">
+<img src="data:image/png;base64,{img_scen}"
+  alt="Three scenario trajectories for the compound-department count">
+</div>
+<div class="txt" style="flex:1.15">
 <table class="scen lv lv-en">
-<tr><th style="width:13%"></th>
+<tr><th style="width:16%"></th>
 <th class="sA">A — Late-season recovery</th>
 <th class="sB">B — Confirmed drought, localized east</th>
 <th class="sC">C — Widespread 2009-type failure</th></tr>
-<tr><td class="h">Analogous years</td>
-<td>2006 (loud early September, no bad year); 1993/1996 rainfall-only
-seasons</td>
-<td>2011 (localized pockets → ≈$22M CERF); 2004 (partial, eastern)</td>
-<td>2009 (→ 2010 crisis, ≈$35M CERF); 2021 September collapse
-(→ record 2022 lean season, 4.4M in CH 3+)</td></tr>
-<tr><td class="h">September rain (CHIRPS prelim / IMERG dekads)</td>
-<td>Near or above normal over the deficit belt</td>
-<td>Mediocre; deficits persist but do not deepen</td>
-<td>Below normal again across the belt, or a 2021-style September
-collapse</td></tr>
-<tr><td class="h">Vegetation pillar (detrended VHI, last Sept dekad)</td>
-<td>&lt; 10 departments at RP ≥ 5; compound count falls below 5</td>
-<td>10–25 departments, still Diffa–Zinder(–Tahoua); compound 5–15</td>
-<td>&gt; 25 departments (2009 had 33 by this dekad); compound ≥ 15,
-spreading into Maradi/Tahoua/Dosso</td></tr>
-<tr><td class="h">ASAP warnings (dekad 21–30 Sept)</td>
-<td>No new level-3/4 units; the east stabilizes or improves</td>
-<td>Level 3/3+ persists on the eastern belt, ≤ ~6 units, no level 4</td>
-<td>Level 3/4 beyond the east (&gt; 6 units) or level 4 appearing</td></tr>
-<tr><td class="h">Planning posture</td>
-<td>Stand down heightened posture; log as a framework false alarm;
-keep routine monitoring through harvest</td>
-<td>Targeted scale-up for eastern departments + HNRP severity-4
-overlaps; prepare a CERF-type submission at 2011 scale</td>
-<td>National-scale response planning ahead of the November Cadre
-Harmonisé; early CERF engagement; preposition for a 2010-type lean
-season</td></tr>
+<tr><td class="h">By end Sept we'd see</td>
+<td>September rains recover; vegetation stress recedes (compound
+&lt; 5 departments); no new ASAP level 3</td>
+<td>Deficits persist; vegetation stress stays eastern (compound
+5–15); ASAP level 3 confined to the east</td>
+<td>September fails too, or vegetation spreads west (compound ≥ 15);
+ASAP level 3/4 beyond the east</td></tr>
+<tr><td class="h">Analogues</td>
+<td>2006, 1996</td><td>2011, 2004</td><td>2009, 2021</td></tr>
+<tr><td class="h">Posture</td>
+<td>Stand down; log as a false alarm; routine monitoring through
+harvest</td>
+<td>Targeted eastern scale-up; prepare a CERF-type submission at
+2011 scale</td>
+<td>National-scale planning before the November Cadre Harmonisé;
+early CERF engagement; preposition</td></tr>
 </table>
 <table class="scen lv lv-fr">
-<tr><th style="width:13%"></th>
+<tr><th style="width:16%"></th>
 <th class="sA">A — Redressement de fin de saison</th>
 <th class="sB">B — Sécheresse confirmée, localisée à l'est</th>
 <th class="sC">C — Défaillance généralisée type 2009</th></tr>
-<tr><td class="h">Années analogues</td>
-<td>2006 (début septembre chargé, pas de mauvaise année)&nbsp;;
-1993/1996, saisons «&nbsp;pluie seule&nbsp;»</td>
-<td>2011 (poches localisées → ≈22 M$ CERF)&nbsp;; 2004 (partiel, à
-l'est)</td>
-<td>2009 (→ crise de 2010, ≈35 M$ CERF)&nbsp;; effondrement de
-septembre 2021 (→ soudure record 2022, 4,4 M en CH 3+)</td></tr>
-<tr><td class="h">Pluies de septembre (CHIRPS prélim. / décades IMERG)</td>
-<td>Proches ou au-dessus de la normale sur la bande déficitaire</td>
-<td>Médiocres&nbsp;; les déficits persistent sans se creuser</td>
-<td>À nouveau sous la normale sur la bande, ou effondrement de
-septembre type 2021</td></tr>
-<tr><td class="h">Pilier végétation (VHI détendancé, dernière décade de
-septembre)</td>
-<td>&lt; 10 départements à PR ≥ 5&nbsp;; classe composée sous 5</td>
-<td>10–25 départements, toujours Diffa–Zinder(–Tahoua)&nbsp;;
-composé 5–15</td>
-<td>&gt; 25 départements (2009&nbsp;: 33 à cette décade)&nbsp;;
-composé ≥ 15, extension vers Maradi/Tahoua/Dosso</td></tr>
-<tr><td class="h">Alertes ASAP (décade 21–30 septembre)</td>
-<td>Pas de nouvelles unités en niveau 3/4&nbsp;; l'est se stabilise ou
-s'améliore</td>
-<td>Niveau 3/3+ persistant sur la bande orientale, ≤ ~6 unités, pas de
-niveau 4</td>
-<td>Niveau 3/4 au-delà de l'est (&gt; 6 unités) ou apparition du
-niveau 4</td></tr>
-<tr><td class="h">Posture de planification</td>
-<td>Lever la posture renforcée&nbsp;; consigner comme fausse alerte
-pour le cadre&nbsp;; maintenir le suivi de routine jusqu'aux
-récoltes</td>
-<td>Renforcement ciblé pour les départements de l'est + recoupements
-sévérité 4 du HNRP&nbsp;; préparer une soumission de type CERF à
-l'échelle de 2011</td>
-<td>Planification d'une réponse d'échelle nationale avant le Cadre
-harmonisé de novembre&nbsp;; engagement précoce du CERF&nbsp;;
-prépositionnement pour une soudure type 2010</td></tr>
+<tr><td class="h">Ce qu'on verrait fin sept.</td>
+<td>Les pluies de septembre se redressent&nbsp;; le stress de la
+végétation recule (composé &lt; 5 départements)&nbsp;; pas de
+nouveau niveau 3 ASAP</td>
+<td>Les déficits persistent&nbsp;; le stress végétation reste à
+l'est (composé 5–15)&nbsp;; niveau 3 ASAP confiné à l'est</td>
+<td>Septembre échoue aussi, ou la végétation s'étend vers l'ouest
+(composé ≥ 15)&nbsp;; niveau 3/4 ASAP au-delà de l'est</td></tr>
+<tr><td class="h">Analogues</td>
+<td>2006, 1996</td><td>2011, 2004</td><td>2009, 2021</td></tr>
+<tr><td class="h">Posture</td>
+<td>Lever la posture renforcée&nbsp;; consigner comme fausse
+alerte&nbsp;; suivi de routine jusqu'aux récoltes</td>
+<td>Renforcement ciblé à l'est&nbsp;; préparer une soumission de
+type CERF à l'échelle de 2011</td>
+<td>Planification d'échelle nationale avant le Cadre harmonisé de
+novembre&nbsp;; engagement précoce du CERF&nbsp;;
+prépositionnement</td></tr>
 </table>
+<p class="note" style="margin-top:0.5rem">{T(
+  "End of September ≈ end of the growing season; the check-in simply "
+  "re-runs this brief's pipeline on the last September dekad. B is "
+  "the central case, given the advanced season and the dry "
+  "September–November forecast tilt.",
+  "Fin septembre ≈ fin de la saison de croissance&nbsp;; le bilan "
+  "consiste à réexécuter la chaîne de ce briefing sur la dernière "
+  "décade de septembre. B est le scénario central, vu l'avancement de "
+  "la saison et la tendance sèche de la prévision "
+  "septembre–novembre.")}</p>
+</div>
+</div>
 <div class="foot"><span>8 / 8</span>
 <span>ocha-dap.github.io/ds-aa-ner-drought/pockets/</span></div>
 </section>

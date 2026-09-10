@@ -554,8 +554,8 @@ agricultural-production-hotspots.ec.europa.eu · {T("dekad", "décade")}
 level 3</td>
 <td>Deficits persist; the rain-and-vegetation overlap stays eastern
 (5–15 departments); ASAP level 3 confined to the east</td>
-<td>September fails too, or vegetation spreads west (overlap ≥ 15
-departments); ASAP level 3/4 beyond the east</td></tr>
+<td>Vegetation spreads west (overlap ≥ 15 departments); ASAP level
+3/4 beyond the east</td></tr>
 <tr><td class="h">Analogues</td>
 <td>2006 — <span style="color:#1d6b34;font-weight:600">no EM-DAT
 drought event, no CERF drought response</span></td>
@@ -564,17 +564,14 @@ drought event, no CERF drought response</span></td>
 2004 — <span style="color:#a34e00;font-weight:600">3.0M affected
 (EM-DAT)</span></td>
 <td>2009 — <span style="color:#7a0a10;font-weight:600">CERF ≈US$35M ·
-7.9M affected (EM-DAT)</span><br>
-2021 — <span style="color:#7a0a10;font-weight:600">CERF US$10M ·
-4.4M affected (EM-DAT)</span></td></tr>
+7.9M affected (EM-DAT)</span></td></tr>
 <tr><td class="h">What followed in those years</td>
 <td>Nothing unusual — a normal harvest and lean season; 2006 is
 logged as a false alarm of the rainfall signal</td>
 <td>2011 → the hard 2012 lean season, concentrated in the west;
 2004 → the 2005 food crisis (drought plus locusts), concentrated
 in the east</td>
-<td>2009 → the 2010 nationwide food crisis; 2021 → the record 2022
-lean season</td></tr>
+<td>2009 → the 2010 nationwide food crisis</td></tr>
 </table>
 <table class="scen lv lv-fr">
 <tr><th style="width:16%"></th>
@@ -588,9 +585,8 @@ et en végétation&nbsp;; pas de nouveau niveau 3 ASAP</td>
 <td>Les déficits persistent&nbsp;; le recoupement pluie-végétation
 reste à l'est (5–15 départements)&nbsp;; niveau 3 ASAP confiné à
 l'est</td>
-<td>Septembre échoue aussi, ou la végétation s'étend vers l'ouest
-(recoupement ≥ 15 départements)&nbsp;; niveau 3/4 ASAP au-delà de
-l'est</td></tr>
+<td>La végétation s'étend vers l'ouest (recoupement ≥ 15
+départements)&nbsp;; niveau 3/4 ASAP au-delà de l'est</td></tr>
 <tr><td class="h">Analogues</td>
 <td>2006 — <span style="color:#1d6b34;font-weight:600">aucun
 événement sécheresse EM-DAT, aucune réponse sécheresse du
@@ -600,33 +596,42 @@ CERF</span></td>
 2004 — <span style="color:#a34e00;font-weight:600">3,0 M affectés
 (EM-DAT)</span></td>
 <td>2009 — <span style="color:#7a0a10;font-weight:600">CERF ≈35 M$ ·
-7,9 M affectés (EM-DAT)</span><br>
-2021 — <span style="color:#7a0a10;font-weight:600">CERF 10 M$ ·
-4,4 M affectés (EM-DAT)</span></td></tr>
+7,9 M affectés (EM-DAT)</span></td></tr>
 <tr><td class="h">Ce qui a suivi ces années-là</td>
 <td>Rien d'inhabituel — récolte et soudure normales&nbsp;; 2006
 est consigné comme fausse alerte du signal pluviométrique</td>
 <td>2011 → la soudure difficile de 2012, concentrée à
 l'ouest&nbsp;; 2004 → la crise alimentaire de 2005 (sécheresse plus
 criquets), concentrée à l'est</td>
-<td>2009 → la crise alimentaire nationale de 2010&nbsp;; 2021 → la
-soudure record de 2022</td></tr>
+<td>2009 → la crise alimentaire nationale de 2010</td></tr>
 </table>
-<p class="note" style="margin-top:0.5rem">{T(
+<p class="note" style="margin-top:0.45rem;font-size:0.82rem">{T(
   "The chart counts departments where BOTH the rainfall and the "
-  "vegetation indicators signal drought (each at a 1-in-5-year level "
-  "or rarer) — today that is 7, all in the east. End of September ≈ "
-  "end of the growing season; the check-in simply re-runs this "
-  "brief's analysis on the last September dekad. B is the central "
-  "case, given the advanced season and the dry September–November "
-  "forecast tilt.",
+  "vegetation indicators signal drought (RP ≥ 5 each) — today 7, all "
+  "in the east; the end-September check-in re-runs this analysis on "
+  "the last September dekad. Analogue years are placed by what they "
+  "measured at this same check-in, not by their outcomes. B is the "
+  "central case, given the advanced season and the dry "
+  "September–November forecast tilt.",
   "Le graphique compte les départements où la pluie ET la végétation "
-  "signalent la sécheresse (chacune à un niveau de 1 an sur 5 ou plus "
-  "rare) — aujourd'hui 7, tous à l'est. Fin septembre ≈ fin de la "
-  "saison de croissance&nbsp;; le bilan consiste à réexécuter cette "
-  "même analyse sur la dernière décade de septembre. B est le "
-  "scénario central, vu l'avancement de la saison et la tendance "
-  "sèche de la prévision septembre–novembre.")}</p>
+  "signalent la sécheresse (PR ≥ 5 chacune) — aujourd'hui 7, tous à "
+  "l'est&nbsp;; le bilan de fin septembre réexécute cette analyse sur "
+  "la dernière décade de septembre. Les années analogues sont placées "
+  "selon ce qu'elles mesuraient à ce même bilan, pas selon leurs "
+  "issues. B est le scénario central, vu l'avancement de la saison et "
+  "la tendance sèche de la prévision septembre–novembre.")}</p>
+<p class="note" style="margin-top:0.3rem;font-size:0.82rem">{T(
+  "The 2021 caveat: 2021 measured near zero here — its rains failed "
+  "in September itself — yet it ended in the record 2022 lean season "
+  "(<span style='color:#7a0a10;font-weight:600'>CERF US$10M · 4.4M "
+  "affected, EM-DAT</span>). Hence September rainfall and the "
+  "vegetation dekads are monitored in their own right.",
+  "La réserve 2021&nbsp;: 2021 mesurait ici près de zéro — ses pluies "
+  "ont échoué en septembre même — et s'est pourtant soldée par la "
+  "soudure record de 2022 "
+  "(<span style='color:#7a0a10;font-weight:600'>CERF 10 M$ · 4,4 M "
+  "affectés, EM-DAT</span>). D'où le suivi des pluies de septembre et "
+  "des décades de végétation à part entière.")}</p>
 </div>
 </div>
 <div class="foot"><span>9 / 9</span>

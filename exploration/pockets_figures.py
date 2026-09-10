@@ -969,7 +969,7 @@ def fig_scenarios():
     bands = [
         ("A", 0, 5, "#74c476", "#1d6b34", "2006", 2),
         ("B", 5, 15, "#fd8d3c", "#a34e00", "2011 · 2004", 10),
-        ("C", 15, 30, "#a50f15", "#7a0a10", "2009 · 2021", 21),
+        ("C", 15, 30, "#a50f15", "#7a0a10", "2009", 21),
     ]
     for lab, lo, hi, fill, dark, ana, tgt in bands:
         ax.add_patch(

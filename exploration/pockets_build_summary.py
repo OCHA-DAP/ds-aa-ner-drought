@@ -47,18 +47,46 @@ CDI_CLASSES = {
 }
 # seasons with a CERF drought allocation (mapped to the drought's VALID
 # growing season, not the allocation date; 2022 AA excluded):
-# - 2008: 08-RR-NER-8416 (Sep 2008; small, season ambiguous - no narrative)
 # - 2009: 10-UF-8444 (Jan 2010) + 10-RR-8451 (May) + 10-RR-8465 (Aug 2010),
 #         the 2009 harvest failure -> 2010 crisis
 # - 2011: 11-RR-8545 (Nov 2011) + 12-RR-8564 (Apr 2012), the 2011 failure
 #         -> 2012 Sahel crisis
 # - 2021: 22-UF-51060 (Dec 2021; "cereal yields down 39% ... lower-than-
 #         normal rainfall")
-CERF_SEASONS = [2008, 2009, 2011, 2021]
+# NOT 2008: 08-RR-NER-8416 (Sep 2008) is CERF-typed "Drought" but its four
+# projects (aa.cerf_project) are Zinder nutrition scale-up, emergency child
+# nutrition, UNHAS, and FAO support to households "affected by the rising
+# prices of food and agricultural inputs" - the 2008 food-price crisis, not
+# a meteorological drought.
+CERF_SEASONS = [2009, 2011, 2021]
+# EM-DAT drought events for Niger since 2000 (blob snapshot via
+# stratus.emdat), each attributed to the growing season within its event
+# window that the framework's own bad-year record ranks worst (event
+# months are coarse, so attribution is +/-1 year):
+# 2001->2001(rank 3), 2005->2004(10), 2009->2009(1), 2011->2011(4),
+# 2015-17->2015(5), 2017->2017(7), 2020->2020(2), 2022->2021(9)
+EMDAT_SEASONS = [2001, 2004, 2009, 2011, 2015, 2017, 2020, 2021]
 AA_SEASONS = [2022]  # framework AA activation, excluded from the CERF set
 # composite reconstructed for every season since ENACTS begins (1991);
 # pre-1998 years lack IMERG (median over the remaining three witnesses)
 CDI_YEARS = list(range(1991, 2027))
+
+
+def detrend_series(s):
+    """Linear detrend of a yearly series (OLS fit, residual + mean).
+
+    The vegetation series need this before ranking: over 1984-2026 the
+    Aug-dekad ASI falls 6-12 points/decade and VHI rises 0.02-0.08/decade
+    (Sahel re-greening compounded by the early-AVHRR sensor era), so raw
+    ranks concentrate all dry extremes in the 1990s. Same convention as
+    the SEAS5 hybrid detrending.
+    """
+    s = s.dropna().sort_index()
+    if len(s) < 3:
+        return s
+    x = s.index.values.astype(float)
+    a, b = np.polyfit(x, s.values, 1)
+    return pd.Series(s.values - (a * x + b) + s.values.mean(), index=s.index)
 
 
 def dry_p(series_by_year, year, lower_is_worse=True):
@@ -193,9 +221,21 @@ def main():
             }
         )
 
-    # --- vegetation per adm1 (FAO ASIS regions)
+    # --- vegetation per adm1 (FAO ASIS regions).
+    # The pillar uses DETRENDED VHI only: over 1984-2026 VHI rises
+    # 0.02-0.08/decade (greening + AVHRR era), so raw ranks put every dry
+    # extreme in the 1990s; the linear detrend (SEAS5 convention) fixes
+    # that and the result corroborates ASAP's unit-level warnings. ASI is
+    # kept as RAW context (floor-bounded at 0, so a linear detrend is
+    # invalid: it would rank regions with literally zero stressed cropland
+    # as anomalously stressed).
     asi = load_asis("asi_dekad.csv", "asi")
     vhi = load_asis("vhi_dekad.csv", "vhi")
+    parts = []
+    for _, g in vhi.groupby("region"):
+        dt = detrend_series(g.set_index("year")["vhi"])
+        parts.append(pd.Series(dt.reindex(g["year"]).values, index=g.index))
+    vhi["vhi"] = pd.concat(parts).sort_index()
     t_asi = rp_table(asi, "asi", unit_col="region", lower_is_worse=False)
     t_asi = t_asi.add_prefix("asi_").rename(columns={"asi_region": "region"})
     t_vhi = rp_table(vhi, "vhi", unit_col="region", lower_is_worse=True)
@@ -275,7 +315,8 @@ def main():
     # ASI/VHI). The rainfall witnesses are kept separate: different sensors,
     # windows and gauge inputs, and they disagree regionally in 2026.
     out["rain_rp"] = out[["chirps_rp", "imerg_rp"]].max(axis=1)
-    out["veg_rp"] = out[["asi_rp", "vhi_rp"]].max(axis=1)
+    # vegetation pillar = detrended VHI only (ASI kept as raw context)
+    out["veg_rp"] = out["vhi_rp"]
     out["conv_n"] = (
         (out["chirps_rp"] >= CONVERGENCE_RP).astype(int)
         + (out["imerg_rp"] >= CONVERGENCE_RP).astype(int)
@@ -327,7 +368,6 @@ def main():
         rank = int((others < s.loc[year]).sum()) + 1
         return rank / (len(others) + 1)
 
-    asi_full = load_asis("asi_dekad.csv", "v")
     vhi_full = load_asis("vhi_dekad.csv", "v")
     # ENACTS's own validity mask: Saharan departments it declines to cover
     # (Arlit, Bilma, Iferouane) are shown as "not assessed" rather than
@@ -340,8 +380,9 @@ def main():
         c_s = chirps[chirps["pcode"] == pcode].set_index("year")["junjul_mm"]
         i_s = imerg[imerg["pcode"] == pcode].set_index("year")["junaug_mm"]
         e_s = e2[e2["pcode"] == pcode].set_index("year")["spi"]
-        a_s = asi_full[asi_full["region"] == region].set_index("year")["v"]
-        v_s = vhi_full[vhi_full["region"] == region].set_index("year")["v"]
+        v_s = detrend_series(
+            vhi_full[vhi_full["region"] == region].set_index("year")["v"]
+        )
         for year in CDI_YEARS:
             ps = [
                 dry_p(c_s, year),
@@ -352,13 +393,8 @@ def main():
             ps = [x for x in ps if not np.isnan(x)]
             rain_p = float(np.median(ps)) if ps else np.nan
             rain_rp = 1.0 / rain_p if rain_p else np.nan
-            veg_rps = []
-            pa = dry_p(a_s, year, lower_is_worse=False)
             pv = dry_p(v_s, year, lower_is_worse=True)
-            for x in (pa, pv):
-                if not np.isnan(x):
-                    veg_rps.append(1.0 / x)
-            veg_rp = max(veg_rps) if veg_rps else np.nan
+            veg_rp = 1.0 / pv if not np.isnan(pv) else np.nan
             comp_rows.append(
                 {
                     "pcode": pcode,

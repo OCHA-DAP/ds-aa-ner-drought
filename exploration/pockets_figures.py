@@ -448,33 +448,47 @@ def fig_hnrp(summary):
 
 
 # --- combined drought indicator (CDI-style) ---------------------------------
+# map rendering: fills show the RAIN pillar; vegetation stress (detrended
+# VHI at RP >= 5) is overlaid as dark-red dots so it reads as an
+# aggravating signal, not a separate cool-coloured category
 CDI_COLORS = {
-    0: "#f2f2ed",  # none
-    1: "#fec44f",  # rainfall watch (rain RP 5-10)
-    2: "#ec7014",  # severe rainfall deficit (rain RP >= 10)
-    3: "#cb181d",  # compound rain + vegetation
-    4: "#67000d",  # severe compound
-    5: "#74a9cf",  # vegetation stress only
+    0: "#f2f2ed",  # rain < 5
+    1: "#fec44f",  # rain RP 5-10
+    2: "#ec7014",  # rain RP >= 10
     6: "#e4e2da",  # not assessed (Saharan, outside ENACTS coverage)
 }
-CDI_LABELS = {
-    0: "–",
-    1: "5–10",
-    2: "≥ 10",
-    3: "5–10 +veg",
-    4: "≥ 10 +veg",
-    5: "veg",
-    6: "n/a",
+CDI_LABELS = {0: "–", 1: "5–10", 2: "≥ 10", 6: "n/a"}
+VEG_DOT = "#67000d"
+# table-chip colours for the full class set (data classes unchanged)
+CDI_CHIP_COLORS = {
+    0: "#f2f2ed",
+    1: "#fec44f",
+    2: "#ec7014",
+    3: "#cb181d",
+    4: "#67000d",
+    5: "#8c1a1a",
+    6: "#e4e2da",
 }
 
 
-def cdi_map(ax, adm1, adm2, cls_by_pcode, hatch_pcodes=None, labels=True):
-    g = adm2.merge(
-        cls_by_pcode.rename("cls"),
-        left_on="ADM2_PCODE",
-        right_index=True,
-        how="left",
-    )
+def _rain_cls(rain_rp, cdi):
+    if pd.isna(cdi):
+        return np.nan
+    if int(cdi) == 6:
+        return 6
+    if pd.isna(rain_rp):
+        return np.nan
+    if rain_rp >= 10:
+        return 2
+    if rain_rp >= 5:
+        return 1
+    return 0
+
+
+def cdi_map(ax, adm1, adm2, df_unit, hatch_pcodes=None, labels=True):
+    """df_unit: index pcode, columns rain_rp, veg_rp, cdi."""
+    g = adm2.merge(df_unit, left_on="ADM2_PCODE", right_index=True, how="left")
+    g["cls"] = [_rain_cls(r, c) for r, c in zip(g["rain_rp"], g["cdi"])]
     for k, color in CDI_COLORS.items():
         sub = g[g["cls"] == k]
         if len(sub):
@@ -493,6 +507,19 @@ def cdi_map(ax, adm1, adm2, cls_by_pcode, hatch_pcodes=None, labels=True):
             edgecolor="#ffffff",
             linewidth=0.4,
             zorder=2,
+        )
+    veg = g[(g["veg_rp"] >= 5) & (g["cls"] != 6)]
+    if len(veg):
+        pts = veg.geometry.representative_point()
+        ax.scatter(
+            pts.x,
+            pts.y,
+            s=16,
+            color=VEG_DOT,
+            zorder=6,
+            marker="o",
+            edgecolor="white",
+            linewidth=0.4,
         )
     if hatch_pcodes:
         sel = g[g["ADM2_PCODE"].isin(hatch_pcodes)]
@@ -513,8 +540,19 @@ def cdi_legend_handles(with_hatch=False):
         Patch(
             facecolor=CDI_COLORS[k], edgecolor="#cccccc", label=CDI_LABELS[k]
         )
-        for k in (0, 1, 2, 3, 4, 5, 6)
+        for k in (0, 1, 2, 6)
     ]
+    hs.append(
+        Line2D(
+            [],
+            [],
+            marker="o",
+            linestyle="",
+            color=VEG_DOT,
+            markersize=6,
+            label="végétation / vegetation",
+        )
+    )
     if with_hatch:
         hs.append(
             Patch(
@@ -530,14 +568,17 @@ def cdi_legend_handles(with_hatch=False):
 def fig_cdi(summary):
     adm1, adm2 = _load_admins()
     fig, ax = plt.subplots(figsize=(9.2, 6.8))
-    s = summary.set_index("pcode")
+    df_unit = summary.set_index("pcode")[["veg_rp", "cdi_class"]].rename(
+        columns={"cdi_class": "cdi"}
+    )
+    df_unit["rain_rp"] = summary.set_index("pcode")["rain_rp_med"]
     hatch = summary.loc[summary["final_severity"] >= 4, "pcode"].tolist()
-    cdi_map(ax, adm1, adm2, s["cdi_class"], hatch_pcodes=hatch)
+    cdi_map(ax, adm1, adm2, df_unit, hatch_pcodes=hatch)
     ax.legend(
         handles=cdi_legend_handles(with_hatch=True),
         loc="lower left",
         fontsize=8,
-        ncol=8,
+        ncol=6,
         frameon=False,
         title="RP pluie/rain (ans/yrs)",
         title_fontsize=8,
@@ -573,8 +614,10 @@ def fig_cdi_history(
     for ax in axes[n:]:
         ax.set_axis_off()
     for ax, year in zip(axes, years):
-        cls = comp[comp["year"] == year].set_index("pcode")["cdi"]
-        cdi_map(ax, adm1, adm2, cls, labels=False)
+        df_unit = comp[comp["year"] == year].set_index("pcode")[
+            ["rain_rp", "veg_rp", "cdi"]
+        ]
+        cdi_map(ax, adm1, adm2, df_unit, labels=False)
         if extent is not None:
             ax.set_xlim(*extent[0])
             ax.set_ylim(*extent[1])
@@ -734,7 +777,7 @@ def fig_ch_lean():
     return _b64(fig)
 
 
-def fig_indicator_bars(comp, cerf_years=(), aa_years=()):
+def fig_indicator_bars(comp, cerf_years=(), aa_years=(), emdat_years=()):
     """Yearly summary: departments in rainfall deficit / vegetation stress.
 
     Two aligned panels (rain pillar, vegetation pillar): per season, the
@@ -793,14 +836,47 @@ def fig_indicator_bars(comp, cerf_years=(), aa_years=()):
             facecolor="#b3261e", alpha=0.18, label="saison CERF / CERF season"
         )
     )
-    ax.legend(
-        handles=handles, fontsize=8.5, frameon=False, loc="upper right", ncol=3
-    )
     ax.set_ylabel("pluie / rain", fontsize=9.5)
 
     ax = axes[1]
-    ax.bar(years, [n_veg[y] for y in years], color="#74a9cf", zorder=2)
+    ax.bar(years, [n_veg[y] for y in years], color="#8c1a1a", zorder=2)
     ax.set_ylabel("végétation / vegetation", fontsize=9.5)
+    if emdat_years:
+        import matplotlib.transforms as mtransforms
+
+        marked = [y for y in emdat_years if y in years]
+        for a in axes:
+            tr = mtransforms.blended_transform_factory(
+                a.transData, a.transAxes
+            )
+            a.scatter(
+                marked,
+                [0.97] * len(marked),
+                transform=tr,
+                marker="v",
+                s=34,
+                color="#1a1a1a",
+                zorder=5,
+                clip_on=False,
+            )
+        handles.append(
+            Line2D(
+                [],
+                [],
+                marker="v",
+                linestyle="",
+                color="#1a1a1a",
+                markersize=6,
+                label="sécheresse EM-DAT / EM-DAT drought",
+            )
+        )
+    axes[0].legend(
+        handles=handles,
+        fontsize=8.5,
+        frameon=False,
+        loc="upper right",
+        ncol=len(handles),
+    )
 
     ticks = [y for y in years if y % 5 == 0 and y != 2025] + [2026]
     axes[1].set_xticks(ticks)

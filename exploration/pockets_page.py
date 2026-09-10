@@ -67,7 +67,7 @@ CDI_CHIP = {
     2: ("#ec7014", "Severe", "Sévère", True),
     3: ("#cb181d", "Compound", "Composé", True),
     4: ("#67000d", "Severe compound", "Composé sévère", True),
-    5: ("#74a9cf", "Vegetation", "Végétation", False),
+    5: ("#8c1a1a", "Vegetation", "Végétation", True),
     6: ("#e4e2da", "n/a", "n/a", False),
 }
 
@@ -105,10 +105,15 @@ def main():
     comp = pd.read_csv(D / "composite_adm2.csv")
     cdi_years = sorted(comp["year"].unique())
     img_cdi_hist = figs.fig_cdi_history(
-        comp, cdi_years, cerf_years={2008, 2009, 2011, 2021}, aa_years={2022}
+        comp, cdi_years, cerf_years={2009, 2011, 2021}, aa_years={2022}
     )
+    # EM-DAT drought events attributed to growing seasons (see
+    # pockets_build_summary.EMDAT_SEASONS for the attribution rule)
     img_bars = figs.fig_indicator_bars(
-        comp, cerf_years={2008, 2009, 2011, 2021}, aa_years={2022}
+        comp,
+        cerf_years={2009, 2011, 2021},
+        aa_years={2022},
+        emdat_years=(2001, 2004, 2009, 2011, 2015, 2017, 2020, 2021),
     )
     img_pixel = figs.fig_pixel_percentile()
     img_rain = figs.fig_rain_rp_quad(summary)
@@ -328,24 +333,27 @@ def main():
 <li>{T(
   "The combined indicator puts six departments in severe rainfall "
   "deficit (median rain RP ≥ 10): Keita, Dioundiou, Dosso, Gaya, Loga "
-  "and Tanout, with 17 more on watch (Tahoua belt, rest of Dosso, "
-  "eastern Diffa). No compound class yet: no region's vegetation "
-  "(ASI/VHI) has crossed RP 5 at the late-August dekad — Diffa is "
-  "closest (ASI 15% of cropland stressed, 10th worst of 43 years). The "
-  "JRC ASAP system's finer unit-level warnings do, however, already "
-  "flag biomass impact in the east: level 3 on Diffa, Maïné-Soroa and "
-  "Tanout croplands, 3+ on N'Guigmi rangelands.",
+  "and Tanout, with 18 more on watch (Tahoua belt, rest of Dosso, the "
+  "east). And vegetation has begun to confirm in the east: on the "
+  "detrended VHI (the vegetation pillar — see methods), the Diffa "
+  "region is at its worst late-August value of the 44-year record and "
+  "Zinder crosses RP 5, putting seven departments in the compound "
+  "class — Tanout (severe compound) plus the eastern belt from N'Gourti "
+  "to N'Guigmi — exactly where the JRC ASAP system's unit-level "
+  "warnings sit at level 3 (Diffa, Maïné-Soroa and Tanout croplands, "
+  "3+ on N'Guigmi rangelands).",
   "L’indicateur combiné place six départements en déficit "
   "pluviométrique sévère (PR pluie médiane ≥ 10)&nbsp;: Keita, "
-  "Dioundiou, Dosso, Gaya, Loga et Tanout, et 17 autres en vigilance "
-  "(bande de Tahoua, reste de Dosso, est de Diffa). Pas encore de "
-  "classe composée&nbsp;: aucune région n’a franchi PR 5 en végétation "
-  "(ASI/VHI) à la décade fin août — Diffa en est la plus proche "
-  "(ASI&nbsp;: 15&nbsp;% des cultures stressées, 10ᵉ pire valeur sur "
-  "43&nbsp;ans). Les alertes ASAP (JRC), plus fines car par unité, "
-  "signalent toutefois déjà l'impact sur la biomasse à l'est&nbsp;: "
-  "niveau 3 sur les cultures de Diffa, Maïné-Soroa et Tanout, 3+ sur "
-  "les pâturages de N'Guigmi.")}</li>
+  "Dioundiou, Dosso, Gaya, Loga et Tanout, et 18 autres en vigilance "
+  "(bande de Tahoua, reste de Dosso, l’est). Et la végétation commence "
+  "à confirmer à l’est&nbsp;: sur le VHI détendancé (le pilier "
+  "végétation — voir méthodes), la région de Diffa est à sa pire "
+  "valeur de fin août des 44 ans d’historique et Zinder franchit PR 5, "
+  "plaçant sept départements en classe composée — Tanout (composé "
+  "sévère) plus la bande orientale de N'Gourti à N'Guigmi — exactement "
+  "là où les alertes ASAP (JRC), par unité, sont au niveau 3 (cultures "
+  "de Diffa, Maïné-Soroa et Tanout, 3+ sur les pâturages de "
+  "N'Guigmi).")}</li>
 <li>{T(
   "With July and August observed, the season-closing JAS estimate is "
   "the driest of the 46-year record in every region — though this leans "
@@ -362,26 +370,30 @@ def main():
   "performance).")}</li>
 <li>{T(
   "Backtest: in early September the same composite flagged the 2009 "
-  "CERF drought (24 departments, 12 compound), the 2011 western pockets "
-  "and now — with August observed — partially the 2004 season, but "
-  "still misses 2021, whose rains only collapsed in September. 2026's "
-  "rainfall extent equals 2009's at the same date, without vegetation "
-  "confirmation so far.",
+  "CERF drought (24 departments in rainfall deficit, 20 compound), the "
+  "2011 western pockets and — with August observed — partially the "
+  "2004 season, but still misses 2021, whose rains only collapsed in "
+  "September. 2026 matches 2009's rainfall extent at the same date (24 "
+  "departments each) and its vegetation is starting to follow (17 "
+  "departments at vegetation RP ≥ 5, vs 33 in 2009).",
   "Contre-épreuve&nbsp;: début septembre, le même composite signalait "
-  "la sécheresse CERF de 2009 (24 départements, dont 12 en composé), "
-  "les poches de l’ouest en 2011 et désormais — août observé — "
-  "partiellement la saison 2004, mais manque toujours 2021, dont les "
-  "pluies ne se sont effondrées qu’en septembre. L’étendue "
-  "pluviométrique de 2026 égale celle de 2009 à la même date, sans "
-  "confirmation par la végétation à ce jour.")}</li>
+  "la sécheresse CERF de 2009 (24 départements en déficit "
+  "pluviométrique, dont 20 en composé), les poches de l’ouest en 2011 "
+  "et — août observé — partiellement la saison 2004, mais manque "
+  "toujours 2021, dont les pluies ne se sont effondrées qu’en "
+  "septembre. 2026 égale l’étendue pluviométrique de 2009 à la même "
+  "date (24 départements chacun) et sa végétation commence à suivre "
+  "(17 départements à PR végétation ≥ 5, contre 33 en 2009).")}</li>
 <li>{T(
   f"The {len(sev4)} HNRP severity-4 departments ({sev4_names}) all show "
   "at least one rainfall signal at RP ≥ 5, but only N'Guigmi makes the "
-  "composite watch list — in western Tillabéri the deficit is seen by "
+  "composite list — now in the compound class (rainfall watch plus "
+  "vegetation stress) — in western Tillabéri the deficit is seen by "
   "IMERG and the hybrid only.",
   f"Les {len(sev4)} départements en sévérité 4 du HNRP ({sev4_names}) "
   "montrent tous au moins un signal pluviométrique à PR ≥ 5, mais seul "
-  "N'Guigmi figure en vigilance du composite — dans l’ouest de "
+  "N'Guigmi figure au composite — désormais en classe composée "
+  "(vigilance pluie plus stress de la végétation) — dans l’ouest de "
   "Tillabéri, le déficit n’est vu que par IMERG et l’hybride.")}</li>
 </ul>
 </div>
@@ -396,12 +408,19 @@ def main():
   "IMERG June–August, ENACTS June–July SPI, and the detrended SEAS5+ERA5 "
   "JAS hybrid) — the median demands majority agreement, so no single "
   "product (an ENACTS artifact, ERA5's dry bias) can drive the class "
-  "alone. The vegetation pillar is the worst of the regional ASI / VHI "
-  "return periods. Classes: rainfall watch (median rain RP 5–10), severe "
+  "alone. The vegetation pillar is the regional VHI return period "
+  "computed on the linearly detrended series: both raw ASI and VHI "
+  "carry strong long-term trends (re-greening plus the change of "
+  "satellite era) that otherwise concentrate every extreme before "
+  "2000, and detrending the floor-bounded ASI is not valid, so the "
+  "pillar rests on detrended VHI alone (raw ASI is kept as context in "
+  "the table). Classes: rainfall watch (median rain RP 5–10), severe "
   "rainfall deficit (RP ≥ 10), and their compound counterparts when "
   "vegetation is also at RP ≥ 5 — the stage where a rainfall deficit is "
-  "visibly hitting crops and pasture. Hatching marks the four HNRP "
-  "severity-4 departments.",
+  "visibly hitting crops and pasture. On the maps, the fills show the "
+  "rainfall pillar and vegetation stress is overlaid as dark-red dots, "
+  "so it reads as an aggravating signal wherever it appears. Hatching "
+  "marks the four HNRP severity-4 departments.",
   "Les indicateurs sont combinés en une classe unique par département, "
   "suivant la logique des indicateurs de sécheresse combinés comme celui "
   "du JRC&nbsp;: un pilier précipitations et un pilier végétation. Le "
@@ -411,26 +430,35 @@ def main():
   "juin–juillet ENACTS et hybride SEAS5+ERA5 JAS détendancé) — la médiane "
   "exige un accord majoritaire, de sorte qu’aucun produit isolé (un "
   "artefact ENACTS, le biais sec d’ERA5) ne peut déterminer la classe à "
-  "lui seul. Le pilier végétation est la pire des périodes de retour "
-  "régionales ASI / VHI. Classes&nbsp;: vigilance pluviométrique (PR "
-  "médiane 5–10), déficit pluviométrique sévère (PR ≥ 10), et leurs "
-  "équivalents composés lorsque la végétation est aussi à PR ≥ 5 — le "
-  "stade où le déficit de pluie atteint visiblement cultures et "
-  "pâturages. Les hachures marquent les quatre départements en sévérité "
-  "4 du HNRP.")}</p>
+  "lui seul. Le pilier végétation est la période de retour régionale du "
+  "VHI calculée sur la série linéairement détendancée&nbsp;: l’ASI et "
+  "le VHI bruts portent de fortes tendances de long terme "
+  "(reverdissement et changement d’ère satellitaire) qui concentrent "
+  "sinon tous les extrêmes avant 2000, et détendancer l’ASI, borné à "
+  "zéro, n’est pas valide — le pilier repose donc sur le seul VHI "
+  "détendancé (l’ASI brut reste en contexte dans le tableau). "
+  "Classes&nbsp;: vigilance pluviométrique (PR médiane 5–10), déficit "
+  "pluviométrique sévère (PR ≥ 10), et leurs équivalents composés "
+  "lorsque la végétation est aussi à PR ≥ 5 — le stade où le déficit "
+  "de pluie atteint visiblement cultures et pâturages. Sur les cartes, "
+  "les aplats montrent le pilier pluie et le stress de la végétation "
+  "est superposé en points rouge foncé, pour qu’il se lise comme un "
+  "signal aggravant partout où il apparaît. Les hachures marquent les "
+  "quatre départements en sévérité 4 du HNRP.")}</p>
 <figure>
 <img src="data:image/png;base64,{img_cdi}" alt="Combined drought indicator map">
 <figcaption>{T(
-  "Combined drought indicator, 9 September 2026. Yellow/orange: median "
-  "rainfall RP 5–10 / ≥ 10 years; reds: rainfall + vegetation compound; "
-  "blue: vegetation stress without a majority rainfall deficit; pale "
-  "grey n/a: Saharan departments outside ENACTS coverage (Arlit, Bilma, "
-  "Iferouane), not assessed; hatched: HNRP 2026 intersectoral severity "
-  "4.",
-  "Indicateur de sécheresse combiné, 9 septembre 2026. Jaune/orange : "
-  "PR pluviométrique médiane 5–10 / ≥ 10 ans&nbsp;; rouges&nbsp;: composé "
-  "pluie + végétation&nbsp;; bleu&nbsp;: stress de la végétation sans "
-  "déficit pluviométrique majoritaire&nbsp;; gris pâle n/a&nbsp;: "
+  "Combined drought indicator, 9 September 2026. Yellow/orange fills: "
+  "median rainfall RP 5–10 / ≥ 10 years; dark-red dots: vegetation "
+  "pillar (detrended VHI) at RP ≥ 5 — a dot on a coloured fill is a "
+  "compound department; pale grey n/a: Saharan departments outside "
+  "ENACTS coverage (Arlit, Bilma, Iferouane), not assessed; hatched: "
+  "HNRP 2026 intersectoral severity 4.",
+  "Indicateur de sécheresse combiné, 9 septembre 2026. Aplats "
+  "jaunes/orange&nbsp;: PR pluviométrique médiane 5–10 / ≥ 10 "
+  "ans&nbsp;; points rouge foncé&nbsp;: pilier végétation (VHI "
+  "détendancé) à PR ≥ 5 — un point sur un aplat coloré est un "
+  "département en classe composée&nbsp;; gris pâle n/a&nbsp;: "
   "départements sahariens hors couverture ENACTS (Arlit, Bilma, "
   "Iferouane), non évalués&nbsp;; hachures&nbsp;: sévérité "
   "intersectorielle 4 du HNRP 2026.")}</figcaption>
@@ -446,7 +474,7 @@ def main():
   <th>{T("ENACTS SPI RP", "ENACTS SPI PR")}</th>
   <th>{T("SEAS5 JAS RP", "SEAS5 JAS PR")}</th>
   <th>{T("ASI RP*", "ASI PR*")}</th>
-  <th>{T("VHI RP*", "VHI PR*")}</th>
+  <th>{T("VHI RP (detr.)*", "VHI PR (détend.)*")}</th>
   <th>{T("HNRP severity", "Sévérité HNRP")}</th>
   <th>{T("People in need", "Personnes dans le besoin")}</th>
   <th>{T("Rain RP (median)", "PR pluie (médiane)")}</th>
@@ -458,14 +486,18 @@ def main():
 <p class="note">{T(
   "Departments with at least one indicator at RP ≥ 5 or HNRP severity 4. "
   "* ASI/VHI are only available per region (FAO GAUL admin-1); the regional "
-  "value is shown for each department. ENACTS is blank for Saharan "
+  "value is shown for each department. The VHI RP is computed on the "
+  "detrended series (the combined indicator's vegetation pillar); the ASI "
+  "RP is on the raw series, context only. ENACTS is blank for Saharan "
   "departments without coverage. SEAS5 (the detrended SEAS5+ERA5 JAS "
   "hybrid) is blank where the model has insufficient historical "
   "performance (r < 0.30).",
   "Départements avec au moins un indicateur à PR ≥ 5 ou en sévérité 4 du "
   "HNRP. * L’ASI et le VHI ne sont disponibles que par région (admin-1 GAUL "
   "de la FAO)&nbsp;; la valeur régionale est reprise pour chaque "
-  "département. ENACTS est vide pour les départements sahariens sans "
+  "département. La PR du VHI est calculée sur la série détendancée (le "
+  "pilier végétation de l’indicateur combiné)&nbsp;; la PR de l’ASI est "
+  "sur la série brute, à titre de contexte. ENACTS est vide pour les départements sahariens sans "
   "couverture. SEAS5 (l’hybride SEAS5+ERA5 JAS détendancé) est vide "
   "lorsque la performance historique du modèle est insuffisante "
   "(r &lt; 0,30).")}</p>
@@ -482,9 +514,12 @@ def main():
   "the January–August 2010 allocations respond to the failed 2009 season, "
   "the November 2011 and April 2012 ones to the 2011 season, and the "
   "December 2021 food-security allocation to the 2021 season ('cereal "
-  "yields down 39% … lower-than-normal rainfall'). A small September 2008 "
-  "drought allocation is shown against the 2008 season, though its "
-  "narrative is not archived and the mapping is uncertain. The 2022 "
+  "yields down 39% … lower-than-normal rainfall'). A small September "
+  "2008 allocation is typed 'Drought' in the CERF records, but its "
+  "projects (a Zinder nutrition scale-up, child-nutrition support, "
+  "humanitarian air services, FAO support against rising food and "
+  "input prices) show it answered the 2008 food-price crisis, not a "
+  "failed season — it is left unframed. The 2022 "
   "anticipatory-action allocation (dashed frame) is excluded — it was "
   "triggered by the framework, not a conventional response. The strong "
   "unframed years carry their own story: 1993 and 1995–1997 are "
@@ -506,9 +541,13 @@ def main():
   "et d’avril 2012 à la saison 2011, et l’allocation sécurité alimentaire "
   "de décembre 2021 à la saison 2021 («&nbsp;rendements céréaliers en "
   "baisse de 39&nbsp;% … précipitations inférieures à la "
-  "normale&nbsp;»). Une petite allocation sécheresse de septembre 2008 "
-  "est montrée face à la saison 2008, bien que son narratif ne soit pas "
-  "archivé et que le rattachement soit incertain. L’allocation d’action "
+  "normale&nbsp;»). Une petite allocation de septembre 2008 est typée "
+  "«&nbsp;sécheresse&nbsp;» dans les registres CERF, mais ses projets "
+  "(renforcement nutritionnel à Zinder, nutrition infantile, services "
+  "aériens humanitaires, appui FAO face à la hausse des prix des "
+  "denrées et des intrants) montrent qu’elle répondait à la crise des "
+  "prix alimentaires de 2008, pas à une saison échouée — elle n’est "
+  "pas encadrée. L’allocation d’action "
   "anticipatoire de 2022 (cadre en tirets) est exclue — déclenchée par "
   "le cadre, ce n’est pas une réponse classique. Les années fortes sans "
   "cadre portent leur propre histoire&nbsp;: 1993 et 1995–1997 sont des "
@@ -539,22 +578,30 @@ def main():
 <figcaption>{T(
   "The same record as a summary series: per season, the number of "
   "assessed departments (of 64) whose rain pillar sits at RP ≥ 5 "
-  "(dark: ≥ 10) and, below, whose regional vegetation pillar (ASI/VHI, "
-  "late-August dekad) sits at RP ≥ 5. Red bands: CERF drought seasons; "
-  "grey: the 2022 AA activation. 2026's rainfall count is the largest "
-  "since 2009–2011 while its vegetation count remains low — pre-2000 "
-  "vegetation values come from the early-AVHRR record and deserve extra "
-  "caution.",
+  "(dark: ≥ 10) and, below, whose vegetation pillar (detrended "
+  "regional VHI, late-August dekad) sits at RP ≥ 5. Red bands: CERF "
+  "drought seasons; grey: the 2022 AA activation; black triangles: "
+  "drought events in EM-DAT since 2000, each attributed to the growing "
+  "season inside its window that the framework's severity list ranks "
+  "worst. 2026's rainfall count is the largest since 2009–2011; its "
+  "vegetation count (17 departments) is still well below 2009's 33, "
+  "but unlike most of the noisy vegetation-only years it coincides "
+  "with the rainfall deficit in a single eastern belt — hence the "
+  "compound classes above.",
   "Le même historique en série résumée&nbsp;: par saison, le nombre de "
   "départements évalués (sur 64) dont le pilier pluie est à PR ≥ 5 "
-  "(foncé&nbsp;: ≥ 10) et, en dessous, dont le pilier végétation "
-  "régional (ASI/VHI, décade fin août) est à PR ≥ 5. Bandes "
+  "(foncé&nbsp;: ≥ 10) et, en dessous, dont le pilier végétation (VHI "
+  "régional détendancé, décade fin août) est à PR ≥ 5. Bandes "
   "rouges&nbsp;: saisons de sécheresse CERF&nbsp;; gris&nbsp;: "
-  "l'activation AA de 2022. Le décompte pluviométrique de 2026 est le "
-  "plus élevé depuis 2009–2011 alors que celui de la végétation reste "
-  "bas — les valeurs de végétation antérieures à 2000 proviennent du "
-  "début de l'archive AVHRR et appellent une prudence "
-  "supplémentaire.")}</figcaption>
+  "l'activation AA de 2022&nbsp;; triangles noirs&nbsp;: événements de "
+  "sécheresse EM-DAT depuis 2000, chacun rattaché à la saison agricole "
+  "de sa fenêtre que la liste de sévérité du cadre classe la pire. Le "
+  "décompte pluviométrique de 2026 est le plus élevé depuis "
+  "2009–2011&nbsp;; son décompte végétation (17 départements) reste "
+  "bien sous les 33 de 2009, mais contrairement à la plupart des "
+  "années «&nbsp;végétation seule&nbsp;», bruitées, il coïncide avec "
+  "le déficit de pluie dans une même bande orientale — d'où les "
+  "classes composées ci-dessus.")}</figcaption>
 </figure>
 
 <h2>{T("Observed rainfall — CHIRPS, IMERG and ENACTS",
@@ -782,6 +829,29 @@ def main():
   "1984–2025, rouge = 2026. Un ASI élevé est défavorable (plus de cultures "
   "stressées)&nbsp;; un VHI bas est défavorable.")}</figcaption>
 </figure>
+<p class="note">{T(
+  "Both raw series carry strong long-term trends — ASI falling 6–12 "
+  "points per decade and VHI rising 0.02–0.08 per decade, a mix of the "
+  "Sahel's re-greening and the change of satellite era — so on the raw "
+  "values nearly every extreme lands before 2000 and a dry 2026 can "
+  "still rank mid-pack. The combined indicator's vegetation pillar "
+  "therefore uses the linearly detrended VHI (same convention as the "
+  "SEAS5 hybrid); detrending the ASI, bounded at 0% stressed cropland, "
+  "would manufacture artificial stress in wet regions and is not used. "
+  "On the detrended VHI, 2026 is Diffa's worst late-August dekad of the "
+  "44-year record, with Zinder at RP 5.5 and Tahoua at RP 4.9.",
+  "Les deux séries brutes portent de fortes tendances de long terme — "
+  "l’ASI baisse de 6 à 12 points par décennie et le VHI monte de 0,02 "
+  "à 0,08 par décennie, entre reverdissement du Sahel et changement "
+  "d’ère satellitaire — si bien que sur les valeurs brutes presque "
+  "tous les extrêmes tombent avant 2000 et qu’un 2026 sec peut rester "
+  "au milieu du classement. Le pilier végétation de l’indicateur "
+  "combiné utilise donc le VHI linéairement détendancé (même "
+  "convention que l’hybride SEAS5)&nbsp;; détendancer l’ASI, borné à "
+  "0&nbsp;% de cultures stressées, fabriquerait un stress artificiel "
+  "dans les régions humides et n’est pas retenu. Sur le VHI "
+  "détendancé, 2026 est la pire décade de fin août de Diffa sur les 44 "
+  "ans d’historique, avec Zinder à PR 5,5 et Tahoua à PR 4,9.")}</p>
 <figure>
 <img src="data:image/png;base64,{fao_ndvi}" alt="FAO NDVI anomaly map"
      style="max-width:49%; min-width:320px;">
@@ -970,18 +1040,29 @@ def main():
   "Combined indicator: rain pillar = median of the four rainfall "
   "witnesses' exceedance probabilities (each the Weibull rank within its "
   "own record; the hybrid ranked against all other hindcast years), "
-  "converted back to a return period; vegetation pillar = worst of the "
-  "regional ASI/VHI RPs at the late-August dekad. CERF allocations from "
-  "the OCHA CERF records (aa.cerf_allocation mirror), drought-typed "
-  "applications mapped to their valid growing season.",
+  "converted back to a return period; vegetation pillar = RP of the "
+  "linearly detrended regional VHI at the late-August dekad (raw ASI "
+  "shown as context only). CERF allocations from the OCHA CERF records "
+  "(aa.cerf_allocation mirror), drought-typed applications mapped to "
+  "their valid growing season; the September 2008 'drought' allocation "
+  "is excluded, its projects being food-price/nutrition responses. "
+  "EM-DAT drought events (CRED, 2000 onward) marked on the summary "
+  "series, each attributed to the growing season within its window "
+  "ranked worst by the framework's severity list.",
   "Indicateur combiné&nbsp;: pilier pluie = médiane des probabilités de "
   "dépassement des quatre témoins pluviométriques (chacune le rang de "
   "Weibull dans son propre historique&nbsp;; l’hybride classé face à "
   "toutes les autres années de re-prévision), reconvertie en période de "
-  "retour&nbsp;; pilier végétation = pire des PR régionales ASI/VHI à la "
-  "décade fin août. Allocations CERF issues des registres CERF de l’OCHA "
-  "(miroir aa.cerf_allocation), demandes de type sécheresse rattachées à "
-  "leur saison agricole de validité.")}</li>
+  "retour&nbsp;; pilier végétation = PR du VHI régional linéairement "
+  "détendancé à la décade fin août (ASI brut en contexte seulement). "
+  "Allocations CERF issues des registres CERF de l’OCHA (miroir "
+  "aa.cerf_allocation), demandes de type sécheresse rattachées à leur "
+  "saison agricole de validité&nbsp;; l’allocation «&nbsp;"
+  "sécheresse&nbsp;» de septembre 2008 est exclue, ses projets étant "
+  "des réponses prix alimentaires/nutrition. Événements de sécheresse "
+  "EM-DAT (CRED, depuis 2000) marqués sur la série résumée, chacun "
+  "rattaché à la saison agricole de sa fenêtre classée la pire par la "
+  "liste de sévérité du cadre.")}</li>
 <li>{T(
   "This is a monitoring analysis, not the AA framework trigger: the "
   "framework's own observational indicator (ENACTS June–July SPI over the "
